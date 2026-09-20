@@ -1,153 +1,95 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { expeditions, getDailyPuzzle } from "@/lib/catalog";
-import { MAX_CLUES, MIN_SCORE, PENALTY_PER_CLUE, STARTING_SCORE } from "@/lib/scoring";
-import { cn, formatUtcDate, utcDateKey } from "@/lib/utils";
-
-export const dynamic = "force-dynamic";
+import Link from 'next/link';
 
 export default function HomePage() {
-  const dateKey = utcDateKey();
-  const daily = getDailyPuzzle(dateKey);
-
   return (
-    <div className="space-y-12">
-      <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-        <div>
-          <Badge variant="gold">The archive is open</Badge>
-          <h1 className="mt-4 max-w-xl font-serif text-5xl leading-[0.95] text-paper sm:text-6xl">
-            History doesn&apos;t repeat. It leaves clues.
+    <main className="min-h-screen bg-slate-950 text-slate-50 font-sans selection:bg-blue-600 selection:text-white">
+      
+      {/* Top Navigation - Sportig och minimalistisk */}
+      <nav className="flex justify-between items-center p-6 border-b border-slate-800/50 uppercase tracking-widest text-xs font-bold">
+        <div className="flex items-center gap-3">
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+          <span className="text-white">SportHistoryClue</span>
+        </div>
+        <div className="hidden md:flex gap-8 text-slate-400">
+          <Link href="/play" className="hover:text-blue-400 transition-colors">Play</Link>
+          <Link href="/daily" className="hover:text-blue-400 transition-colors">Daily Fixture</Link>
+          <Link href="/tournaments" className="hover:text-blue-400 transition-colors">Tournaments</Link>
+          <Link href="/profile" className="hover:text-blue-400 transition-colors">Stats</Link>
+        </div>
+        <Link href="/login" className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-md transition-colors">
+          Log In
+        </Link>
+      </nav>
+
+      <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+        
+        {/* Hero Section */}
+        <div className="mb-20">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase font-bold tracking-widest rounded-full mb-6">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+            Season 2026 Active
+          </div>
+          <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter text-white mb-6 leading-[0.9]">
+            History leaves <br /> 
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+              its mark.
+            </span>
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-paper/70">
-            A cropped plate. A redacted box score. A line of period copy. Name the
-            subject and the year before extra clues spend the file.
+          <p className="text-slate-400 max-w-xl text-lg font-medium">
+            Analyze the clues. Deduce the match. Name the legend. Step into the arena and test your sports history knowledge against the clock.
           </p>
         </div>
-        <Card className="border-gold/40 bg-card text-paper">
-          <CardHeader>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-gold">
-              {formatUtcDate(dateKey)}
-            </p>
-            <CardTitle>Today&apos;s brief</CardTitle>
-            <CardDescription className="text-paper/65">{daily.teaser}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/daily" className={cn(buttonVariants({ variant: "gold" }), "w-full")}>
-              Open the daily file
-              <ArrowRight className="size-4" />
+
+        {/* Action Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          {/* Card 1: Random Play */}
+          <div className="group bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/50 transition-all duration-300 rounded-2xl p-8 flex flex-col justify-between min-h-[300px] cursor-pointer relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-20 transition-opacity">
+              <span className="text-9xl font-black">01</span>
+            </div>
+            <div>
+              <div className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-4">Quick Match</div>
+              <h2 className="text-3xl font-black uppercase tracking-tight text-white mb-2">Play</h2>
+              <p className="text-slate-400 text-sm">Face a random historical sports moment. Unlimited rounds, pure trivia.</p>
+            </div>
+            <Link href="/play" className="inline-flex items-center gap-2 text-white font-bold uppercase text-sm tracking-wider group-hover:text-blue-400 transition-colors">
+              Enter Arena <span className="text-xl">→</span>
             </Link>
-          </CardContent>
-        </Card>
-      </section>
+          </div>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <ModeCard
-          kicker="Mode 01"
-          title="Play"
-          body="A random plate from the archive. Name the subject and year, then draw the next file."
-          href="/play"
-          cta="Open a random file"
-        />
-        <ModeCard
-          kicker="Mode 02"
-          title="Daily Brief"
-          body="One plate, worldwide, reset at UTC midnight. Same clues, same scoring, a share line for the group chat."
-          href="/daily"
-          cta="Play today"
-        />
-        <ModeCard
-          kicker="Mode 03"
-          title="Expeditions"
-          body="Time-travel campaigns through five eras, from marble Athens to Lusail. Chain the files. Keep the streak of a different kind."
-          href="/expeditions"
-          cta="Choose an era"
-        />
-      </section>
-
-      <section>
-        <h2 className="font-serif text-2xl text-paper">How a brief is scored</h2>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-3">
-          <Rule
-            title={`${STARTING_SCORE.toLocaleString("en-US")} opening`}
-            body="Every file starts at ten thousand. Clue one is free."
-          />
-          <Rule
-            title={`${MAX_CLUES} plates`}
-            body={`Each extra clue costs ${PENALTY_PER_CLUE.toLocaleString("en-US")}. You can always go back.`}
-          />
-          <Rule
-            title={`${MIN_SCORE.toLocaleString("en-US")} floor`}
-            body="Year and subject must both match. A correct file never drops below a thousand."
-          />
-        </ul>
-      </section>
-
-      <section>
-        <div className="mb-4 flex items-end justify-between">
-          <h2 className="font-serif text-2xl text-paper">Expedition map</h2>
-          <Link href="/expeditions" className="font-mono text-[11px] uppercase tracking-[0.16em] text-gold">
-            All eras
-          </Link>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {expeditions.map((expedition) => (
-            <Link
-              key={expedition.slug}
-              href={`/expeditions/${expedition.slug}`}
-              className="rounded-xl border border-gold/20 bg-card p-4 transition hover:border-gold"
-            >
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold">
-                {expedition.period}
-              </p>
-              <p className="mt-2 font-serif text-lg leading-tight text-paper">
-                {expedition.title}
-              </p>
+          {/* Card 2: Daily Brief */}
+          <div className="group bg-blue-600 hover:bg-blue-500 transition-all duration-300 rounded-2xl p-8 flex flex-col justify-between min-h-[300px] cursor-pointer shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] relative overflow-hidden md:scale-105 z-10">
+            <div>
+              <div className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-4 flex items-center justify-between">
+                <span>Daily Fixture</span>
+                <span className="bg-white text-blue-600 px-2 py-0.5 rounded-sm text-[9px]">NEW</span>
+              </div>
+              <h2 className="text-3xl font-black uppercase tracking-tight text-white mb-2">Today's <br/>Matchup</h2>
+              <p className="text-blue-100 text-sm">One iconic moment worldwide. Resets at midnight. Compare stats with friends.</p>
+            </div>
+            <Link href="/daily" className="inline-flex items-center gap-2 text-white font-bold uppercase text-sm tracking-wider">
+              Play Today <span className="text-xl">→</span>
             </Link>
-          ))}
+          </div>
+
+          {/* Card 3: Expeditions/Tournaments */}
+          <div className="group bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-600 transition-all duration-300 rounded-2xl p-8 flex flex-col justify-between min-h-[300px] cursor-pointer relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-20 transition-opacity">
+              <span className="text-9xl font-black">03</span>
+            </div>
+            <div>
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4">Career Mode</div>
+              <h2 className="text-3xl font-black uppercase tracking-tight text-white mb-2">Tournaments</h2>
+              <p className="text-slate-400 text-sm">Play through eras, from the 1994 World Cup to Olympic classics. Unlock badges.</p>
+            </div>
+            <Link href="/tournaments" className="inline-flex items-center gap-2 text-white font-bold uppercase text-sm tracking-wider group-hover:text-white transition-colors">
+              View Bracket <span className="text-xl">→</span>
+            </Link>
+          </div>
+
         </div>
-      </section>
-    </div>
-  );
-}
-
-function ModeCard({
-  kicker,
-  title,
-  body,
-  href,
-  cta,
-}: {
-  kicker: string;
-  title: string;
-  body: string;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <Card className="border-gold/20 bg-card">
-      <CardHeader>
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-gold">{kicker}</p>
-        <CardTitle className="text-3xl">{title}</CardTitle>
-        <CardDescription>{body}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Link href={href} className={cn(buttonVariants({ variant: "gold" }))}>
-          {cta}
-          <ArrowRight className="size-4" />
-        </Link>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Rule({ title, body }: { title: string; body: string }) {
-  return (
-    <li className="rounded-xl border border-gold/15 bg-card/80 p-4">
-      <p className="font-serif text-xl text-gold">{title}</p>
-      <p className="mt-2 text-sm text-paper/65">{body}</p>
-    </li>
+      </div>
+    </main>
   );
 }
