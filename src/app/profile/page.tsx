@@ -48,7 +48,6 @@ export default function ProfilePage() {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}-${Math.random()}.${fileExt}`;
 
-      // (supabaseClient as any) tvingar TypeScript att godkänna anropet
       const { error: uploadError } = await (supabaseClient as any).storage
         .from('avatars')
         .upload(filePath, file);
@@ -68,14 +67,14 @@ export default function ProfilePage() {
 
       setProfile({ ...profile, avatar_url: data.publicUrl });
     } catch (error) {
-      console.error('Fel vid uppladdning:', error);
-      alert('Kunde inte ladda upp bilden.');
+      console.error('Upload error:', error);
+      alert('Could not upload the image. Please try again.');
     } finally {
       setUploading(false);
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center font-black uppercase text-2xl tracking-widest">Loading Stats...</div>;
+  if (loading) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center font-black uppercase text-2xl tracking-widest text-black">Loading Stats...</div>;
 
   return (
     <main className="min-h-screen bg-zinc-50 text-black font-sans p-4 sm:p-8">
@@ -97,12 +96,12 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          {/* Vänster kolumn: Spelar-ID & Avatar */}
+          {/* Avatar & ID */}
           <div className="col-span-1 bg-lime-400 border-4 border-black rounded-3xl p-8 flex flex-col items-center text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             
             <label className="cursor-pointer relative group flex items-center justify-center w-32 h-32 rounded-full bg-white border-4 border-black mb-6 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profilbild" className="w-full h-full object-cover" />
+                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-5xl">🏆</span>
               )}
@@ -133,7 +132,7 @@ export default function ProfilePage() {
             <span className="text-xs text-black font-black uppercase tracking-widest">Level 34</span>
           </div>
 
-          {/* Höger kolumn: Statistik och Badges */}
+          {/* Stats & Badges */}
           <div className="col-span-1 md:col-span-2 space-y-8">
             
             {/* Stats Block */}

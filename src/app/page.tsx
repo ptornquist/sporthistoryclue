@@ -2,82 +2,72 @@ import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-zinc-50 text-black font-sans">
+    <main className="min-h-screen bg-white text-zinc-900 font-sans">
       
-      {/* App Header */}
-      <nav className="flex justify-between items-center p-4 sm:p-6 border-b-4 border-black bg-white">
-        <div className="flex items-center gap-2 font-black text-2xl tracking-tighter uppercase">
-          <span className="text-3xl">⚡️</span> SHC
+      {/* Sleek Minimalist Header */}
+      <nav className="flex justify-between items-center p-6 border-b border-zinc-100">
+        <div className="font-black text-2xl tracking-tighter">
+          SHC<span className="text-blue-600">.</span>
         </div>
-        <div className="hidden md:flex gap-8 font-black uppercase tracking-widest text-sm">
-          <Link href="/play" className="hover:text-lime-500 transition-colors hover:-translate-y-1 transform">Play</Link>
-          <Link href="/daily" className="hover:text-lime-500 transition-colors hover:-translate-y-1 transform">Daily Drop</Link>
-          <Link href="/tournaments" className="hover:text-lime-500 transition-colors hover:-translate-y-1 transform">Seasons</Link>
-          <Link href="/profile" className="hover:text-lime-500 transition-colors hover:-translate-y-1 transform">Profile</Link>
+        <div className="hidden md:flex gap-8 font-semibold text-sm tracking-wide text-zinc-500">
+          <Link href="/play" className="hover:text-black transition-colors">Play</Link>
+          <Link href="/daily" className="hover:text-black transition-colors">Daily Drop</Link>
+          <Link href="/timeline" className="hover:text-black transition-colors">Timelines</Link>
+          <Link href="/profile" className="hover:text-black transition-colors">Trophy Cabinet</Link>
         </div>
-        <Link href="/login" className="bg-black text-white font-black uppercase tracking-wider text-xs px-6 py-3 rounded-full hover:bg-lime-400 hover:text-black transition-all border-2 border-transparent hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
-          Log In
+        <Link href="/login" className="bg-black text-white font-semibold text-sm px-6 py-2.5 rounded-full hover:bg-zinc-800 transition-colors">
+          Sign In
         </Link>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-24">
+      <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
         
-        {/* Hero Section */}
-        <div className="mb-20 text-center md:text-left flex flex-col md:items-start items-center">
-          <div className="inline-block bg-lime-400 border-2 border-black font-black uppercase tracking-widest text-xs px-4 py-2 rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-8 transform -rotate-2">
-            🔥 Season 2026 is LIVE
+        {/* Clean Hero Section */}
+        <div className="max-w-3xl mb-20 md:mb-24">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-100 text-zinc-600 text-xs font-bold uppercase tracking-wider rounded-full mb-6">
+            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+            Global Leaderboards Active
           </div>
-          <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tighter leading-[0.85] mb-6">
-            Know <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-500 to-cyan-500" style={{ WebkitTextStroke: '3px black' }}>
-              Your Stats.
-            </span>
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-6">
+            MASTER THE <br />
+            <span className="text-blue-600">HISTORY.</span>
           </h1>
-          <p className="text-zinc-600 max-w-xl text-lg md:text-xl font-bold">
-            Drop into the arena. Guess the historical match. Flex your sports knowledge on the global leaderboard.
+          <p className="text-xl text-zinc-500 font-medium leading-relaxed max-w-xl">
+            The ultimate sports history platform. Challenge friends, unlock rare digital memorabilia, and climb the global ranks.
           </p>
         </div>
 
-        {/* Action Grid (Neo-Brutalism) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Game Modes Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Card 1: Random Play */}
-          <Link href="/play" className="block group bg-white border-4 border-black rounded-3xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
-            <div className="flex justify-between items-start mb-12">
-              <span className="text-5xl">🎯</span>
-              <span className="font-black text-4xl text-zinc-200 group-hover:text-black transition-colors">01</span>
+          {/* Daily Drop */}
+          <Link href="/daily" className="group p-8 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-blue-600 hover:shadow-xl transition-all duration-300">
+            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-16 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             </div>
-            <h2 className="text-4xl font-black uppercase tracking-tighter mb-2">Quick<br/>Match</h2>
-            <p className="text-zinc-500 font-bold text-sm mb-6">Endless mode. Pure trivia. Swipe through history.</p>
-            <div className="font-black uppercase tracking-wider text-sm flex items-center gap-2 group-hover:text-lime-500 transition-colors">
-              Enter Arena &rarr;
-            </div>
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Daily Drop</h2>
+            <p className="text-zinc-500 text-sm mb-6">One match. One chance. Everyone in the world gets the same puzzle.</p>
+            <span className="text-sm font-semibold text-blue-600 group-hover:text-blue-700">Play Today's Match &rarr;</span>
           </Link>
 
-          {/* Card 2: Daily Drop */}
-          <Link href="/daily" className="block group bg-lime-400 border-4 border-black rounded-3xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
-            <div className="flex justify-between items-start mb-12">
-              <span className="text-5xl">🌍</span>
-              <span className="bg-black text-lime-400 font-black uppercase text-[10px] px-3 py-1 rounded-full animate-pulse border-2 border-black">New</span>
+          {/* Timelines */}
+          <Link href="/timeline" className="group p-8 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-black hover:shadow-xl transition-all duration-300">
+            <div className="w-12 h-12 bg-zinc-200 text-zinc-700 rounded-full flex items-center justify-center mb-16 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
             </div>
-            <h2 className="text-4xl font-black uppercase tracking-tighter mb-2">Daily<br/>Drop</h2>
-            <p className="text-black font-bold text-sm mb-6">One match a day. Everyone gets the same clue. Share your streak.</p>
-            <div className="font-black uppercase tracking-wider text-sm flex items-center gap-2 text-black">
-              Play Today &rarr;
-            </div>
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Timelines</h2>
+            <p className="text-zinc-500 text-sm mb-6">Unlock the history of the Olympics, World Cups, Basketball, and Ice Hockey.</p>
+            <span className="text-sm font-semibold text-black">View Campaigns &rarr;</span>
           </Link>
 
-          {/* Card 3: Tournaments */}
-          <Link href="/tournaments" className="block group bg-cyan-300 border-4 border-black rounded-3xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
-            <div className="flex justify-between items-start mb-12">
-              <span className="text-5xl">🏆</span>
-              <span className="font-black text-4xl text-black/10 group-hover:text-black transition-colors">03</span>
+          {/* Social / Head to Head */}
+          <Link href="/friends" className="group p-8 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-black hover:shadow-xl transition-all duration-300">
+            <div className="w-12 h-12 bg-zinc-200 text-zinc-700 rounded-full flex items-center justify-center mb-16 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             </div>
-            <h2 className="text-4xl font-black uppercase tracking-tighter mb-2">Career<br/>Mode</h2>
-            <p className="text-black font-bold text-sm mb-6">Unlock badges from the '94 World Cup to Olympic classics.</p>
-            <div className="font-black uppercase tracking-wider text-sm flex items-center gap-2 text-black">
-              View Bracket &rarr;
-            </div>
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Friend Leagues</h2>
+            <p className="text-zinc-500 text-sm mb-6">Send direct challenges, track win rates, and dominate your friends.</p>
+            <span className="text-sm font-semibold text-black">View Leaderboards &rarr;</span>
           </Link>
 
         </div>
