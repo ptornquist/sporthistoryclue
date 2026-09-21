@@ -1,133 +1,82 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
+import { useState } from 'react';
+import { supabaseClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: "error" | "success" } | null>(
-    null,
-  );
 
-  const handleAuth = async (action: "login" | "signup", e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) alert(error.message);
+    else window.location.href = '/profile';
+    setLoading(false);
+  };
 
-    try {
-      if (!isSupabaseConfigured) {
-        throw new Error("Arkivet är inte kopplat till Supabase.");
-      }
-
-      if (action === "signup") {
-        const { error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) throw error;
-        setMessage({ text: "Kolla din mail för att bekräfta kontot!", type: "success" });
-      } else {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        router.replace("/profile");
-        router.refresh();
-      }
-    } catch (error: unknown) {
-      const text = error instanceof Error ? error.message : "Ett fel uppstod.";
-      setMessage({ text, type: "error" });
-    } finally {
-      setLoading(false);
-    }
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) alert(error.message);
+    else alert('Account created! You can now log in.');
+    setLoading(false);
   };
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-8 shadow-2xl">
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">
-            SportHistory<span className="text-amber-400">Clue</span>
-          </h1>
-          <p className="text-sm text-zinc-400">Logga in för att spara dina framsteg i arkivet.</p>
-        </div>
-
-        {message && (
-          <div
-            role="status"
-            className={`mb-6 rounded-xl p-4 text-sm ${
-              message.type === "error"
-                ? "border border-red-900 bg-red-950/50 text-red-400"
-                : "border border-emerald-900 bg-emerald-950/50 text-emerald-400"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
-
-        <form className="space-y-4" onSubmit={(event) => void handleAuth("login", event)}>
+    <main className="min-h-screen bg-white flex flex-col justify-center items-center p-6 text-zinc-900 font-sans">
+      <Link href="/" className="absolute top-6 left-6 font-black text-2xl tracking-tighter">
+        SHC<span className="text-blue-600">.</span>
+      </Link>
+      
+      <div className="w-full max-w-md bg-zinc-50 border border-zinc-200 rounded-3xl p-8 shadow-sm">
+        <h1 className="text-3xl font-black tracking-tight mb-2 text-center">Welcome Back</h1>
+        <p className="text-zinc-500 text-sm text-center mb-8 font-medium">Log in to save your global leaderboard progress.</p>
+        
+        <form className="space-y-6">
           <div>
-            <label
-              htmlFor="login-email"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500"
-            >
-              E-post
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              autoComplete="email"
+            <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Email</label>
+            <input 
+              type="email" 
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-zinc-100 placeholder-zinc-600 transition-colors focus:border-amber-500 focus:outline-none"
-              placeholder="din@epost.se"
-              required
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              placeholder="player@example.com"
             />
           </div>
           <div>
-            <label
-              htmlFor="login-password"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500"
-            >
-              Lösenord
-            </label>
-            <input
-              id="login-password"
-              type="password"
-              autoComplete="current-password"
+            <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Password</label>
+            <input 
+              type="password" 
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-zinc-100 placeholder-zinc-600 transition-colors focus:border-amber-500 focus:outline-none"
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
               placeholder="••••••••"
-              minLength={6}
-              required
             />
           </div>
-
+          
           <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={loading || !email || !password}
-              className="flex-1 rounded-xl bg-amber-500 py-3 font-semibold text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
+            <button 
+              onClick={handleLogin}
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white font-bold text-sm py-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              {loading ? "Laddar..." : "Logga in"}
+              {loading ? 'Processing...' : 'Sign In'}
             </button>
-            <button
-              type="button"
-              onClick={(event) => void handleAuth("signup", event)}
-              disabled={loading || !email || !password}
-              className="flex-1 rounded-xl bg-zinc-800 py-3 font-semibold text-white transition-colors hover:bg-zinc-700 disabled:opacity-50"
+            <button 
+              onClick={handleSignUp}
+              disabled={loading}
+              className="flex-1 bg-zinc-200 text-zinc-800 font-bold text-sm py-3 rounded-full hover:bg-zinc-300 transition-colors disabled:opacity-50"
             >
-              Skapa konto
+              Create Account
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </main>
   );
 }
