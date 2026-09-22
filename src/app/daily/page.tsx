@@ -32,11 +32,9 @@ export default function DailyDropPage() {
 
   useEffect(() => {
     const initGame = async () => {
-      // 1. Get current logged-in user
       const { data: { user } } = await supabaseClient.auth.getUser();
       setUser(user);
 
-      // 2. Fetch today's challenge
       const today = new Date().toISOString().split('T')[0];
       const { data: chalData } = await supabaseClient
         .from('challenges')
@@ -52,7 +50,6 @@ export default function DailyDropPage() {
         };
         setChallenge(parsedChallenge);
 
-        // 3. Check if user already completed this match today
         if (user) {
           const { data: matchData } = await supabaseClient
             .from('match_history')
@@ -97,7 +94,6 @@ export default function DailyDropPage() {
       setStatus('won');
       setFeedback(`Match Identified! Solved on Clue ${revealedCount} for ${currentScore.toLocaleString()} PTS.`);
 
-      // Record to database if user is logged in
       if (user) {
         await supabaseClient.from('match_history').insert({
           user_id: user.id,
@@ -111,15 +107,14 @@ export default function DailyDropPage() {
       if (!isSubjectMatch && isYearMatch) {
         setFeedback('Year confirmed, but the subject / matchup is incorrect.');
       } else if (isSubjectMatch && !isYearMatch) {
-        setFeedback(`Subject confirmed, but the year is off.`);
+        setFeedback('Subject confirmed, but the year is off.');
       } else {
         setFeedback('Incorrect subject and year.');
       }
+
       setTimeout(() => {
-        if (status !== 'won') {
-          setStatus('playing');
-          setFeedback(null);
-        }
+        setStatus((prev) => (prev === 'won' ? 'won' : 'playing'));
+        setFeedback(null);
       }, 3000);
     }
   };
@@ -185,7 +180,6 @@ export default function DailyDropPage() {
             </div>
           </div>
 
-          {/* Running Scoreboard */}
           <div className="flex items-center gap-4">
             <div className="text-right">
               <span className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Score Potential</span>
@@ -194,7 +188,6 @@ export default function DailyDropPage() {
               </span>
             </div>
 
-            {/* Stepper Dots (1-6) */}
             <div className="flex gap-1.5 ml-2">
               {[0, 1, 2, 3, 4, 5].map((idx) => {
                 const isUnlocked = idx < revealedCount;
@@ -235,7 +228,6 @@ export default function DailyDropPage() {
             </p>
           </div>
 
-          {/* Feedback Banner */}
           {feedback && (
             <div className={`p-4 rounded-2xl mb-6 text-sm font-bold text-center transition-all ${
               status === 'won'
@@ -246,7 +238,6 @@ export default function DailyDropPage() {
             </div>
           )}
 
-          {/* Unlocked Clues History Drawer */}
           {revealedCount > 1 && (
             <div className="space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block px-1">
