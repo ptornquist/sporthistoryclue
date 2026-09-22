@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import SubjectAutocomplete from '@/components/SubjectAutocomplete';
 import { supabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
@@ -18,7 +19,7 @@ export default function PlayPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
 
-  // Game State
+  // Spelstatus
   const [activeClueIndex, setActiveClueIndex] = useState(0);
   const [revealedCount, setRevealedCount] = useState(1);
   const [subjectGuess, setSubjectGuess] = useState('');
@@ -26,10 +27,10 @@ export default function PlayPage() {
   const [status, setStatus] = useState<'playing' | 'won' | 'incorrect'>('playing');
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  // 10,000 starting score, drops 2,000 per additional clue
+  // Poäng: börjar på 10 000, tappar 2 000 per upplåst ledtråd
   const currentScore = Math.max(0, 10000 - (revealedCount - 1) * 2000);
 
-  const fetchRandomChallenge = async () => {
+  const fetchChallenge = async () => {
     setLoading(true);
     setStatus('playing');
     setSubjectGuess('');
@@ -38,18 +39,28 @@ export default function PlayPage() {
     setActiveClueIndex(0);
     setRevealedCount(1);
 
-    // Fetch available challenges
-    const { data } = await supabaseClient
-      .from('challenges')
-      .select('*')
-      .limit(20);
+    const searchParams = new URLSearchParams(window.location.search);
+    const selectedCategory = searchParams.get('category');
+    const selectedCampaign = searchParams.get('campaign');
+
+    let query = supabaseClient.from('challenges').select('*');
+
+    if (selectedCategory) {
+      query = query.eq('category', selectedCategory);
+    } else if (selectedCampaign) {
+      query = query.eq('type', selectedCampaign).order('year', { ascending: true });
+    }
+
+    const { data } = await query.limit(25);
 
     if (data && data.length > 0) {
-      const randomItem = data[Math.floor(Math.random() * data.length)];
+      const matchItem = data[Math.floor(Math.random() * data.length)];
       setChallenge({
-        ...randomItem,
-        clues: typeof randomItem.clues === 'string' ? JSON.parse(randomItem.clues) : randomItem.clues
+        ...matchItem,
+        clues: typeof matchItem.clues === 'string' ? JSON.parse(matchItem.clues) : matchItem.clues
       });
+    } else {
+      setChallenge(null);
     }
     setLoading(false);
   };
@@ -58,7 +69,7 @@ export default function PlayPage() {
     const init = async () => {
       const { data: { user } } = await supabaseClient.auth.getUser();
       setUser(user);
-      await fetchRandomChallenge();
+      await fetchChallenge();
     };
     init();
   }, []);
@@ -167,12 +178,11 @@ export default function PlayPage() {
             <div className="flex items-center gap-2">
               <span>{getCategoryIcon(challenge.category)}</span>
               <span className="text-xs font-black uppercase tracking-wider text-zinc-800">
-                Random Series · {challenge.category.replace('_', ' ')}
+                {challenge.category.replace('_', ' ')} Arena
               </span>
             </div>
           </div>
 
-          {/* Score & Stepper */}
           <div className="flex items-center gap-4">
             <div className="text-right">
               <span className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Score Potential</span>
@@ -214,7 +224,7 @@ export default function PlayPage() {
                 Clue {activeClueIndex + 1} of 6
               </span>
               <button
-                onClick={fetchRandomChallenge}
+                onClick={fetchChallenge}
                 className="text-xs font-bold text-zinc-400 hover:text-black uppercase tracking-wider transition-colors"
               >
                 Skip Match ↷
@@ -276,7 +286,7 @@ export default function PlayPage() {
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={fetchRandomChallenge}
+                  onClick={fetchChallenge}
                   className="px-6 py-3 bg-blue-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-blue-700 transition-colors"
                 >
                   Next Fixture →
@@ -292,12 +302,10 @@ export default function PlayPage() {
           ) : (
             <form onSubmit={handleGuess} className="flex flex-col md:flex-row gap-3">
               <div className="flex-1">
-                <input
-                  type="text"
+                <SubjectAutocomplete
                   value={subjectGuess}
-                  onChange={(e) => setSubjectGuess(e.target.value)}
-                  placeholder="Identify the athlete, club, or historic clash..."
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3.5 text-sm font-semibold text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                  onChange={(val) => setSubjectGuess(val)}
+                  placeholder="Identify athlete, nation, or historic match..."
                 />
               </div>
 

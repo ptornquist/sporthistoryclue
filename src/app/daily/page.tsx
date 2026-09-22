@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import SubjectAutocomplete from '@/components/SubjectAutocomplete';
 import { supabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
@@ -296,12 +297,10 @@ export default function DailyDropPage() {
           ) : (
             <form onSubmit={handleGuess} className="flex flex-col md:flex-row gap-3">
               <div className="flex-1">
-                <input
-                  type="text"
+                <SubjectAutocomplete
                   value={subjectGuess}
-                  onChange={(e) => setSubjectGuess(e.target.value)}
-                  placeholder="Identify the event, player, or matchup..."
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3.5 text-sm font-semibold text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                  onChange={(val) => setSubjectGuess(val)}
+                  placeholder="Identify athlete, nation, or historic match..."
                 />
               </div>
 
