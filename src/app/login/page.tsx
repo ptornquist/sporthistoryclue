@@ -3,10 +3,8 @@
 import React, { useState } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,38 +12,53 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      alert('Please fill in both email and password.');
+      alert('Please enter both email and password.');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    
-    if (error) {
-      alert(error.message);
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) {
+        alert(`Login failed: ${error.message}`);
+      } else if (data?.user) {
+        window.location.href = '/';
+      }
+    } catch (err: any) {
+      alert(`Unexpected error: ${err?.message || 'Check console and environment variables'}`);
+    } finally {
       setLoading(false);
-    } else {
-      // Hard redirect to home ensures auth state and cookies refresh properly
-      window.location.href = '/';
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      alert('Please fill in both email and password.');
+      alert('Please enter both email and password.');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabaseClient.auth.signUp({ email, password });
-    
-    if (error) {
-      alert(error.message);
-    } else {
-      alert('Account created! You can now sign in.');
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) {
+        alert(`Registration failed: ${error.message}`);
+      } else {
+        alert('Account created! If email confirmation is disabled, you can now sign in.');
+      }
+    } catch (err: any) {
+      alert(`Unexpected error: ${err?.message || 'Check console'}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
