@@ -16,38 +16,62 @@ interface Challenge {
 export default function DailyDropPage() {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   // Game State
   const [activeClueIndex, setActiveClueIndex] = useState(0);
-  const [revealedCount, setRevealedCount] = useState(1); // 1 to 6 clues unlocked
+  const [revealedCount, setRevealedCount] = useState(1);
   const [subjectGuess, setSubjectGuess] = useState('');
   const [yearGuess, setYearGuess] = useState<number | ''>('');
   const [status, setStatus] = useState<'playing' | 'won' | 'incorrect'>('playing');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
 
   // Score starts at 10,000 and drops by 2,000 for each additional clue unlocked
   const currentScore = Math.max(0, 10000 - (revealedCount - 1) * 2000);
 
   useEffect(() => {
-    const fetchDailyChallenge = async () => {
+    const initGame = async () => {
+      // 1. Get current logged-in user
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      setUser(user);
+
+      // 2. Fetch today's challenge
       const today = new Date().toISOString().split('T')[0];
-      const { data } = await supabaseClient
+      const { data: chalData } = await supabaseClient
         .from('challenges')
         .select('*')
         .eq('type', 'daily_drop')
         .eq('scheduled_date', today)
         .maybeSingle();
 
-      if (data) {
-        setChallenge({
-          ...data,
-          clues: typeof data.clues === 'string' ? JSON.parse(data.clues) : data.clues
-        });
+      if (chalData) {
+        const parsedChallenge = {
+          ...chalData,
+          clues: typeof chalData.clues === 'string' ? JSON.parse(chalData.clues) : chalData.clues
+        };
+        setChallenge(parsedChallenge);
+
+        // 3. Check if user already completed this match today
+        if (user) {
+          const { data: matchData } = await supabaseClient
+            .from('match_history')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('challenge_id', parsedChallenge.id)
+            .maybeSingle();
+
+          if (matchData) {
+            setStatus('won');
+            setAlreadyCompleted(true);
+            setFeedback(`Completed! You recorded ${matchData.score.toLocaleString()} PTS for today.`);
+          }
+        }
       }
       setLoading(false);
     };
 
-    fetchDailyChallenge();
+    initGame();
   }, []);
 
   const handleUnlockClue = () => {
@@ -58,9 +82,9 @@ export default function DailyDropPage() {
     }
   };
 
-  const handleGuess = (e: React.FormEvent) => {
+  const handleGuess = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!challenge || !subjectGuess.trim()) return;
+    if (!challenge || !subjectGuess.trim() || status === 'won') return;
 
     const normalizedGuess = subjectGuess.toLowerCase().trim();
     const correctSubject = challenge.subject.toLowerCase().trim();
@@ -72,6 +96,16 @@ export default function DailyDropPage() {
     if (isSubjectMatch && isYearMatch) {
       setStatus('won');
       setFeedback(`Match Identified! Solved on Clue ${revealedCount} for ${currentScore.toLocaleString()} PTS.`);
+
+      // Record to database if user is logged in
+      if (user) {
+        await supabaseClient.from('match_history').insert({
+          user_id: user.id,
+          challenge_id: challenge.id,
+          score: currentScore,
+          clues_used: revealedCount,
+        });
+      }
     } else {
       setStatus('incorrect');
       if (!isSubjectMatch && isYearMatch) {
@@ -82,8 +116,10 @@ export default function DailyDropPage() {
         setFeedback('Incorrect subject and year.');
       }
       setTimeout(() => {
-        setStatus('playing');
-        setFeedback(null);
+        if (status !== 'won') {
+          setStatus('playing');
+          setFeedback(null);
+        }
       }, 3000);
     }
   };
@@ -120,7 +156,7 @@ export default function DailyDropPage() {
       <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-6 text-center font-sans">
         <div className="text-4xl mb-4">📋</div>
         <h1 className="text-3xl font-black mb-2 tracking-tight">NO MATCH SCHEDULED</h1>
-        <p className="text-zinc-500 mb-8 max-w-sm text-sm">Today’s historical fixture has not dropped yet. Check back soon.</p>
+        <p className="text-zinc-500 mb-8 max-w-sm text-sm">Today’s historical fixture has not dropped yet.</p>
         <Link href="/" className="text-xs font-black tracking-wider uppercase text-blue-600 hover:underline">
           ← Back to Arena
         </Link>
@@ -186,16 +222,12 @@ export default function DailyDropPage() {
 
         {/* Central Pure Clue Area */}
         <div className="max-w-3xl mx-auto px-6 py-10">
-          
-          {/* Active Clue Focus Card */}
           <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-12 shadow-sm mb-6 relative overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-black tracking-wider uppercase">
                 Clue {activeClueIndex + 1} of 6
               </span>
-              <span className="text-xs font-medium text-zinc-400">
-                Deduction Phase
-              </span>
+              <span className="text-xs font-medium text-zinc-400">Deduction Phase</span>
             </div>
 
             <p className="text-2xl md:text-3xl font-black text-zinc-900 leading-snug tracking-tight">
@@ -239,19 +271,20 @@ export default function DailyDropPage() {
               ))}
             </div>
           )}
-
         </div>
       </div>
 
-      {/* Bottom Command Bar */}
+      {/* Bottom Controls */}
       <footer className="bg-white border-t border-zinc-200 px-6 py-5 sticky bottom-0 z-20">
         <div className="max-w-3xl mx-auto">
           {status === 'won' ? (
             <div className="py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
-                <h3 className="text-xl font-black tracking-tight text-zinc-900">CHALLENGE CLEARED</h3>
+                <h3 className="text-xl font-black tracking-tight text-zinc-900">
+                  {alreadyCompleted ? 'COMPLETED TODAY' : 'CHALLENGE CLEARED'}
+                </h3>
                 <p className="text-xs font-semibold text-zinc-500">
-                  {challenge.subject} ({challenge.year}) · +{currentScore.toLocaleString()} PTS Earned
+                  {challenge.subject} ({challenge.year})
                 </p>
               </div>
               <div className="flex gap-3">
@@ -259,7 +292,7 @@ export default function DailyDropPage() {
                   href="/"
                   className="px-6 py-3 bg-black text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-zinc-800 transition-colors"
                 >
-                  Lobby
+                  Arena Lobby
                 </Link>
                 <Link
                   href="/profile"
@@ -271,8 +304,6 @@ export default function DailyDropPage() {
             </div>
           ) : (
             <form onSubmit={handleGuess} className="flex flex-col md:flex-row gap-3">
-              
-              {/* Event / Subject Input */}
               <div className="flex-1">
                 <input
                   type="text"
@@ -283,7 +314,6 @@ export default function DailyDropPage() {
                 />
               </div>
 
-              {/* Optional Year Input */}
               <div className="w-full md:w-32">
                 <input
                   type="number"
@@ -294,7 +324,6 @@ export default function DailyDropPage() {
                 />
               </div>
 
-              {/* Submission Controls */}
               <div className="flex gap-2">
                 <button
                   type="submit"
@@ -315,7 +344,6 @@ export default function DailyDropPage() {
           )}
         </div>
       </footer>
-
     </main>
   );
 }
