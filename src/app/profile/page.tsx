@@ -1,182 +1,356 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { supabaseClient } from '@/lib/supabase/client';
+
+interface Profile {
+  id: string;
+  username: string;
+  display_name: string;
+}
+
+interface MatchRecord {
+  id: string;
+  score: number;
+  clues_used: number;
+  created_at: string;
+  challenges: {
+    subject: string;
+    year: number;
+    category: string;
+  };
+}
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [savingUsername, setSavingUsername] = useState(false);
+  const [matches, setMatches] = useState<MatchRecord[]>([]);
+  const [totalScore, setTotalScore] = useState(0);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      
-      if (!session) {
-        window.location.href = '/login';
-        return;
-      }
-      
-      setUser(session.user);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-      const { data } = await supabaseClient
-        .from('profiles')
+  const loadData = async () => {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+    setUser(user);
+
+    const { data: prof } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (prof) {
+      setProfile(prof);
+      setUsernameInput(prof.username || '');
+    }
+
+    const { data: matchHistory } = await supabaseClient
+      .from('match_history')
+      .select('id, score, clues_used, created_at, challenges(subject, year, category)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (matchHistory) {
+      setMatches(matchHistory as any);
+      const sum = matchHistory.reduce((acc, curr) => acc + (curr.score || 0), 0);
+      setTotalScore(sum);
+    }
+
+    const { data: friendRows } = await supabaseClient
+      .from('friendships')
+      .select('friend_id')
+      .eq('user_id', user.id);
+
+    if (friendRows && friendRows.length > 0) {
+      const fIds = friendRows.map((r) => r.friend_id);
+      const { data: friendProfiles } = await supabaseClient
+        .from('leaderboard_view')
         .select('*')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (data) setProfile(data);
-      setLoading(false);
-    };
+        .in('id', fIds);
 
-    fetchProfile();
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabaseClient.auth.signOut();
-    window.location.href = '/login';
-  };
-
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
-      if (!event.target.files || event.target.files.length === 0) return;
-      
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}-${Math.random()}.${fileExt}`;
-
-      const { error: uploadError } = await (supabaseClient as any).storage
-        .from('avatars')
-        .upload(filePath, file);
-        
-      if (uploadError) throw uploadError;
-
-      const { data } = (supabaseClient as any).storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabaseClient
-        .from('profiles')
-        .update({ avatar_url: data.publicUrl })
-        .eq('id', user.id);
-        
-      if (updateError) throw updateError;
-
-      setProfile({ ...profile, avatar_url: data.publicUrl });
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Could not upload the image. Please try again.');
-    } finally {
-      setUploading(false);
+      setFriends(friendProfiles || []);
+    } else {
+      setFriends([]);
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center font-black uppercase text-2xl tracking-widest text-black">Loading Stats...</div>;
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleUpdateUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usernameInput.trim() || !user) return;
+    setSavingUsername(true);
+
+    const clean = usernameInput.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+    const { error } = await supabaseClient
+      .from('profiles')
+      .upsert({ id: user.id, username: clean, display_name: clean });
+
+    if (error) {
+      alert(`Could not save username: ${error.message}`);
+    } else {
+      setProfile((prev: any) => ({ ...prev, username: clean, display_name: clean }));
+      setActionMessage('Username updated!');
+      setTimeout(() => setActionMessage(null), 3000);
+    }
+    setSavingUsername(false);
+  };
+
+  const handleSearchUsers = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+
+    const query = searchQuery.toLowerCase().trim();
+    const { data } = await supabaseClient
+      .from('profiles')
+      .select('id, username, display_name')
+      .ilike('username', `%${query}%`)
+      .neq('id', user.id)
+      .limit(6);
+
+    setSearchResults(data || []);
+    setSearching(false);
+  };
+
+  const handleConnect = async (targetId: string) => {
+    if (!user) return;
+    const { error } = await supabaseClient
+      .from('friendships')
+      .insert({ user_id: user.id, friend_id: targetId, status: 'accepted' });
+
+    if (error) {
+      alert(error.message);
+    } else {
+      setActionMessage('Friend connected!');
+      setTimeout(() => setActionMessage(null), 3000);
+      setSearchResults((prev) => prev.filter((u) => u.id !== targetId));
+      loadData();
+    }
+  };
+
+  const handleRemoveFriend = async (friendId: string) => {
+    if (!user) return;
+    await supabaseClient
+      .from('friendships')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('friend_id', friendId);
+
+    loadData();
+  };
 
   return (
-    <main className="min-h-screen bg-zinc-50 text-black font-sans p-4 sm:p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-4 border-black pb-6 gap-4">
-          <div>
-            <Link href="/" className="inline-block mb-4 text-sm font-black uppercase tracking-widest bg-black text-white px-3 py-1 rounded-full hover:bg-lime-400 hover:text-black transition-colors border-2 border-transparent hover:border-black">
-              ← Back to Arena
+    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
+      <header className="bg-white border-b border-zinc-200 px-6 py-4 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-xl font-black tracking-tighter uppercase">
+              Sports<span className="text-blue-600">History</span>Clue
             </Link>
-            <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-1 leading-none">Player Stats</h1>
-            <p className="text-zinc-600 font-bold text-sm md:text-base uppercase tracking-widest">Global Ranking • Achievements • Progress</p>
+            <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
+              Profile
+            </span>
           </div>
-          <button onClick={handleSignOut} className="bg-black text-white font-black uppercase tracking-wider text-xs px-6 py-3 rounded-full hover:bg-red-500 hover:text-black transition-all border-2 border-transparent hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
-            Log Out
-          </button>
+
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
+              Arena
+            </Link>
+            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
+              Leaderboard
+            </Link>
+            <button
+              onClick={async () => {
+                await supabaseClient.auth.signOut();
+                window.location.href = '/login';
+              }}
+              className="text-xs font-medium text-zinc-400 hover:text-zinc-600"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+        {actionMessage && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold text-center">
+            {actionMessage}
+          </div>
+        )}
+
+        {/* Profile Card */}
+        <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm flex flex-col md:flex-row justify-between gap-8 items-start md:items-center">
+          <div>
+            <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
+              Scout Handle
+            </span>
+            <h1 className="text-3xl font-black tracking-tight text-zinc-900 uppercase mt-1">
+              @{profile?.username || 'scout'}
+            </h1>
+            <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
+
+            <form onSubmit={handleUpdateUsername} className="flex gap-2 mt-4">
+              <input
+                type="text"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
+                placeholder="Change handle"
+                className="bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-600"
+              />
+              <button
+                type="submit"
+                disabled={savingUsername}
+                className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black"
+              >
+                {savingUsername ? 'Saving...' : 'Save'}
+              </button>
+            </form>
+          </div>
+
+          <div className="flex gap-6 border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8 w-full md:w-auto">
+            <div>
+              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Career Score</span>
+              <span className="text-3xl font-black font-mono text-blue-600">
+                {totalScore.toLocaleString()}
+              </span>
+            </div>
+            <div>
+              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Fixtures Cleared</span>
+              <span className="text-3xl font-black font-mono text-zinc-900">
+                {matches.length}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          {/* Avatar & ID */}
-          <div className="col-span-1 bg-lime-400 border-4 border-black rounded-3xl p-8 flex flex-col items-center text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-            
-            <label className="cursor-pointer relative group flex items-center justify-center w-32 h-32 rounded-full bg-white border-4 border-black mb-6 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-5xl">🏆</span>
-              )}
-              
-              <div className="absolute inset-0 bg-black/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-xs text-lime-400 font-black uppercase tracking-widest">{uploading ? 'Wait...' : 'Upload'}</span>
-              </div>
-              
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={uploadAvatar} 
-                disabled={uploading} 
-                className="hidden" 
-              />
-            </label>
+        {/* Social / Friends Section */}
+        <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">
+                Scout Network
+              </h2>
+              <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                Connect with friends to challenge each other and compare on the friend leaderboard.
+              </p>
+            </div>
 
-            <h2 className="text-3xl font-black uppercase tracking-tighter text-black mb-2 break-all">
-              {profile?.username || user?.email?.split('@')[0]}
-            </h2>
-            <div className="bg-white text-black font-black uppercase tracking-widest text-[10px] px-3 py-1 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mb-8">
-              Grand Slam Champion
-            </div>
-            
-            <div className="w-full bg-white border-2 border-black rounded-full h-4 mb-2 overflow-hidden shadow-inner">
-              <div className="bg-cyan-400 h-full border-r-2 border-black w-1/3"></div>
-            </div>
-            <span className="text-xs text-black font-black uppercase tracking-widest">Level 34</span>
+            <form onSubmit={handleSearchUsers} className="flex gap-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Find @username..."
+                className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-blue-600"
+              />
+              <button
+                type="submit"
+                disabled={searching}
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-700"
+              >
+                {searching ? '...' : 'Search'}
+              </button>
+            </form>
           </div>
 
-          {/* Stats & Badges */}
-          <div className="col-span-1 md:col-span-2 space-y-8">
-            
-            {/* Stats Block */}
-            <div className="bg-white border-4 border-black rounded-3xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-              <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">Career Numbers</h3>
-              <div className="grid grid-cols-2 gap-4 md:gap-8">
-                <div className="bg-zinc-100 border-4 border-black p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                  <div className="text-5xl md:text-6xl font-black text-lime-500 mb-2" style={{ WebkitTextStroke: '2px black' }}>
-                    {profile?.total_score?.toLocaleString() || '0'}
-                  </div>
-                  <div className="text-xs font-black text-black uppercase tracking-widest">Total Score</div>
-                </div>
-                <div className="bg-zinc-100 border-4 border-black p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                  <div className="text-5xl md:text-6xl font-black text-cyan-400 mb-2" style={{ WebkitTextStroke: '2px black' }}>
-                    0
-                  </div>
-                  <div className="text-xs font-black text-black uppercase tracking-widest">Matches Played</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Badges Block */}
-            <div className="bg-cyan-300 border-4 border-black rounded-3xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-sm font-black text-black uppercase tracking-widest">Trophy Cabinet</h3>
-                <span className="text-xs text-black font-bold cursor-pointer hover:underline uppercase tracking-wider">View All →</span>
-              </div>
-              <div className="flex gap-4 overflow-x-auto pb-4">
-                {[
-                  { icon: '🥇', name: 'First Blood' },
-                  { icon: '🌍', name: 'Global Pro' },
-                  { icon: '🔥', name: 'On Fire' },
-                  { icon: '🤝', name: 'Team Player' }
-                ].map((badge, i) => (
-                  <div key={i} className="flex-shrink-0 flex flex-col items-center justify-center w-28 h-32 bg-white border-4 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-2 hover:shadow-[4px_8px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer">
-                    <span className="text-4xl mb-3">{badge.icon}</span>
-                    <span className="text-[10px] font-black text-black text-center px-2 uppercase tracking-wider">{badge.name}</span>
+          {searchResults.length > 0 && (
+            <div className="mb-6 p-4 bg-zinc-50 border border-zinc-200 rounded-2xl">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                Users Found
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {searchResults.map((sr) => (
+                  <div key={sr.id} className="bg-white p-3 rounded-xl border border-zinc-200 flex justify-between items-center">
+                    <span className="font-bold text-xs text-zinc-900">@{sr.username}</span>
+                    <button
+                      onClick={() => handleConnect(sr.id)}
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-700"
+                    >
+                      + Connect
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
+          )}
 
-          </div>
-        </div>
+          {friends.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400 text-xs font-medium">
+              No scout connections yet. Search a handle above to add your first friend.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {friends.map((f) => (
+                <div key={f.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-between">
+                  <div>
+                    <span className="font-black text-xs text-zinc-900 block">@{f.username}</span>
+                    <span className="text-[10px] font-mono text-blue-600 font-bold">
+                      {f.total_score.toLocaleString()} PTS
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveFriend(f.id)}
+                    className="text-zinc-400 hover:text-rose-600 text-xs px-2 py-1"
+                    title="Remove connection"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Match History */}
+        <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
+          <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900 mb-6">
+            Scouting Log
+          </h2>
+
+          {matches.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400 text-xs font-medium">
+              No completed fixtures yet. Head over to the Arena to start solving.
+            </div>
+          ) : (
+            <div className="divide-y divide-zinc-100">
+              {matches.map((m) => (
+                <div key={m.id} className="py-4 flex justify-between items-center">
+                  <div>
+                    <span className="text-sm font-black text-zinc-900 block">
+                      {m.challenges?.subject} ({m.challenges?.year})
+                    </span>
+                    <span className="text-[11px] font-medium text-zinc-400 uppercase">
+                      {m.challenges?.category?.replace('_', ' ')} · Solved on Clue {m.clues_used}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-black font-mono text-blue-600">
+                      +{m.score.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-400 block">
+                      {new Date(m.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
