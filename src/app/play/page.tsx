@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 
 interface Challenge {
@@ -15,9 +15,8 @@ interface Challenge {
   options?: string[];
 }
 
-export default function PlayArenaPage() {
+function PlayContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const category = searchParams.get('category') || 'ice_hockey';
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
@@ -29,11 +28,10 @@ export default function PlayArenaPage() {
   const [gameOver, setGameOver] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch challenge and setup options
   useEffect(() => {
     const fetchChallenge = async () => {
       setLoading(true);
-      const { data, error } = await supabaseClient
+      const { data } = await supabaseClient
         .from('challenges')
         .select('*')
         .eq('category', category)
@@ -43,11 +41,9 @@ export default function PlayArenaPage() {
       if (data) {
         setChallenge(data);
 
-        // If custom options exist, randomize them
         if (data.options && Array.isArray(data.options) && data.options.length > 0) {
           setOptions([...data.options].sort(() => Math.random() - 0.5));
         } else {
-          // Dynamic fallback if no options array exists: use subject + year
           const correctAnswer = `${data.subject} (${data.year})`;
           setOptions([
             correctAnswer,
@@ -66,7 +62,6 @@ export default function PlayArenaPage() {
   const handleSelectOption = (option: string) => {
     if (selectedWrong.includes(option) || gameWon || gameOver || !challenge) return;
 
-    // Check if the chosen option contains the correct subject or title
     const isCorrect =
       option.toLowerCase().includes(challenge.subject.toLowerCase()) ||
       option.toLowerCase().includes(challenge.title.toLowerCase()) ||
@@ -76,12 +71,11 @@ export default function PlayArenaPage() {
       setGameWon(true);
       saveScore(score);
     } else {
-      // Wrong guess deduction
       setSelectedWrong((prev) => [...prev, option]);
       const nextScore = Math.max(2000, score - 2000);
       setScore(nextScore);
 
-      if (currentClueIdx < (challenge.clues.length - 1)) {
+      if (currentClueIdx < challenge.clues.length - 1) {
         setCurrentClueIdx((prev) => prev + 1);
       } else {
         setGameOver(true);
@@ -130,7 +124,7 @@ export default function PlayArenaPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Top Header */}
+      {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-4">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <Link href="/" className="text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-black">
@@ -143,7 +137,6 @@ export default function PlayArenaPage() {
               <span className="font-mono font-black text-blue-600 text-base">{score.toLocaleString()} PTS</span>
             </div>
 
-            {/* Clue Progress Dots */}
             <div className="flex gap-1.5">
               {[0, 1, 2, 3, 4, 5].map((idx) => (
                 <div
@@ -166,7 +159,6 @@ export default function PlayArenaPage() {
 
       {/* Main Deduction Arena */}
       <div className="max-w-3xl w-full mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
-        {/* Clue Card */}
         <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-12 shadow-sm mb-8 text-center relative">
           <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[11px] font-bold uppercase rounded-full tracking-wider mb-6 inline-block">
             Clue {currentClueIdx + 1} of 6
@@ -188,7 +180,7 @@ export default function PlayArenaPage() {
           </div>
         </div>
 
-        {/* Suggestion Options Grid */}
+        {/* 4 Suggestion Cards */}
         <div>
           <span className="block text-center text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-4">
             Select Your Historical Deduction
@@ -224,7 +216,7 @@ export default function PlayArenaPage() {
       {/* Victory / Defeat Modal */}
       {(gameWon || gameOver) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl">
             <span className="text-4xl block mb-2">{gameWon ? '🏆' : '⏱️'}</span>
             <h3 className="text-2xl font-black uppercase tracking-tight text-zinc-900">
               {gameWon ? 'Match Solved!' : 'Out of Deductions'}
@@ -245,13 +237,13 @@ export default function PlayArenaPage() {
             <div className="flex gap-3">
               <Link
                 href="/leaderboard"
-                className="flex-1 py-3 bg-zinc-100 text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200"
+                className="flex-1 py-3 bg-zinc-100 text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200 text-center"
               >
                 Leaderboard
               </Link>
               <Link
                 href="/"
-                className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700"
+                className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 text-center"
               >
                 Next Arena
               </Link>
@@ -260,8 +252,21 @@ export default function PlayArenaPage() {
         </div>
       )}
 
-      {/* Bottom Spacer */}
       <div className="h-6"></div>
     </main>
+  );
+}
+
+export default function PlayArenaPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
+          Loading Arena Dossier...
+        </main>
+      }
+    >
+      <PlayContent />
+    </Suspense>
   );
 }
