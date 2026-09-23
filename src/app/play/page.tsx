@@ -1,344 +1,267 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import SubjectAutocomplete from '@/components/SubjectAutocomplete';
-import { supabaseClient } from '@/lib/supabase/client';
+import React, { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { supabaseClient } from '@/lib/supabase/client';
 
 interface Challenge {
   id: string;
-  category: string;
   title: string;
+  category: string;
   clues: string[];
   subject: string;
   year: number;
+  options?: string[];
 }
 
-export default function PlayPage() {
+export default function PlayArenaPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const category = searchParams.get('category') || 'ice_hockey';
+
   const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [currentClueIdx, setCurrentClueIdx] = useState(0);
+  const [score, setScore] = useState(10000);
+  const [options, setOptions] = useState<string[]>([]);
+  const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
+  const [gameWon, setGameWon] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
 
-  // Spelstatus
-  const [activeClueIndex, setActiveClueIndex] = useState(0);
-  const [revealedCount, setRevealedCount] = useState(1);
-  const [subjectGuess, setSubjectGuess] = useState('');
-  const [yearGuess, setYearGuess] = useState<number | ''>('');
-  const [status, setStatus] = useState<'playing' | 'won' | 'incorrect'>('playing');
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  // Poäng: börjar på 10 000, tappar 2 000 per upplåst ledtråd
-  const currentScore = Math.max(0, 10000 - (revealedCount - 1) * 2000);
-
-  const fetchChallenge = async () => {
-    setLoading(true);
-    setStatus('playing');
-    setSubjectGuess('');
-    setYearGuess('');
-    setFeedback(null);
-    setActiveClueIndex(0);
-    setRevealedCount(1);
-
-    const searchParams = new URLSearchParams(window.location.search);
-    const selectedCategory = searchParams.get('category');
-    const selectedCampaign = searchParams.get('campaign');
-
-    let query = supabaseClient.from('challenges').select('*');
-
-    if (selectedCategory) {
-      query = query.eq('category', selectedCategory);
-    } else if (selectedCampaign) {
-      query = query.eq('type', selectedCampaign).order('year', { ascending: true });
-    }
-
-    const { data } = await query.limit(25);
-
-    if (data && data.length > 0) {
-      const matchItem = data[Math.floor(Math.random() * data.length)];
-      setChallenge({
-        ...matchItem,
-        clues: typeof matchItem.clues === 'string' ? JSON.parse(matchItem.clues) : matchItem.clues
-      });
-    } else {
-      setChallenge(null);
-    }
-    setLoading(false);
-  };
-
+  // Fetch challenge and setup options
   useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      setUser(user);
-      await fetchChallenge();
+    const fetchChallenge = async () => {
+      setLoading(true);
+      const { data, error } = await supabaseClient
+        .from('challenges')
+        .select('*')
+        .eq('category', category)
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setChallenge(data);
+
+        // If custom options exist, randomize them
+        if (data.options && Array.isArray(data.options) && data.options.length > 0) {
+          setOptions([...data.options].sort(() => Math.random() - 0.5));
+        } else {
+          // Dynamic fallback if no options array exists: use subject + year
+          const correctAnswer = `${data.subject} (${data.year})`;
+          setOptions([
+            correctAnswer,
+            'Canada vs Soviet Union (1972)',
+            'USA vs Soviet Union (1980)',
+            'Sweden vs Finland (2006)',
+          ].sort(() => Math.random() - 0.5));
+        }
+      }
+      setLoading(false);
     };
-    init();
-  }, []);
+
+    fetchChallenge();
+  }, [category]);
+
+  const handleSelectOption = (option: string) => {
+    if (selectedWrong.includes(option) || gameWon || gameOver || !challenge) return;
+
+    // Check if the chosen option contains the correct subject or title
+    const isCorrect =
+      option.toLowerCase().includes(challenge.subject.toLowerCase()) ||
+      option.toLowerCase().includes(challenge.title.toLowerCase()) ||
+      (challenge.options && option === challenge.options[0]);
+
+    if (isCorrect) {
+      setGameWon(true);
+      saveScore(score);
+    } else {
+      // Wrong guess deduction
+      setSelectedWrong((prev) => [...prev, option]);
+      const nextScore = Math.max(2000, score - 2000);
+      setScore(nextScore);
+
+      if (currentClueIdx < (challenge.clues.length - 1)) {
+        setCurrentClueIdx((prev) => prev + 1);
+      } else {
+        setGameOver(true);
+      }
+    }
+  };
 
   const handleUnlockClue = () => {
-    if (revealedCount < 6) {
-      const next = revealedCount + 1;
-      setRevealedCount(next);
-      setActiveClueIndex(next - 1);
-    }
+    if (!challenge || currentClueIdx >= challenge.clues.length - 1) return;
+    setScore((prev) => Math.max(2000, prev - 2000));
+    setCurrentClueIdx((prev) => prev + 1);
   };
 
-  const handleGuess = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!challenge || !subjectGuess.trim() || status === 'won') return;
+  const saveScore = async (finalScore: number) => {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user || !challenge) return;
 
-    const normalizedGuess = subjectGuess.toLowerCase().trim();
-    const correctSubject = challenge.subject.toLowerCase().trim();
-    const isSubjectMatch =
-      normalizedGuess.includes(correctSubject) ||
-      correctSubject.includes(normalizedGuess);
-    const isYearMatch = yearGuess === '' || Number(yearGuess) === Number(challenge.year);
-
-    if (isSubjectMatch && isYearMatch) {
-      setStatus('won');
-      setFeedback(`Moment Identified! Cleared on Clue ${revealedCount} for ${currentScore.toLocaleString()} PTS.`);
-
-      if (user) {
-        await supabaseClient.from('match_history').insert({
-          user_id: user.id,
-          challenge_id: challenge.id,
-          score: currentScore,
-          clues_used: revealedCount,
-        });
-      }
-    } else {
-      setStatus('incorrect');
-      if (!isSubjectMatch && isYearMatch) {
-        setFeedback('Year matches, but subject/fixture is incorrect.');
-      } else if (isSubjectMatch && !isYearMatch) {
-        setFeedback('Subject confirmed, but the year is off.');
-      } else {
-        setFeedback('Incorrect subject and year.');
-      }
-
-      setTimeout(() => {
-        setStatus((prev) => (prev === 'won' ? 'won' : 'playing'));
-        setFeedback(null);
-      }, 3000);
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
-      case 'ice_hockey':
-      case 'hockey':
-        return '🏒';
-      case 'football':
-      case 'soccer':
-        return '⚽';
-      case 'golf':
-        return '⛳';
-      case 'tennis':
-        return '🎾';
-      case 'olympics':
-        return '🥇';
-      default:
-        return '🏆';
-    }
+    await supabaseClient.from('match_history').insert({
+      user_id: user.id,
+      challenge_id: challenge.id,
+      score: finalScore,
+      clues_used: currentClueIdx + 1,
+    });
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-zinc-900 flex items-center justify-center font-bold uppercase tracking-widest text-xs">
-        Loading Arena Fixture...
-      </div>
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
+        Loading Arena Dossier...
+      </main>
     );
   }
 
   if (!challenge) {
     return (
-      <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-6 text-center font-sans">
-        <div className="text-4xl mb-4">🏟️</div>
-        <h1 className="text-3xl font-black mb-2 tracking-tight">NO MATCHES IN ARCHIVE</h1>
-        <p className="text-zinc-500 mb-8 max-w-sm text-sm">Add questions to your Supabase challenges table to play.</p>
-        <Link href="/" className="text-xs font-black tracking-wider uppercase text-blue-600 hover:underline">
+      <main className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 text-center">
+        <span className="text-4xl mb-4">🏟️</span>
+        <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mb-2">No Matches in Archive</h2>
+        <p className="text-zinc-500 text-xs mb-6">Add questions to your Supabase challenges table to play.</p>
+        <Link href="/" className="text-xs font-black uppercase text-blue-600 tracking-wider hover:underline">
           ← Back to Arena
         </Link>
       </main>
     );
   }
 
-  const clues = challenge.clues || [];
-
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      
       {/* Top Header */}
-      <div>
-        <header className="bg-white border-b border-zinc-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-black transition-colors">
-              ← Exit
-            </Link>
-            <span className="text-zinc-300">/</span>
-            <div className="flex items-center gap-2">
-              <span>{getCategoryIcon(challenge.category)}</span>
-              <span className="text-xs font-black uppercase tracking-wider text-zinc-800">
-                {challenge.category.replace('_', ' ')} Arena
-              </span>
-            </div>
-          </div>
+      <header className="bg-white border-b border-zinc-200 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          <Link href="/" className="text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-black">
+            ← Exit Match
+          </Link>
 
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Score Potential</span>
-              <span className="text-lg font-black font-mono tracking-tight text-blue-600">
-                {currentScore.toLocaleString()} <span className="text-xs font-semibold text-zinc-400">PTS</span>
-              </span>
+          <div className="flex items-center gap-6">
+            <div>
+              <span className="block text-[10px] font-mono font-bold uppercase text-zinc-400 text-right">Score Potential</span>
+              <span className="font-mono font-black text-blue-600 text-base">{score.toLocaleString()} PTS</span>
             </div>
 
-            <div className="flex gap-1.5 ml-2">
-              {[0, 1, 2, 3, 4, 5].map((idx) => {
-                const isUnlocked = idx < revealedCount;
-                const isActive = idx === activeClueIndex;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => isUnlocked && setActiveClueIndex(idx)}
-                    disabled={!isUnlocked}
-                    className={`w-7 h-7 rounded-lg text-xs font-black font-mono transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/20'
-                        : isUnlocked
-                        ? 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                        : 'bg-zinc-100 text-zinc-300 cursor-not-allowed border border-dashed border-zinc-200'
-                    }`}
-                  >
-                    {idx + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </header>
-
-        {/* Clue Arena */}
-        <div className="max-w-3xl mx-auto px-6 py-10">
-          <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-12 shadow-sm mb-6 relative overflow-hidden">
-            <div className="flex justify-between items-center mb-6">
-              <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-black tracking-wider uppercase">
-                Clue {activeClueIndex + 1} of 6
-              </span>
-              <button
-                onClick={fetchChallenge}
-                className="text-xs font-bold text-zinc-400 hover:text-black uppercase tracking-wider transition-colors"
-              >
-                Skip Match ↷
-              </button>
-            </div>
-
-            <p className="text-2xl md:text-3xl font-black text-zinc-900 leading-snug tracking-tight">
-              {clues[activeClueIndex] || 'No further clues available.'}
-            </p>
-          </div>
-
-          {feedback && (
-            <div className={`p-4 rounded-2xl mb-6 text-sm font-bold text-center transition-all ${
-              status === 'won'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}>
-              {feedback}
-            </div>
-          )}
-
-          {revealedCount > 1 && (
-            <div className="space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block px-1">
-                Unlocked Clues
-              </span>
-              {clues.slice(0, revealedCount).map((clue, idx) => (
+            {/* Clue Progress Dots */}
+            <div className="flex gap-1.5">
+              {[0, 1, 2, 3, 4, 5].map((idx) => (
                 <div
                   key={idx}
-                  onClick={() => setActiveClueIndex(idx)}
-                  className={`p-4 rounded-xl border text-sm font-medium cursor-pointer transition-all flex items-center justify-between ${
-                    idx === activeClueIndex
-                      ? 'bg-white border-blue-500 shadow-sm text-zinc-900'
-                      : 'bg-zinc-50 border-zinc-200/80 text-zinc-500 hover:bg-zinc-100/70'
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono font-bold transition-all ${
+                    idx === currentClueIdx
+                      ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-100'
+                      : idx < currentClueIdx
+                      ? 'bg-zinc-200 text-zinc-500'
+                      : 'border border-dashed border-zinc-300 text-zinc-300'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-bold text-zinc-400">#{idx + 1}</span>
-                    <span className="line-clamp-1">{clue}</span>
-                  </div>
-                  <span className="text-xs text-blue-600 font-bold">Review</span>
+                  {idx + 1}
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Deduction Arena */}
+      <div className="max-w-3xl w-full mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
+        {/* Clue Card */}
+        <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-12 shadow-sm mb-8 text-center relative">
+          <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[11px] font-bold uppercase rounded-full tracking-wider mb-6 inline-block">
+            Clue {currentClueIdx + 1} of 6
+          </span>
+
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-snug text-zinc-900">
+            {challenge.clues[currentClueIdx]}
+          </h2>
+
+          <div className="mt-8 flex justify-center">
+            {currentClueIdx < challenge.clues.length - 1 && !gameWon && !gameOver && (
+              <button
+                onClick={handleUnlockClue}
+                className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors"
+              >
+                Skip to next clue (-2,000 PTS) →
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Suggestion Options Grid */}
+        <div>
+          <span className="block text-center text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-4">
+            Select Your Historical Deduction
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {options.map((option, idx) => {
+              const isWrong = selectedWrong.includes(option);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleSelectOption(option)}
+                  disabled={isWrong || gameWon || gameOver}
+                  className={`p-4 md:p-5 rounded-2xl border text-left font-bold text-sm transition-all duration-150 flex items-center justify-between ${
+                    isWrong
+                      ? 'bg-zinc-100 border-zinc-200 text-zinc-400 line-through cursor-not-allowed opacity-60'
+                      : gameWon
+                      ? 'bg-zinc-50 border-zinc-200 text-zinc-400'
+                      : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm active:scale-[0.99]'
+                  }`}
+                >
+                  <span className="truncate pr-2">{option}</span>
+                  <span className="text-xs font-mono text-zinc-400">
+                    {isWrong ? '✕' : `[${String.fromCharCode(65 + idx)}]`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Input Action Controls */}
-      <footer className="bg-white border-t border-zinc-200 px-6 py-5 sticky bottom-0 z-20">
-        <div className="max-w-3xl mx-auto">
-          {status === 'won' ? (
-            <div className="py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-black tracking-tight text-zinc-900">MOMENT CLEARED</h3>
-                <p className="text-xs font-semibold text-zinc-500">
-                  {challenge.subject} ({challenge.year}) · +{currentScore.toLocaleString()} PTS Earned
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={fetchChallenge}
-                  className="px-6 py-3 bg-blue-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-blue-700 transition-colors"
-                >
-                  Next Fixture →
-                </button>
-                <Link
-                  href="/"
-                  className="px-6 py-3 bg-black text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-zinc-800 transition-colors"
-                >
-                  Exit
-                </Link>
-              </div>
+      {/* Victory / Defeat Modal */}
+      {(gameWon || gameOver) && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl animate-in fade-in zoom-in-95">
+            <span className="text-4xl block mb-2">{gameWon ? '🏆' : '⏱️'}</span>
+            <h3 className="text-2xl font-black uppercase tracking-tight text-zinc-900">
+              {gameWon ? 'Match Solved!' : 'Out of Deductions'}
+            </h3>
+            <p className="text-xs text-zinc-500 font-medium mt-1 mb-6">
+              {gameWon
+                ? `You correctly identified ${challenge.subject} (${challenge.year}) on Clue ${currentClueIdx + 1}.`
+                : `The fixture was ${challenge.subject} (${challenge.year}).`}
+            </p>
+
+            <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 mb-6">
+              <span className="block text-[10px] font-mono uppercase text-zinc-400">Points Awarded</span>
+              <span className="text-3xl font-black font-mono text-blue-600">
+                {gameWon ? `+${score.toLocaleString()}` : '0'} PTS
+              </span>
             </div>
-          ) : (
-            <form onSubmit={handleGuess} className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1">
-                <SubjectAutocomplete
-                  value={subjectGuess}
-                  onChange={(val) => setSubjectGuess(val)}
-                  placeholder="Identify athlete, nation, or historic match..."
-                />
-              </div>
 
-              <div className="w-full md:w-32">
-                <input
-                  type="number"
-                  value={yearGuess}
-                  onChange={(e) => setYearGuess(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="Year (opt)"
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3.5 text-sm font-semibold font-mono text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="px-6 py-3.5 bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-blue-700 transition-colors whitespace-nowrap"
-                >
-                  Submit Guess
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUnlockClue}
-                  disabled={revealedCount >= 6}
-                  className="px-4 py-3.5 bg-zinc-100 border border-zinc-200 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-colors whitespace-nowrap"
-                >
-                  Clue (-2K)
-                </button>
-              </div>
-            </form>
-          )}
+            <div className="flex gap-3">
+              <Link
+                href="/leaderboard"
+                className="flex-1 py-3 bg-zinc-100 text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200"
+              >
+                Leaderboard
+              </Link>
+              <Link
+                href="/"
+                className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700"
+              >
+                Next Arena
+              </Link>
+            </div>
+          </div>
         </div>
-      </footer>
+      )}
+
+      {/* Bottom Spacer */}
+      <div className="h-6"></div>
     </main>
   );
 }
