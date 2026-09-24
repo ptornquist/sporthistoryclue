@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
 import FindScouts from '@/components/game/FindScouts';
+import { followScout, getFollowingIds, unfollowScout } from '@/lib/supabase/network';
 
 interface LeaderboardEntry {
   id: string;
@@ -36,24 +37,17 @@ export default function LeaderboardPage() {
       if (globalData) setLeaders(globalData);
 
       if (user) {
-        const { data: connectionData } = await supabaseClient
-          .from('scout_connections')
-          .select('connected_user_id')
-          .eq('user_id', user.id);
-
-        if (connectionData) {
-          const ids = connectionData.map((row) => row.connected_user_id);
-          setNetworkIds(ids);
-          if (ids.length > 0) {
-            const { data: networkScores } = await supabaseClient
-              .from('leaderboard_view')
-              .select('*')
-              .in('id', ids)
-              .order('total_score', { ascending: false });
-            if (networkScores) setNetworkLeaders(networkScores);
-          } else {
-            setNetworkLeaders([]);
-          }
+        const ids = await getFollowingIds(user.id);
+        setNetworkIds(ids);
+        if (ids.length > 0) {
+          const { data: networkScores } = await supabaseClient
+            .from('leaderboard_view')
+            .select('*')
+            .in('id', ids)
+            .order('total_score', { ascending: false });
+          setNetworkLeaders(networkScores ?? []);
+        } else {
+          setNetworkLeaders([]);
         }
       }
       setLoading(false);
@@ -62,7 +56,34 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, []);
 
-  const displayedLeaders = tab === 'global' ? leaders : networkLeaders;
+  const displayedLeaders = tab === 'global'
+    ? leaders
+    : networkLeaders.filter((entry) => networkIds.includes(entry.id));
+
+  const toggleFollow = async (targetId: string) => {
+    if (!currentUser) {
+      window.location.href = '/login';
+      return;
+    }
+    const already = networkIds.includes(targetId);
+    if (already) {
+      await unfollowScout(currentUser.id, targetId);
+    } else {
+      await followScout(currentUser.id, targetId);
+    }
+    const ids = await getFollowingIds(currentUser.id);
+    setNetworkIds(ids);
+    if (ids.length === 0) {
+      setNetworkLeaders([]);
+      return;
+    }
+    const { data: networkScores } = await supabaseClient
+      .from('leaderboard_view')
+      .select('*')
+      .in('id', ids)
+      .order('total_score', { ascending: false });
+    setNetworkLeaders(networkScores ?? []);
+  };
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
@@ -166,16 +187,15 @@ export default function LeaderboardPage() {
             <div className="p-12 text-center text-xs font-bold uppercase tracking-widest text-zinc-400">
               Loading rankings...
             </div>
+          ) : tab === 'network' && networkIds.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="text-zinc-500 text-sm">
+                You haven&apos;t followed any scouts yet. Search and connect with fellow scouts to see their scores here.
+              </p>
+            </div>
           ) : displayedLeaders.length === 0 ? (
             <div className="p-12 text-center">
-              <p className="text-zinc-500 text-sm mb-4">
-                {tab === 'network'
-                  ? 'No connected scouts on the board yet.'
-                  : 'No records found for this category yet.'}
-              </p>
-              <Link href="/profile" className="text-xs font-bold text-blue-600 uppercase tracking-wider hover:underline">
-                Find Scouts in Profile →
-              </Link>
+              <p className="text-zinc-500 text-sm">No records found for this category yet.</p>
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
@@ -209,11 +229,26 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <span className="font-mono font-black text-base text-zinc-900">
-                        {entry.total_score.toLocaleString()}
-                      </span>
-                      <span className="text-[11px] font-bold text-zinc-400 ml-1">PTS</span>
+                    <div className="flex items-center gap-3">
+                      {!isMe && (
+                        <button
+                          type="button"
+                          onClick={() => toggleFollow(entry.id)}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-colors ${
+                            networkIds.includes(entry.id)
+                              ? 'bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300'
+                              : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                          }`}
+                        >
+                          {networkIds.includes(entry.id) ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                      <div className="text-right">
+                        <span className="font-mono font-black text-base text-zinc-900">
+                          {entry.total_score.toLocaleString()}
+                        </span>
+                        <span className="text-[11px] font-bold text-zinc-400 ml-1">PTS</span>
+                      </div>
                     </div>
                   </div>
                 );
