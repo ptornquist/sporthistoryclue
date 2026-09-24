@@ -19,6 +19,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'global' | 'network'>('global');
   const [networkIds, setNetworkIds] = useState<string[]>([]);
+  const [networkLeaders, setNetworkLeaders] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -41,7 +42,18 @@ export default function LeaderboardPage() {
           .eq('user_id', user.id);
 
         if (connectionData) {
-          setNetworkIds(connectionData.map((row) => row.connected_user_id));
+          const ids = connectionData.map((row) => row.connected_user_id);
+          setNetworkIds(ids);
+          if (ids.length > 0) {
+            const { data: networkScores } = await supabaseClient
+              .from('leaderboard_view')
+              .select('*')
+              .in('id', ids)
+              .order('total_score', { ascending: false });
+            if (networkScores) setNetworkLeaders(networkScores);
+          } else {
+            setNetworkLeaders([]);
+          }
         }
       }
       setLoading(false);
@@ -50,9 +62,7 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, []);
 
-  const displayedLeaders = tab === 'global'
-    ? leaders
-    : leaders.filter((entry) => networkIds.includes(entry.id));
+  const displayedLeaders = tab === 'global' ? leaders : networkLeaders;
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
