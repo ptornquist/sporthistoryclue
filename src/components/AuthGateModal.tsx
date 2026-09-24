@@ -74,10 +74,10 @@ export default function AuthGateModal({
           </span>
           <ul className="text-xs text-zinc-600 font-medium space-y-1">
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">✦</span> Campaigns &amp; Eras
+              <span className="text-blue-600 font-bold">✦</span> Storylines
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">✦</span> Browse by Discipline
+              <span className="text-blue-600 font-bold">✦</span> By Sport
             </li>
             <li className="flex items-center gap-2">
               <span className="text-blue-600 font-bold">✦</span> Play Another Match (unlimited archive)

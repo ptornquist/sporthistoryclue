@@ -96,7 +96,7 @@ export default function DisciplinesPage() {
       <AuthGateModal
         isOpen={showAuthGate}
         onClose={() => setShowAuthGate(false)}
-        featureName="Browse by Discipline"
+        featureName="By Sport"
       />
 
       {/* Header */}
@@ -107,7 +107,7 @@ export default function DisciplinesPage() {
               Sports<span className="text-blue-600">History</span>Clue
             </Link>
             <span className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold">
-              Disciplines
+              By Sport
             </span>
           </div>
 
@@ -116,10 +116,10 @@ export default function DisciplinesPage() {
               Daily Drop
             </Link>
             <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Campaigns
+              Storylines
             </Link>
             <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Leaderboard
+              Standings
             </Link>
           </nav>
         </div>
@@ -129,7 +129,7 @@ export default function DisciplinesPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-1">
-            Browse by Discipline
+            Browse by Sport
           </span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
             Sports Archive

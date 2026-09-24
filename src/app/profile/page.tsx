@@ -162,7 +162,7 @@ export default function ProfilePage() {
               Sports<span className="text-blue-600">History</span>Clue
             </Link>
             <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
-              Profile
+              Career Stats
             </span>
           </div>
 
@@ -171,7 +171,7 @@ export default function ProfilePage() {
               Arena
             </Link>
             <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
-              Leaderboard
+              Standings
             </Link>
             <button
               onClick={async () => {

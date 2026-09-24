@@ -62,7 +62,7 @@ export default function LeaderboardPage() {
               Sports<span className="text-blue-600">History</span>Clue
             </Link>
             <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
-              Leaderboard
+              Standings
             </span>
           </div>
 
@@ -80,7 +80,7 @@ export default function LeaderboardPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-black tracking-tight uppercase">Scout Rankings</h1>
+            <h1 className="text-3xl font-black tracking-tight uppercase">Global Standings</h1>
             <p className="text-zinc-500 text-xs font-medium mt-1">
               Ranked by total historical deduction points across all fixtures.
             </p>

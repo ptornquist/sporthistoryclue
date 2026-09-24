@@ -239,7 +239,7 @@ function PlayContent() {
                 href="/leaderboard"
                 className="flex-1 py-3 bg-zinc-100 text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200 text-center"
               >
-                Leaderboard
+                Standings
               </Link>
               <Link
                 href="/"
