@@ -37,7 +37,11 @@ function DailyDropArena() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [playerName, setPlayerName] = useState('Scout');
+  const [streak, setStreak] = useState(1);
+  const [emailSubscribed, setEmailSubscribed] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
 
+  // Load player handle & streak
   useEffect(() => {
     const initPlayer = async () => {
       const { data: { user } } = await supabaseClient.auth.getUser();
@@ -50,11 +54,14 @@ function DailyDropArena() {
 
         if (profile?.username) {
           setPlayerName(profile.username);
-          return;
         }
+      } else {
+        const saved = localStorage.getItem('shc_handle');
+        if (saved) setPlayerName(saved);
       }
-      const saved = localStorage.getItem('shc_handle');
-      if (saved) setPlayerName(saved);
+
+      const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
+      setStreak(savedStreak);
     };
     initPlayer();
   }, []);
@@ -79,17 +86,14 @@ function DailyDropArena() {
       const todayStr = new Date().toISOString().slice(0, 10);
       let matchQuery = supabaseClient.from('challenges').select('*');
 
-      // 1. If invited to a specific match, load that exact fixture
       if (specificMatch) {
         matchQuery = matchQuery.or(`slug.eq.${specificMatch},id.eq.${specificMatch}`);
       } else {
-        // 2. Otherwise load today's scheduled fixture
         matchQuery = matchQuery.eq('drop_date', todayStr);
       }
 
       let { data } = await matchQuery.limit(1).maybeSingle();
 
-      // Fallback: If no match is scheduled for today's date yet, load the first available fixture
       if (!data) {
         const fallback = await supabaseClient
           .from('challenges')
@@ -104,7 +108,6 @@ function DailyDropArena() {
         setChallenge(data);
         setupOptions(data);
 
-        // Check if this fixture was already completed locally
         const savedScoreKey = `shc_score_${data.slug || data.id}`;
         const savedScore = localStorage.getItem(savedScoreKey);
 
@@ -158,6 +161,11 @@ function DailyDropArena() {
 
       const scoreKey = `shc_score_${challenge.slug || challenge.id}`;
       localStorage.setItem(scoreKey, score.toString());
+      
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      localStorage.setItem('shc_streak', newStreak.toString());
+
       saveScore(score);
     } else {
       setSelectedWrong((prev) => [...prev, option]);
@@ -197,22 +205,39 @@ function DailyDropArena() {
       .map((_, i) => (i < clueNumber ? '🟩' : '⬛'))
       .join('');
 
-    const handlePrompt = playerName === 'Scout'
-      ? prompt('Enter your name or handle for the challenge link:', 'Scout') || 'Scout'
-      : playerName;
-
-    if (handlePrompt !== 'Scout') {
-      localStorage.setItem('shc_handle', handlePrompt);
-      setPlayerName(handlePrompt);
+    let handlePrompt = playerName;
+    if (handlePrompt === 'Scout') {
+      const input = prompt('Enter your name for the leaderboard & duel link:', 'Scout');
+      if (input && input.trim()) {
+        handlePrompt = input.trim();
+        localStorage.setItem('shc_handle', handlePrompt);
+        setPlayerName(handlePrompt);
+      }
     }
 
     const matchIdentifier = challenge?.slug || challenge?.id;
     const shareUrl = `${window.location.origin}/?vs=${encodeURIComponent(handlePrompt)}&clues=${clueNumber}&pts=${score}&match=${matchIdentifier}`;
-    const shareText = `SportsHistoryClue 🏆\n${squares} (${score.toLocaleString()} PTS)\nSolved on Clue ${clueNumber} of 6!\nCan you beat ${handlePrompt}? 👉 ${shareUrl}`;
+    
+    let shareText = '';
+    if (challenger) {
+      const challengerScoreNum = challengerPts ? parseInt(challengerPts, 10) : 0;
+      const resultVerb = score > challengerScoreNum ? 'defeated' : score === challengerScoreNum ? 'tied with' : 'lost to';
+      shareText = `SportsHistoryClue Duel ⚔️\nI just ${resultVerb} ${challenger} on today's match!\nMe: ${score.toLocaleString()} PTS (Clue ${clueNumber}) vs ${challenger}: ${challengerScoreNum.toLocaleString()} PTS\nCan you beat us? 👉 ${shareUrl}`;
+    } else {
+      shareText = `SportsHistoryClue 🏆\n${squares} (${score.toLocaleString()} PTS)\nSolved on Clue ${clueNumber} of 6!\nCan you beat ${handlePrompt}? 👉 ${shareUrl}`;
+    }
 
     navigator.clipboard.writeText(shareText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleSubscribeNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail || !newsletterEmail.includes('@')) return;
+
+    await supabaseClient.from('subscribers').insert({ email: newsletterEmail }).select();
+    setEmailSubscribed(true);
   };
 
   if (loading) {
@@ -238,6 +263,11 @@ function DailyDropArena() {
     ? JSON.parse(challenge.fun_facts || '[]')
     : [];
 
+  const challengerScoreVal = challengerPts ? parseInt(challengerPts, 10) : 8000;
+  const isDuel = Boolean(challenger);
+  const playerWonDuel = isDuel && score > challengerScoreVal;
+  const playerTiedDuel = isDuel && score === challengerScoreVal;
+
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       {/* Challenger Notification Bar */}
@@ -245,12 +275,12 @@ function DailyDropArena() {
         <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm">
           <span>⚡</span>
           <span>
-            <strong>{challenger}</strong> solved this match on Clue {challengerClues || '2'} ({challengerPts ? parseInt(challengerPts).toLocaleString() : '8,000'} PTS). Beat them!
+            <strong>{challenger}</strong> scored {challengerScoreVal.toLocaleString()} PTS (Clue {challengerClues || '2'}). Beat them!
           </span>
         </div>
       )}
 
-      {/* Header */}
+      {/* Top Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -285,11 +315,13 @@ function DailyDropArena() {
               ))}
             </div>
 
+            <div className="hidden sm:flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
+              <span>🔥</span>
+              <span>{streak} DAY{streak === 1 ? '' : 'S'}</span>
+            </div>
+
             <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black">
               Leaderboard
-            </Link>
-            <Link href="/profile" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black">
-              Profile
             </Link>
           </div>
         </div>
@@ -299,6 +331,30 @@ function DailyDropArena() {
       <div className="max-w-2xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
         {gameWon ? (
           <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Duel Resolution Card */}
+            {isDuel && (
+              <div className={`p-5 rounded-3xl border text-center ${
+                playerWonDuel 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+                  : playerTiedDuel 
+                  ? 'bg-zinc-100 border-zinc-300 text-zinc-900'
+                  : 'bg-rose-50 border-rose-200 text-rose-900'
+              }`}>
+                <span className="text-xs font-mono font-bold uppercase tracking-wider block mb-1">
+                  Head-to-Head Result
+                </span>
+                <h2 className="text-xl font-black uppercase tracking-tight">
+                  {playerWonDuel ? `🏆 You Defeated ${challenger}!` : playerTiedDuel ? `🤝 Tied with ${challenger}!` : `💀 ${challenger} Won This Round`}
+                </h2>
+                <div className="flex justify-center items-center gap-6 mt-3 text-xs font-mono font-bold">
+                  <div>You: <span className="text-sm font-black">{score.toLocaleString()} PTS</span></div>
+                  <div className="text-zinc-400">VS</div>
+                  <div>{challenger}: <span className="text-sm font-black">{challengerScoreVal.toLocaleString()} PTS</span></div>
+                </div>
+              </div>
+            )}
+
+            {/* Dossier Header Card */}
             <div className="bg-white border-2 border-blue-600 rounded-3xl p-6 md:p-8 shadow-sm text-center">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-3 inline-block">
                 Match Solved · Clue {currentClueIdx + 1} of 6
@@ -321,11 +377,12 @@ function DailyDropArena() {
                   onClick={handleShare}
                   className="px-5 py-3.5 bg-zinc-100 text-zinc-800 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200 transition-all"
                 >
-                  {copied ? '✓ Challenge Copied!' : 'Challenge a Friend ⚡'}
+                  {copied ? '✓ Result Copied!' : isDuel ? `Reply to ${challenger} ⚡` : 'Challenge a Friend ⚡'}
                 </button>
               </div>
             </div>
 
+            {/* Historical Dossier */}
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
@@ -352,6 +409,42 @@ function DailyDropArena() {
                   </ul>
                 </div>
               )}
+
+              {/* Retention: Daily Drop Email Signup */}
+              <div className="border-t border-zinc-100 pt-6">
+                <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-5 text-center">
+                  <span className="text-xl block mb-1">📬</span>
+                  <h4 className="text-sm font-black uppercase tracking-tight text-zinc-900">
+                    Get Tomorrow's Mystery Match at 00:00 UTC
+                  </h4>
+                  <p className="text-xs text-zinc-500 font-medium mt-1 mb-4">
+                    One daily 60-second sports puzzle directly to your inbox. No spam.
+                  </p>
+
+                  {emailSubscribed ? (
+                    <div className="text-xs font-mono font-bold text-emerald-600">
+                      ✓ You're on the scouting dispatch list!
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubscribeNewsletter} className="flex gap-2 max-w-sm mx-auto">
+                      <input
+                        type="email"
+                        required
+                        value={newsletterEmail}
+                        onChange={(e) => setNewsletterEmail(e.target.value)}
+                        placeholder="your.email@domain.com"
+                        className="flex-1 px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-black transition-colors"
+                      >
+                        Notify Me
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -409,6 +502,7 @@ function DailyDropArena() {
         )}
       </div>
 
+      {/* Pop-up Modal on Solve */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl relative">
@@ -421,7 +515,9 @@ function DailyDropArena() {
 
             <span className="text-4xl block mb-2">{gameWon ? '🏆' : '⏱️'}</span>
             <h3 className="text-2xl font-black uppercase tracking-tight text-zinc-900">
-              {gameWon ? 'Deduction Confirmed!' : 'Out of Clues'}
+              {isDuel 
+                ? playerWonDuel ? `You Beat ${challenger}!` : playerTiedDuel ? `Tied with ${challenger}!` : `${challenger} Wins!`
+                : gameWon ? 'Deduction Confirmed!' : 'Out of Clues'}
             </h3>
             <p className="text-xs text-zinc-500 font-medium mt-1 mb-6">
               Match: <strong>{challenge.subject} ({challenge.year})</strong>
@@ -432,6 +528,11 @@ function DailyDropArena() {
               <span className="text-3xl font-black font-mono text-blue-600">
                 {gameWon ? `+${score.toLocaleString()}` : '0'} PTS
               </span>
+              {isDuel && (
+                <span className="block text-[11px] font-mono font-bold text-zinc-400 mt-1">
+                  vs {challenger}: {challengerScoreVal.toLocaleString()} PTS
+                </span>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -445,13 +546,14 @@ function DailyDropArena() {
                 onClick={handleShare}
                 className="w-full py-3 bg-zinc-100 text-zinc-800 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-zinc-200 transition-all"
               >
-                {copied ? '✓ Challenge Copied!' : 'Challenge a Friend ⚡'}
+                {copied ? '✓ Copied!' : isDuel ? `Send Result to ${challenger} ⚡` : 'Challenge a Friend ⚡'}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Footer */}
       <footer className="py-4 text-center text-[11px] text-zinc-400 font-mono">
         SportsHistoryClue · New drop released daily at 00:00 UTC
       </footer>
