@@ -13,6 +13,9 @@ interface Challenge {
   subject: string;
   year: number;
   options?: string[];
+  story?: string;
+  fun_facts?: string[];
+  image_url?: string;
 }
 
 function DailyDropArena() {
@@ -28,15 +31,14 @@ function DailyDropArena() {
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  // Hämta dagens match
   useEffect(() => {
     const fetchDailyChallenge = async () => {
       setLoading(true);
 
-      // Kontrollera om användaren redan spelat dagens match lokalt
       const savedDate = localStorage.getItem('shc_daily_date');
       const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -56,17 +58,19 @@ function DailyDropArena() {
           const correct = `${data.subject} (${data.year})`;
           setOptions([
             correct,
-            'Canada vs Soviet Union (1972)',
-            'USA vs Soviet Union (1980)',
-            'Sweden vs Finland (2006)',
+            '1992 Barcelona: USA Dream Team vs Croatia',
+            '1980 Lake Placid: USA vs Soviet Union',
+            '1994 Lillehammer: Sweden vs Canada',
           ].sort(() => Math.random() - 0.5));
         }
 
+        // Restore saved win state without forcibly blocking the screen
         if (savedDate === todayStr) {
           const savedScore = localStorage.getItem('shc_daily_score');
           if (savedScore) {
             setScore(parseInt(savedScore, 10));
             setGameWon(true);
+            setShowModal(false); // keep closed so user can read the dossier
           }
         }
       }
@@ -86,6 +90,7 @@ function DailyDropArena() {
 
     if (isCorrect) {
       setGameWon(true);
+      setShowModal(true);
       const todayStr = new Date().toISOString().slice(0, 10);
       localStorage.setItem('shc_daily_date', todayStr);
       localStorage.setItem('shc_daily_score', score.toString());
@@ -99,6 +104,7 @@ function DailyDropArena() {
         setCurrentClueIdx((prev) => prev + 1);
       } else {
         setGameOver(true);
+        setShowModal(true);
       }
     }
   };
@@ -122,18 +128,24 @@ function DailyDropArena() {
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/?vs=Spelare&clues=${currentClueIdx + 1}&pts=${score}`;
-    const text = `SportsHistoryClue 🏆\nKlarade dagens match på ledtråd ${currentClueIdx + 1} (${score.toLocaleString()} PTS)!\nKan du slå mig? 👉 ${url}`;
+    const url = `${window.location.origin}/?vs=Scout&clues=${currentClueIdx + 1}&pts=${score}`;
+    const text = `SportsHistoryClue 🏆\nI solved today's mystery match on Clue ${currentClueIdx + 1} (${score.toLocaleString()} PTS)!\nCan you beat my deduction? 👉 ${url}`;
 
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const handleResetForTesting = () => {
+    localStorage.removeItem('shc_daily_date');
+    localStorage.removeItem('shc_daily_score');
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
-        Laddar dagens match...
+        Loading Today's Matchup...
       </main>
     );
   }
@@ -141,31 +153,31 @@ function DailyDropArena() {
   if (!challenge) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="text-xl font-black uppercase text-zinc-900 mb-2">Ingen aktiv match hittades</h2>
-        <p className="text-zinc-500 text-xs">Kör SQL-skriptet i Supabase för att ladda in matcherna.</p>
+        <h2 className="text-xl font-black uppercase text-zinc-900 mb-2">No Active Match Found</h2>
+        <p className="text-zinc-500 text-xs">Run the Supabase SQL script to populate challenges.</p>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* 1. Utmanarbanner (visas endast om man fått en utmaning via länk) */}
+      {/* 1. Challenger Banner (Only visible if friend link is clicked) */}
       {challenger && (
         <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm">
           <span>⚡</span>
           <span>
-            <strong>{challenger}</strong> löste denna match på ledtråd {challengerClues || '2'} ({challengerPts ? parseInt(challengerPts).toLocaleString() : '8 000'} PTS). Kan du slå det?
+            <strong>{challenger}</strong> solved this match on Clue {challengerClues || '2'} ({challengerPts ? parseInt(challengerPts).toLocaleString() : '8,000'} PTS). Can you beat them?
           </span>
         </div>
       )}
 
-      {/* 2. Minimalistisk Header */}
-      <header className="bg-white border-b border-zinc-200 px-6 py-3.5">
+      {/* 2. Top Header Navigation */}
+      <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-black tracking-tighter uppercase">
+            <Link href="/" className="text-lg font-black tracking-tighter uppercase">
               Sports<span className="text-blue-600">History</span>Clue
-            </span>
+            </Link>
             <span className="text-[10px] font-mono uppercase bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded font-bold">
               Daily Drop
             </span>
@@ -195,88 +207,175 @@ function DailyDropArena() {
             </div>
 
             <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black">
-              Topplista
+              Leaderboard
+            </Link>
+            <Link href="/profile" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black">
+              Profile
             </Link>
           </div>
         </div>
       </header>
 
-      {/* 3. Spelplanen – Rakt på sak */}
+      {/* 3. Main Arena Area */}
       <div className="max-w-2xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
-        {/* Ledtrådskort */}
-        <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm text-center mb-6 relative">
-          <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-4 inline-block">
-            Ledtråd {currentClueIdx + 1} av 6
-          </span>
+        {/* If the game is already won, show the Match Story Dossier inline */}
+        {gameWon ? (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Dossier Header Card */}
+            <div className="bg-white border-2 border-blue-600 rounded-3xl p-6 md:p-8 shadow-sm text-center">
+              <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-3 inline-block">
+                Match Cleared · Clue {currentClueIdx + 1} of 6
+              </span>
+              <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-zinc-900">
+                {challenge.subject} ({challenge.year})
+              </h1>
+              <p className="text-sm font-mono font-black text-blue-600 mt-1">
+                Score: {score.toLocaleString()} PTS
+              </p>
 
-          <h1 className="text-xl md:text-2xl font-black tracking-tight leading-snug text-zinc-900">
-            "{challenge.clues[currentClueIdx]}"
-          </h1>
-
-          <div className="mt-6">
-            {currentClueIdx < challenge.clues.length - 1 && !gameWon && !gameOver && (
-              <button
-                onClick={handleUnlockClue}
-                className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors"
-              >
-                Nästa ledtråd (-2 000 PTS) →
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* De 4 Svarskorten */}
-        <div className="space-y-2">
-          <span className="block text-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
-            Vilken historisk match gäller det?
-          </span>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {options.map((option, idx) => {
-              const isWrong = selectedWrong.includes(option);
-              return (
+              <div className="flex gap-3 justify-center mt-6">
                 <button
-                  key={idx}
-                  onClick={() => handleSelectOption(option)}
-                  disabled={isWrong || gameWon || gameOver}
-                  className={`p-4 rounded-2xl border text-left font-bold text-xs md:text-sm transition-all flex items-center justify-between ${
-                    isWrong
-                      ? 'bg-zinc-100 border-zinc-200 text-zinc-400 line-through cursor-not-allowed opacity-50'
-                      : gameWon
-                      ? 'bg-zinc-50 border-zinc-200 text-zinc-400'
-                      : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm active:scale-[0.99]'
-                  }`}
+                  onClick={handleShare}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all shadow-sm"
                 >
-                  <span className="truncate pr-2">{option}</span>
-                  <span className="text-[10px] font-mono text-zinc-400">
-                    {isWrong ? '✕' : `[${String.fromCharCode(65 + idx)}]`}
-                  </span>
+                  {copied ? '✓ Challenge Copied!' : 'Challenge a Friend ⚡'}
                 </button>
-              );
-            })}
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="px-4 py-3 bg-zinc-100 text-zinc-700 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-zinc-200"
+                >
+                  Score Card
+                </button>
+              </div>
+            </div>
+
+            {/* The Historical Dossier & Story */}
+            <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                  Match Dossier
+                </span>
+                <p className="text-zinc-700 text-sm leading-relaxed font-medium">
+                  {challenge.story ||
+                    `The 1992 United States Men's Olympic Basketball Team, nicknamed the "Dream Team", was the first American Olympic team to feature active NBA superstars including Michael Jordan, Magic Johnson, and Larry Bird. They dominated Barcelona 1992, defeating opponents by an average of 43.8 points.`}
+                </p>
+              </div>
+
+              {/* Fun Facts / Lore */}
+              <div className="border-t border-zinc-100 pt-5">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-3">
+                  Scout Lore &amp; Trivia
+                </span>
+                <ul className="space-y-2.5 text-xs text-zinc-600 font-medium">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">✦</span>
+                    <span>Head coach Chuck Daly famously did not call a single timeout throughout the entire tournament.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">✦</span>
+                    <span>Opposing players frequently asked for autographs and photos with Jordan, Barkley, and Magic right after final whistles.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Testing / Action Footer */}
+              <div className="border-t border-zinc-100 pt-4 flex justify-between items-center text-[11px]">
+                <span className="text-zinc-400 font-medium">Next fixture arrives at 00:00 UTC</span>
+                <button
+                  onClick={handleResetForTesting}
+                  className="text-zinc-400 hover:text-zinc-600 underline font-mono"
+                >
+                  [Dev Reset]
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Active Playing State */
+          <>
+            {/* Clue Box */}
+            <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm text-center mb-6 relative">
+              <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-4 inline-block">
+                Clue {currentClueIdx + 1} of 6
+              </span>
+
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-snug text-zinc-900">
+                "{challenge.clues[currentClueIdx]}"
+              </h1>
+
+              <div className="mt-6">
+                {currentClueIdx < challenge.clues.length - 1 && !gameOver && (
+                  <button
+                    onClick={handleUnlockClue}
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors"
+                  >
+                    Reveal next clue (-2,000 PTS) →
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 4 Suggestion Cards */}
+            <div className="space-y-2">
+              <span className="block text-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                Identify Today's Historical Matchup
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {options.map((option, idx) => {
+                  const isWrong = selectedWrong.includes(option);
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectOption(option)}
+                      disabled={isWrong || gameOver}
+                      className={`p-4 rounded-2xl border text-left font-bold text-xs md:text-sm transition-all flex items-center justify-between ${
+                        isWrong
+                          ? 'bg-zinc-100 border-zinc-200 text-zinc-400 line-through cursor-not-allowed opacity-50'
+                          : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm active:scale-[0.99]'
+                      }`}
+                    >
+                      <span className="truncate pr-2">{option}</span>
+                      <span className="text-[10px] font-mono text-zinc-400">
+                        {isWrong ? '✕' : `[${String.fromCharCode(65 + idx)}]`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* 4. Avslutningsdossier vid vinst */}
-      {(gameWon || gameOver) && (
+      {/* 4. Pop-up Summary Modal (With working Close ✕ and Continue) */}
+      {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl relative animate-in fade-in zoom-in-95">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-5 right-5 text-zinc-400 hover:text-black text-xl font-bold w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
             <span className="text-4xl block mb-2">{gameWon ? '🏆' : '⏱️'}</span>
             <h3 className="text-2xl font-black uppercase tracking-tight text-zinc-900">
-              {gameWon ? 'Korrekt Deduktion!' : 'Matchen är slut'}
+              {gameWon ? 'Deduction Confirmed!' : 'Out of Clues'}
             </h3>
             <p className="text-xs text-zinc-500 font-medium mt-1 mb-6">
-              Rätt match: <strong>{challenge.subject} ({challenge.year})</strong>
+              Match: <strong>{challenge.subject} ({challenge.year})</strong>
             </p>
 
             <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 mb-6">
-              <span className="block text-[10px] font-mono uppercase text-zinc-400">Dina Poäng</span>
+              <span className="block text-[10px] font-mono uppercase text-zinc-400">Final Score</span>
               <span className="text-3xl font-black font-mono text-blue-600">
                 {gameWon ? `+${score.toLocaleString()}` : '0'} PTS
               </span>
               <span className="block text-[11px] text-zinc-500 font-medium mt-1">
-                Löst på ledtråd {currentClueIdx + 1} av 6
+                Solved on Clue {currentClueIdx + 1} of 6
               </span>
             </div>
 
@@ -285,14 +384,21 @@ function DailyDropArena() {
                 onClick={handleShare}
                 className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-sm"
               >
-                <span>{copied ? '✓ Länk kopierad!' : 'Utmana en kompis ⚡'}</span>
+                <span>{copied ? '✓ Link Copied!' : 'Challenge a Friend ⚡'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-full py-3 bg-zinc-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black transition-all"
+              >
+                Read Match Dossier &amp; Facts →
               </button>
 
               <Link
                 href="/leaderboard"
-                className="w-full py-3 bg-zinc-100 text-zinc-700 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-zinc-200 block"
+                className="w-full py-2.5 text-zinc-500 rounded-xl text-xs font-bold uppercase tracking-wider hover:text-zinc-800 block"
               >
-                Visa Topplistan
+                View Leaderboard
               </Link>
             </div>
           </div>
@@ -301,7 +407,7 @@ function DailyDropArena() {
 
       {/* Footer */}
       <footer className="py-4 text-center text-[11px] text-zinc-400 font-mono">
-        SportsHistoryClue · Ny match varje dag kl 00:00
+        SportsHistoryClue · New drop released daily at 00:00 UTC
       </footer>
     </main>
   );
@@ -312,7 +418,7 @@ export default function HomePage() {
     <Suspense
       fallback={
         <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-          Laddar Arena...
+          Loading Arena...
         </main>
       }
     >
