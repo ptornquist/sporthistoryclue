@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import AuthGateModal from '@/components/AuthGateModal';
 
 interface ChallengeItem {
   id: string;
@@ -29,10 +31,30 @@ const SPORTS: SportGroup[] = [
 ];
 
 export default function DisciplinesPage() {
+  const router = useRouter();
   const [selectedSport, setSelectedSport] = useState<string>('ice_hockey');
   const [challenges, setChallenges] = useState<ChallengeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<unknown>(null);
+  const [showAuthGate, setShowAuthGate] = useState(false);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    supabaseClient.auth
+      .getUser()
+      .then(({ data }) => setCurrentUser(data.user ?? null))
+      .catch(() => setCurrentUser(null));
+  }, []);
+
+  // Deducing an archive fixture requires a free Scout account; the Daily Drop stays open to all.
+  const handleDeduce = (target: string) => {
+    if (!currentUser) {
+      setShowAuthGate(true);
+      return;
+    }
+    router.push(`/?match=${target}`);
+  };
 
   useEffect(() => {
     const fetchChallenges = async () => {
@@ -71,6 +93,12 @@ export default function DisciplinesPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
+      <AuthGateModal
+        isOpen={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        featureName="Browse by Discipline"
+      />
+
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -173,12 +201,13 @@ export default function DisciplinesPage() {
                     </p>
                   </div>
 
-                  <Link
-                    href={`/?match=${challenge.slug || challenge.id}`}
+                  <button
+                    type="button"
+                    onClick={() => handleDeduce(challenge.slug || challenge.id)}
                     className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all shadow-sm"
                   >
                     Deduce →
-                  </Link>
+                  </button>
                 </div>
               ))}
             </div>
