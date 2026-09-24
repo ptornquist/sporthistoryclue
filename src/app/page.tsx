@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
+import AuthGateModal from '@/components/AuthGateModal';
 
 interface Challenge {
   id: string;
@@ -33,6 +34,7 @@ function DailyDropArena() {
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showAuthGate, setShowAuthGate] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isArchiveMode, setIsArchiveMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -157,6 +159,16 @@ function DailyDropArena() {
 
     fetchChallenge();
   }, [specificMatch]);
+
+  // The Daily Drop is free, but playing further archive fixtures requires a Scout account.
+  const handlePlayAnotherClick = () => {
+    if (!currentUser) {
+      setShowModal(false);
+      setShowAuthGate(true);
+      return;
+    }
+    handlePlayAnother();
+  };
 
   const handlePlayAnother = async () => {
     setLoading(true);
@@ -307,6 +319,13 @@ function DailyDropArena() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+      {/* Soft-gate modal for guests reaching archive-only features */}
+      <AuthGateModal
+        isOpen={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        featureName="Play Another Match"
+      />
+
       {/* 1. Slide-Out Navigation Drawer */}
       {menuOpen && (
         <div className="fixed inset-0 z-50 flex">
@@ -624,7 +643,7 @@ function DailyDropArena() {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6 relative z-20">
                 <button
-                  onClick={handlePlayAnother}
+                  onClick={handlePlayAnotherClick}
                   className="px-6 py-3.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all shadow-sm"
                 >
                   Play Another Match →
@@ -799,7 +818,7 @@ function DailyDropArena() {
 
             <div className="space-y-2 relative z-10">
               <button
-                onClick={handlePlayAnother}
+                onClick={handlePlayAnotherClick}
                 className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all"
               >
                 Play Another Fixture →
