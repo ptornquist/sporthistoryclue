@@ -41,12 +41,14 @@ function DailyDropArena() {
   const [streak, setStreak] = useState(1);
   const [emailSubscribed, setEmailSubscribed] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Load handle & streak
+  // Check Supabase Auth state & handle
   useEffect(() => {
     const initPlayer = async () => {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (user) {
+        setCurrentUser(user);
         const { data: profile } = await supabaseClient
           .from('profiles')
           .select('username')
@@ -55,6 +57,8 @@ function DailyDropArena() {
 
         if (profile?.username) {
           setPlayerName(profile.username);
+        } else if (user.email) {
+          setPlayerName(user.email.split('@')[0]);
         }
       } else {
         const saved = localStorage.getItem('shc_handle');
@@ -64,8 +68,29 @@ function DailyDropArena() {
       const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
       setStreak(savedStreak);
     };
+
     initPlayer();
+
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange(
+      async (_event, session) => {
+        setCurrentUser(session?.user || null);
+        if (session?.user?.email) {
+          setPlayerName(session.user.email.split('@')[0]);
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
+
+  const handleSignOut = async () => {
+    await supabaseClient.auth.signOut();
+    setCurrentUser(null);
+    setPlayerName('Scout');
+    localStorage.removeItem('shc_handle');
+  };
 
   const setupOptions = (item: Challenge) => {
     if (item.options && Array.isArray(item.options) && item.options.length > 0) {
@@ -85,7 +110,6 @@ function DailyDropArena() {
     const fetchChallenge = async () => {
       setLoading(true);
 
-      // 1. If invited to a specific duel fixture, prioritize loading that exact match
       if (specificMatch) {
         const { data: matched } = await supabaseClient
           .from('challenges')
@@ -103,7 +127,6 @@ function DailyDropArena() {
         }
       }
 
-      // 2. Deterministic Daily Drop (Day Index Algorithm)
       const { data: allMatches } = await supabaseClient
         .from('challenges')
         .select('*')
@@ -287,22 +310,17 @@ function DailyDropArena() {
       {/* 1. Slide-Out Navigation Drawer */}
       {menuOpen && (
         <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
             onClick={() => setMenuOpen(false)}
           />
 
-          {/* Drawer Panel */}
           <div className="relative ml-auto w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl p-6 flex flex-col justify-between z-10 animate-in slide-in-from-right duration-200">
             <div>
-              {/* Drawer Header */}
               <div className="flex items-center justify-between pb-5 border-b border-zinc-100">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black tracking-tight uppercase">
-                    Game Modes &amp; Hub
-                  </span>
-                </div>
+                <span className="text-sm font-black tracking-tight uppercase">
+                  Game Modes &amp; Hub
+                </span>
                 <button
                   onClick={() => setMenuOpen(false)}
                   className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center font-bold text-zinc-400 hover:text-black transition-colors"
@@ -311,8 +329,58 @@ function DailyDropArena() {
                 </button>
               </div>
 
-              {/* Navigation Links to Old & New Modes */}
-              <nav className="mt-6 space-y-2">
+              {/* Login / Join Card inside Drawer */}
+              {!currentUser ? (
+                <div className="mt-4 p-4 rounded-2xl bg-blue-50/70 border border-blue-100">
+                  <div className="text-xs font-black uppercase tracking-wider text-blue-900 mb-1">
+                    Scout Registration
+                  </div>
+                  <p className="text-[11px] text-blue-700 leading-snug mb-3">
+                    Track your solve streaks, win badges, and climb the leaderboard.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href="/login?mode=signup"
+                      onClick={() => setMenuOpen(false)}
+                      className="py-2 px-3 text-center bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                      Join Free
+                    </Link>
+                    <Link
+                      href="/login"
+                      onClick={() => setMenuOpen(false)}
+                      className="py-2 px-3 text-center bg-white text-zinc-800 border border-zinc-200 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-zinc-50 transition-colors"
+                    >
+                      Log In
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center">
+                      {playerName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-zinc-900 block truncate max-w-[140px]">
+                        {playerName}
+                      </span>
+                      <span className="text-[10px] font-mono text-emerald-600 font-bold">
+                        ● Logged In
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-[11px] font-bold text-zinc-400 hover:text-rose-600 transition-colors"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )}
+
+              {/* Navigation Links */}
+              <nav className="mt-5 space-y-2">
                 <Link
                   href="/"
                   onClick={() => setMenuOpen(false)}
@@ -405,7 +473,6 @@ function DailyDropArena() {
               </nav>
             </div>
 
-            {/* Drawer Footer Status */}
             <div className="pt-6 border-t border-zinc-100 space-y-3">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-400">Scout Handle</span>
@@ -430,7 +497,7 @@ function DailyDropArena() {
         </div>
       )}
 
-      {/* Main Header with Hamburger Menu */}
+      {/* Main Header with Login & Join Buttons */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -442,7 +509,7 @@ function DailyDropArena() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 sm:gap-5">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div>
               <span className="block text-[9px] font-mono font-bold uppercase text-zinc-400 text-right">Potential</span>
               <span className="font-mono font-black text-blue-600 text-sm">{score.toLocaleString()} PTS</span>
@@ -465,14 +532,37 @@ function DailyDropArena() {
               ))}
             </div>
 
-            {!isArchiveMode && !specificMatch && (
-              <div className="hidden sm:flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
-                <span>🔥</span>
-                <span>{streak}D</span>
+            {/* Auth Buttons in Header */}
+            {!currentUser ? (
+              <div className="hidden sm:flex items-center gap-2 border-l border-zinc-200 pl-3">
+                <Link
+                  href="/login"
+                  className="px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black transition-colors"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/login?mode=signup"
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                >
+                  Join
+                </Link>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2 border-l border-zinc-200 pl-3">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-xs font-bold transition-colors"
+                >
+                  <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] flex items-center justify-center">
+                    {playerName.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="max-w-[80px] truncate">{playerName}</span>
+                </Link>
               </div>
             )}
 
-            {/* Hamburger Menu Button */}
+            {/* Hamburger / Modes */}
             <button
               onClick={() => setMenuOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
@@ -489,7 +579,6 @@ function DailyDropArena() {
       <div className="max-w-2xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-center relative z-10">
         {gameWon ? (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Duel Resolution Card */}
             {isDuel && (
               <div
                 className={`p-5 rounded-3xl border text-center ${
@@ -522,7 +611,6 @@ function DailyDropArena() {
               </div>
             )}
 
-            {/* Dossier Header Card */}
             <div className="bg-white border-2 border-blue-600 rounded-3xl p-6 md:p-8 shadow-sm text-center relative z-10">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-3 inline-block">
                 Match Solved · Clue {currentClueIdx + 1} of 6
@@ -534,7 +622,6 @@ function DailyDropArena() {
                 Score: {score.toLocaleString()} PTS
               </p>
 
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6 relative z-20">
                 <button
                   onClick={handlePlayAnother}
@@ -557,7 +644,6 @@ function DailyDropArena() {
               </div>
             </div>
 
-            {/* Dynamic Historical Dossier */}
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
@@ -585,7 +671,6 @@ function DailyDropArena() {
                 </div>
               )}
 
-              {/* Newsletter Subscription */}
               {!isArchiveMode && !emailSubscribed && (
                 <div className="border-t border-zinc-100 pt-6">
                   <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-5 text-center">

@@ -1,126 +1,194 @@
 'use client';
 
-import React, { useState } from 'react';
-import { supabaseClient } from '@/lib/supabase/client';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabaseClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+function AuthContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
+
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (searchParams.get('mode') === 'signup') {
+      setMode('signup');
+    }
+  }, [searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      alert('Please enter both email and password.');
-      return;
-    }
-
+    setErrorMsg('');
+    setSuccessMsg('');
     setLoading(true);
+
     try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
-      });
+      if (mode === 'signup') {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username: username || email.split('@')[0] },
+          },
+        });
 
-      if (error) {
-        alert(`Login failed: ${error.message}`);
-      } else if (data?.user) {
-        window.location.href = '/';
-      }
-    } catch (err: any) {
-      alert(`Unexpected error: ${err?.message || 'Check console and environment variables'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (error) throw error;
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      alert('Please enter both email and password.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email: email.trim(),
-        password: password,
-      });
-
-      if (error) {
-        alert(`Registration failed: ${error.message}`);
+        if (data.user) {
+          if (username) {
+            await supabaseClient.from('profiles').upsert({
+              id: data.user.id,
+              username: username.trim(),
+            });
+            localStorage.setItem('shc_handle', username.trim());
+          }
+          setSuccessMsg('Account created! Logging you in...');
+          setTimeout(() => router.push('/'), 1200);
+        }
       } else {
-        alert('Account created! If email confirmation is disabled, you can now sign in.');
+        const { error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+        router.push('/');
       }
     } catch (err: any) {
-      alert(`Unexpected error: ${err?.message || 'Check console'}`);
+      setErrorMsg(err.message || 'An error occurred during authentication.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-white flex flex-col justify-center items-center p-6 text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <Link href="/" className="absolute top-6 left-6 font-black text-2xl tracking-tighter hover:opacity-80 transition-opacity">
-        SHC<span className="text-blue-600">.</span>
-      </Link>
-      
-      <div className="w-full max-w-md bg-zinc-50 border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm">
-        <h1 className="text-3xl font-black tracking-tight mb-2 text-center uppercase">Welcome Back</h1>
-        <p className="text-zinc-500 text-xs text-center mb-8 font-medium">
-          Log in to track your scores, streaks, and trophy archive.
+    <div className="max-w-md w-full bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
+      <div className="text-center mb-6">
+        <Link href="/" className="text-lg font-black uppercase tracking-tighter">
+          Sports<span className="text-blue-600">History</span>Clue
+        </Link>
+        <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mt-3">
+          {mode === 'login' ? 'Scout Login' : 'Join the League'}
+        </h1>
+        <p className="text-xs text-zinc-500 mt-1">
+          {mode === 'login'
+            ? 'Access your match history and track daily solve streaks.'
+            : 'Compete on daily leaderboards and challenge friends.'}
         </p>
-        
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-2">
-              Email
-            </label>
-            <input 
-              type="email" 
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors placeholder:text-zinc-400"
-              placeholder="player@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-2">
-              Password
-            </label>
-            <input 
-              type="password" 
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors placeholder:text-zinc-400"
-              placeholder="••••••••"
-            />
-          </div>
-          
-          <div className="flex gap-3 pt-3">
-            <button 
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-blue-600 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm"
-            >
-              {loading ? 'Entering...' : 'Sign In'}
-            </button>
-            <button 
-              type="button"
-              onClick={handleSignUp}
-              disabled={loading}
-              className="flex-1 bg-zinc-200 text-zinc-800 font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl hover:bg-zinc-300 transition-colors disabled:opacity-50"
-            >
-              Register
-            </button>
-          </div>
-        </form>
       </div>
+
+      {/* Tabs */}
+      <div className="flex p-1 bg-zinc-100 rounded-xl mb-6">
+        <button
+          type="button"
+          onClick={() => { setMode('login'); setErrorMsg(''); }}
+          className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+            mode === 'login' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
+          }`}
+        >
+          Log In
+        </button>
+        <button
+          type="button"
+          onClick={() => { setMode('signup'); setErrorMsg(''); }}
+          className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+            mode === 'signup' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
+          }`}
+        >
+          Join Free
+        </button>
+      </div>
+
+      {errorMsg && (
+        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium rounded-xl">
+          {errorMsg}
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium rounded-xl">
+          {successMsg}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        {mode === 'signup' && (
+          <div>
+            <label className="block text-[10px] font-mono uppercase font-bold text-zinc-500 mb-1">
+              Scout Handle / Name
+            </label>
+            <input
+              type="text"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. PeterT, PuckScout"
+              className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="block text-[10px] font-mono uppercase font-bold text-zinc-500 mb-1">
+            Email
+          </label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="scout@sportshistoryclue.com"
+            className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-mono uppercase font-bold text-zinc-500 mb-1">
+            Password
+          </label>
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full mt-2 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all disabled:opacity-50 shadow-sm"
+        >
+          {loading ? 'Processing...' : mode === 'login' ? 'Sign In →' : 'Create Free Account →'}
+        </button>
+      </form>
+
+      <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
+        <Link href="/" className="text-xs text-zinc-400 hover:text-black font-medium">
+          ← Back to Daily Match
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <main className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 selection:bg-blue-600 selection:text-white">
+      <Suspense fallback={<div className="text-xs font-mono text-zinc-400">Loading...</div>}>
+        <AuthContent />
+      </Suspense>
     </main>
   );
 }
