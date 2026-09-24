@@ -1,103 +1,168 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
+import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-
-interface MatchHistory {
-  match_identifier: string;
-  title: string;
-  category: string;
-  points: number;
-  score_date: string;
-}
 
 export default function ProfilePage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [playerName, setPlayerName] = useState('Scout');
+  const [username, setUsername] = useState('Scout');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [streak, setStreak] = useState(1);
-  const [careerStats, setCareerStats] = useState({ total_wins: 14, total_pts: 142000, accuracy: 98 });
-  const [history, setHistory] = useState<MatchHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabaseClient.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        // hard-gated for Strategy 2
+    const initProfile = async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
         router.push('/login');
         return;
       }
-      setCurrentUser(data.user);
-      if (data.user.email) setPlayerName(data.user.email.split('@')[0]);
-      
+      setCurrentUser(user);
+
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile?.username) setUsername(profile.username);
+      else if (user.email) setUsername(user.email.split('@')[0]);
+
+      if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+
       const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
       setStreak(savedStreak);
-
-      // Simulation: Fetching career stats and history from match_history
-      setHistory([
-        { match_identifier: 'miracle-on-ice-1980', title: 'USA vs Soviet Union (Winter Olympics)', category: 'Ice Hockey', points: 10000, score_date: 'Today 14:12 UTC' },
-        { match_identifier: 'lillehammer-1994', title: 'Sweden vs Canada (Shootout Final)', category: 'Ice Hockey', points: 8000, score_date: 'Yesterday' },
-        { match_identifier: 'bolt-beijing-2008', title: 'Usain Bolt 100m World Record', category: 'Athletics', points: 10000, score_date: 'Sep 19' },
-      ]);
       setLoading(false);
-    });
+    };
+
+    initProfile();
   }, [router]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      if (!e.target.files || e.target.files.length === 0 || !currentUser) {
+        return;
+      }
+
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${currentUser.id}/avatar.${fileExt}`;
+
+      // Ladda upp till Supabase Storage ('avatars' bucket)
+      const { error: uploadError } = await supabaseClient.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        // Fallback: om Storage-bucket inte är konfigurerad än kan vi konvertera till data-URL
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Url = reader.result as string;
+          setAvatarUrl(base64Url);
+          await supabaseClient
+            .from('profiles')
+            .upsert({ id: currentUser.id, avatar_url: base64Url });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const { data: publicUrlData } = supabaseClient.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+        const publicUrl = publicUrlData.publicUrl;
+        setAvatarUrl(publicUrl);
+
+        await supabaseClient
+          .from('profiles')
+          .upsert({ id: currentUser.id, avatar_url: publicUrl });
+      }
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabaseClient.auth.signOut();
+    router.push('/');
+  };
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
         Loading Scout Profile...
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white flex flex-col justify-between">
+    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
       <div>
-        <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
-          <div className="max-w-4xl mx-auto flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="text-lg font-black tracking-tighter uppercase">
-                Sports<span className="text-blue-600">History</span>Clue
-              </Link>
-              <span className="text-[10px] font-mono uppercase bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded font-bold">
-                Scout Profile
-              </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black">
-                Daily Drop
-              </Link>
-              <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black">
-                Leaderboard
-              </Link>
-            </div>
-          </div>
-        </header>
+        <Navbar />
 
         <div className="max-w-4xl mx-auto px-6 py-10">
-          {/* Profile Header */}
-          <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-3xl bg-blue-600 text-white font-black text-2xl flex items-center justify-center shadow-lg">
-                {playerName.charAt(0).toUpperCase()}
+          {/* Profile Card */}
+          <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
+            <div className="flex items-center gap-5">
+              {/* Klickbar Avatar för bilduppladdning */}
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={username}
+                    className="w-20 h-20 rounded-3xl object-cover border-2 border-zinc-200 shadow-md group-hover:opacity-80 transition-opacity"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-3xl bg-blue-600 text-white font-black text-3xl flex items-center justify-center shadow-md group-hover:bg-blue-700 transition-colors">
+                    {username.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold uppercase tracking-wider">
+                  {uploading ? 'Sparar...' : 'Byt bild'}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
               </div>
+
               <div>
                 <span className="px-3 py-1 bg-zinc-100 text-zinc-600 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-2 inline-block">
                   Verified Scout
                 </span>
                 <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-900">
-                  {playerName}
+                  {username}
                 </h1>
-                <p className="text-xs text-zinc-400 font-medium">Joined {new Date(currentUser.created_at).toLocaleDateString()}</p>
+                <p className="text-xs text-zinc-400 font-medium">
+                  {currentUser?.email}
+                </p>
               </div>
             </div>
-            <div className="text-right bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-sm font-bold text-amber-700 font-mono">
-              🔥 Streak: {streak} Days
+
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-xs font-bold text-amber-700 font-mono">
+                🔥 {streak} Dagar Streak
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 border border-zinc-200 hover:bg-zinc-100 text-zinc-700 rounded-2xl text-xs font-bold uppercase transition-colors"
+              >
+                Logga ut
+              </button>
             </div>
           </div>
 
@@ -105,46 +170,19 @@ export default function ProfilePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
             <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm text-center">
               <span className="block text-[10px] font-mono font-bold uppercase text-zinc-400 mb-1">Total Wins</span>
-              <span className="text-3xl font-black text-blue-600">{careerStats.total_wins}</span>
+              <span className="text-3xl font-black text-blue-600">14</span>
             </div>
             <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm text-center">
               <span className="block text-[10px] font-mono font-bold uppercase text-zinc-400 mb-1">Career Points</span>
-              <span className="text-3xl font-black text-zinc-900">{careerStats.total_pts.toLocaleString()}</span>
+              <span className="text-3xl font-black text-zinc-900">142 000</span>
             </div>
             <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm text-center">
               <span className="block text-[10px] font-mono font-bold uppercase text-zinc-400 mb-1">Deduction %</span>
-              <span className="text-3xl font-black text-emerald-600">{careerStats.accuracy}%</span>
+              <span className="text-3xl font-black text-emerald-600">98%</span>
             </div>
             <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm text-center">
               <span className="block text-[10px] font-mono font-bold uppercase text-zinc-400 mb-1">Badges</span>
               <span className="text-3xl font-black text-zinc-900">2</span>
-            </div>
-          </div>
-
-          {/* History */}
-          <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm">
-            <div className="mb-6 pb-4 border-b border-zinc-100">
-              <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">Recent Deduction History</h2>
-            </div>
-            
-            <div className="space-y-3">
-              {history.map((h, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 border border-zinc-200/60">
-                  <div>
-                    <h3 className="text-sm font-black text-zinc-900">{h.title}</h3>
-                    <p className="text-xs text-zinc-500 font-medium mt-0.5">{h.category} · {h.score_date}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-bold text-zinc-400">+{h.points.toLocaleString()} PTS</span>
-                    <Link
-                      href={`/?match=${h.match_identifier}`}
-                      className="px-3 py-1.5 border border-zinc-200 text-zinc-800 rounded-lg text-xs font-bold transition-all hover:bg-white"
-                    >
-                      Dossier
-                    </Link>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
