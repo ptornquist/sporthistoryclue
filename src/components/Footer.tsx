@@ -45,35 +45,44 @@ const SOCIAL_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="py-8 border-t border-zinc-200/80 bg-white/70 backdrop-blur-sm mt-12">
-      <div className="max-w-4xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        
+    <footer className="border-t border-zinc-200 bg-white mt-12">
+      <div className="max-w-4xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-5">
         {/* Brand & Release Info */}
-        <div className="text-center sm:text-left">
-          <p className="text-xs font-black uppercase tracking-tight text-zinc-900">
+        <p className="text-[11px] text-zinc-400 font-mono text-center md:text-left order-2 md:order-1">
+          <span className="font-black uppercase tracking-tight text-zinc-900">
             Sports<span className="text-blue-600">History</span>Clue
-          </p>
-          <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
-            New mystery fixture drops daily at 00:00 UTC
-          </p>
-        </div>
+          </span>
+          <span> · Daily global sports deduction puzzles · Released at 00:00 UTC</span>
+        </p>
 
-        {/* Social Icons */}
-        <div className="flex items-center gap-2.5">
-          {SOCIAL_LINKS.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={item.name}
-              className="w-9 h-9 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-blue-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm"
-            >
-              {item.icon}
-            </a>
-          ))}
-        </div>
+        {/* Contact + Social Channels */}
+        <div className="flex items-center gap-3 order-1 md:order-2">
+          <a
+            href="mailto:contact@sportshistoryclue.com?subject=SportsHistoryClue%20Inquiry"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-200 text-zinc-700 hover:text-blue-600 hover:border-blue-600 text-xs font-bold uppercase tracking-wider transition-colors"
+          >
+            <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24" aria-hidden>
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
+            Contact Scout HQ
+          </a>
 
+          <div className="flex items-center gap-2.5">
+            {SOCIAL_LINKS.map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={item.name}
+                className="w-9 h-9 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-blue-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm"
+              >
+                {item.icon}
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </footer>
   );
