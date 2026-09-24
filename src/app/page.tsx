@@ -25,6 +25,7 @@ function DailyDropArena() {
   const challenger = searchParams.get('vs');
   const challengerClues = searchParams.get('clues');
   const challengerPts = searchParams.get('pts');
+  const duelUserId = searchParams.get('duel');
   const specificMatch = searchParams.get('match');
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
@@ -40,6 +41,8 @@ function DailyDropArena() {
   const [isArchiveMode, setIsArchiveMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [challengeCopied, setChallengeCopied] = useState(false);
+  const [duelUsername, setDuelUsername] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
   const [emailSubscribed, setEmailSubscribed] = useState(false);
@@ -74,6 +77,18 @@ function DailyDropArena() {
 
     initPlayer();
 
+    if (duelUserId) {
+      const loadChallenger = async () => {
+        const { data } = await supabaseClient
+          .from('profiles')
+          .select('username')
+          .eq('id', duelUserId)
+          .maybeSingle();
+        if (data?.username) setDuelUsername(data.username);
+      };
+      loadChallenger();
+    }
+
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(
       async (_event, session) => {
         setCurrentUser(session?.user || null);
@@ -86,7 +101,7 @@ function DailyDropArena() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [duelUserId]);
 
   const handleSignOut = async () => {
     await supabaseClient.auth.signOut();
@@ -214,6 +229,13 @@ function DailyDropArena() {
         const newStreak = streak + 1;
         setStreak(newStreak);
         localStorage.setItem('shc_streak', newStreak.toString());
+        if (currentUser) {
+          supabaseClient
+            .from('profiles')
+            .update({ streak: newStreak })
+            .eq('id', currentUser.id)
+            .then(() => undefined);
+        }
       }
 
       saveScore(score);
@@ -282,6 +304,17 @@ function DailyDropArena() {
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const handleChallengeScout = async () => {
+    if (!currentUser) {
+      window.location.href = '/login';
+      return;
+    }
+    const link = `https://sportshistoryclue.com/?duel=${currentUser.id}&pts=${score}`;
+    await navigator.clipboard.writeText(link);
+    setChallengeCopied(true);
+    setTimeout(() => setChallengeCopied(false), 2500);
+  };
+
   const handleSubscribeNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsletterEmail || !newsletterEmail.includes('@')) return;
@@ -292,8 +325,13 @@ function DailyDropArena() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
-        Loading Match Fixture...
+      <main className="min-h-screen bg-[#fafafa] flex flex-col font-mono text-xs uppercase tracking-widest text-zinc-400">
+        {duelUserId && (
+          <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide normal-case">
+            Challenged by @{duelUsername || 'scout'} — Beat their {(searchParams.get('pts') ? parseInt(searchParams.get('pts') || '0', 10) : 0).toLocaleString()} PTS!
+          </div>
+        )}
+        <div className="flex-1 flex items-center justify-center">Loading Match Fixture...</div>
       </main>
     );
   }
@@ -313,7 +351,12 @@ function DailyDropArena() {
     ? JSON.parse(challenge.fun_facts || '[]')
     : [];
 
-  const challengerScoreVal = challengerPts ? parseInt(challengerPts, 10) : 8000;
+  const duelPts = searchParams.get('pts');
+  const challengerScoreVal = duelUserId
+    ? (duelPts ? parseInt(duelPts, 10) : 0)
+    : challengerPts
+    ? parseInt(challengerPts, 10)
+    : 8000;
   const isDuel = Boolean(challenger && !isArchiveMode);
   const playerWonDuel = isDuel && score > challengerScoreVal;
   const playerTiedDuel = isDuel && score === challengerScoreVal;
@@ -508,7 +551,16 @@ function DailyDropArena() {
       )}
 
       {/* Challenger Notification Bar */}
-      {challenger && !isArchiveMode && (
+      {duelUserId && !isArchiveMode && (
+        <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm sticky top-0 z-30">
+          <span>⚔️</span>
+          <span>
+            Challenged by @{duelUsername || 'scout'} — Beat their {(duelPts ? parseInt(duelPts, 10) : 0).toLocaleString()} PTS!
+          </span>
+        </div>
+      )}
+
+      {challenger && !duelUserId && !isArchiveMode && (
         <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm sticky top-0 z-30">
           <span>⚡</span>
           <span>
@@ -655,6 +707,14 @@ function DailyDropArena() {
                 >
                   {copied ? '✓ Result Copied!' : isDuel ? `Reply to ${challenger} ⚡` : 'Challenge a Friend ⚡'}
                 </button>
+                {!isArchiveMode && (
+                  <button
+                    onClick={handleChallengeScout}
+                    className="px-5 py-3.5 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-black transition-all"
+                  >
+                    {challengeCopied ? '✓ Link Copied!' : 'Challenge a Scout'}
+                  </button>
+                )}
                 <button
                   onClick={() => setMenuOpen(true)}
                   className="px-4 py-3.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-zinc-100 transition-all"
@@ -830,6 +890,14 @@ function DailyDropArena() {
               >
                 {copied ? '✓ Copied!' : isDuel ? `Send Result to ${challenger} ⚡` : 'Challenge a Friend ⚡'}
               </button>
+              {gameWon && !isArchiveMode && (
+                <button
+                  onClick={handleChallengeScout}
+                  className="w-full py-3 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-black transition-all"
+                >
+                  {challengeCopied ? '✓ Link Copied!' : 'Challenge a Scout'}
+                </button>
+              )}
               <button
                 onClick={() => setShowModal(false)}
                 className="w-full py-2.5 text-zinc-500 rounded-xl text-xs font-bold uppercase tracking-wider hover:text-zinc-800 block"

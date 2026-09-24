@@ -3,11 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
+import FindScouts from '@/components/game/FindScouts';
 
 interface Profile {
   id: string;
   username: string;
   display_name: string;
+  avatar_url?: string | null;
+  streak?: number | null;
 }
 
 interface MatchRecord {
@@ -30,10 +33,7 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [totalScore, setTotalScore] = useState(0);
 
-  const [friends, setFriends] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Profile[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [network, setNetwork] = useState<Profile[]>([]);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -67,21 +67,21 @@ export default function ProfilePage() {
       setTotalScore(sum);
     }
 
-    const { data: friendRows } = await supabaseClient
-      .from('friendships')
-      .select('friend_id')
+    const { data: connectionRows } = await supabaseClient
+      .from('scout_connections')
+      .select('connected_user_id')
       .eq('user_id', user.id);
 
-    if (friendRows && friendRows.length > 0) {
-      const fIds = friendRows.map((r) => r.friend_id);
-      const { data: friendProfiles } = await supabaseClient
-        .from('leaderboard_view')
-        .select('*')
-        .in('id', fIds);
+    if (connectionRows && connectionRows.length > 0) {
+      const ids = connectionRows.map((row) => row.connected_user_id);
+      const { data: scoutProfiles } = await supabaseClient
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, streak')
+        .in('id', ids);
 
-      setFriends(friendProfiles || []);
+      setNetwork((scoutProfiles as Profile[]) || []);
     } else {
-      setFriends([]);
+      setNetwork([]);
     }
   };
 
@@ -109,46 +109,13 @@ export default function ProfilePage() {
     setSavingUsername(false);
   };
 
-  const handleSearchUsers = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setSearching(true);
-
-    const query = searchQuery.toLowerCase().trim();
-    const { data } = await supabaseClient
-      .from('profiles')
-      .select('id, username, display_name')
-      .ilike('username', `%${query}%`)
-      .neq('id', user.id)
-      .limit(6);
-
-    setSearchResults(data || []);
-    setSearching(false);
-  };
-
-  const handleConnect = async (targetId: string) => {
-    if (!user) return;
-    const { error } = await supabaseClient
-      .from('friendships')
-      .insert({ user_id: user.id, friend_id: targetId, status: 'accepted' });
-
-    if (error) {
-      alert(error.message);
-    } else {
-      setActionMessage('Friend connected!');
-      setTimeout(() => setActionMessage(null), 3000);
-      setSearchResults((prev) => prev.filter((u) => u.id !== targetId));
-      loadData();
-    }
-  };
-
-  const handleRemoveFriend = async (friendId: string) => {
+  const handleRemoveConnection = async (connectedUserId: string) => {
     if (!user) return;
     await supabaseClient
-      .from('friendships')
+      .from('scout_connections')
       .delete()
       .eq('user_id', user.id)
-      .eq('friend_id', friendId);
+      .eq('connected_user_id', connectedUserId);
 
     loadData();
   };
@@ -240,78 +207,56 @@ export default function ProfilePage() {
 
         {/* Social / Friends Section */}
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">
-                Scout Network
-              </h2>
-              <p className="text-xs text-zinc-500 font-medium mt-0.5">
-                Connect with friends to challenge each other and compare on the friend leaderboard.
-              </p>
-            </div>
-
-            <form onSubmit={handleSearchUsers} className="flex gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Find @username..."
-                className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-blue-600"
-              />
-              <button
-                type="submit"
-                disabled={searching}
-                className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-700"
-              >
-                {searching ? '...' : 'Search'}
-              </button>
-            </form>
+          <div className="mb-6">
+            <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">
+              My Scout Network
+            </h2>
+            <p className="text-xs text-zinc-500 font-medium mt-0.5 mb-4">
+              Search registered scouts and keep the ones you want to duel.
+            </p>
+            <FindScouts currentUserId={user?.id ?? null} onConnected={loadData} />
           </div>
 
-          {searchResults.length > 0 && (
-            <div className="mb-6 p-4 bg-zinc-50 border border-zinc-200 rounded-2xl">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
-                Users Found
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {searchResults.map((sr) => (
-                  <div key={sr.id} className="bg-white p-3 rounded-xl border border-zinc-200 flex justify-between items-center">
-                    <span className="font-bold text-xs text-zinc-900">@{sr.username}</span>
-                    <button
-                      onClick={() => handleConnect(sr.id)}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-700"
-                    >
-                      + Connect
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {friends.length === 0 ? (
+          {network.length === 0 ? (
             <div className="text-center py-8 text-zinc-400 text-xs font-medium">
-              No scout connections yet. Search a handle above to add your first friend.
+              No scout connections yet. Search a handle above to add your first scout.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {friends.map((f) => (
-                <div key={f.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-between">
-                  <div>
-                    <span className="font-black text-xs text-zinc-900 block">@{f.username}</span>
-                    <span className="text-[10px] font-mono text-blue-600 font-bold">
-                      {f.total_score.toLocaleString()} PTS
-                    </span>
+              {network.map((scout) => {
+                const handle = scout.username || 'scout';
+                const streak = scout.streak ?? 0;
+                return (
+                  <div key={scout.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {scout.avatar_url ? (
+                        <img
+                          src={scout.avatar_url}
+                          alt=""
+                          className="w-10 h-10 rounded-full object-cover border border-zinc-200"
+                        />
+                      ) : (
+                        <span className="w-10 h-10 rounded-full bg-blue-600 text-white text-sm font-black flex items-center justify-center shrink-0">
+                          {handle.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <span className="font-black text-xs text-zinc-900 block truncate">@{handle}</span>
+                        <span className="text-[10px] font-mono text-blue-600 font-bold">
+                          Active streak · {streak} {streak === 1 ? 'day' : 'days'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveConnection(scout.id)}
+                      className="text-zinc-400 hover:text-rose-600 text-xs px-2 py-1"
+                      title="Remove connection"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleRemoveFriend(f.id)}
-                    className="text-zinc-400 hover:text-rose-600 text-xs px-2 py-1"
-                    title="Remove connection"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

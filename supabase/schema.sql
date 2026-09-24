@@ -62,9 +62,14 @@ create table if not exists public.profiles (
   expeditions_completed integer not null default 0 check (expeditions_completed >= 0),
   player_level integer not null default 1 check (player_level >= 1),
   title text not null default 'Archive Rookie',
+  avatar_url text,
+  streak integer not null default 0 check (streak >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists streak integer not null default 0;
 
 alter table public.profiles enable row level security;
 
@@ -89,6 +94,53 @@ create policy "profiles_insert_own"
   for insert
   to authenticated
   with check (auth.uid() = id);
+
+-- Scout search and duel banners need other players' handles. Scores stay on the same row.
+drop policy if exists "profiles_select_public" on public.profiles;
+create policy "profiles_select_public"
+  on public.profiles
+  for select
+  to anon, authenticated
+  using (true);
+
+-- Directed scout connections. A row means user_id follows connected_user_id.
+create table if not exists public.scout_connections (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  connected_user_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  constraint scout_connections_not_self check (user_id <> connected_user_id),
+  constraint scout_connections_unique unique (user_id, connected_user_id)
+);
+
+create index if not exists scout_connections_user_idx
+  on public.scout_connections (user_id);
+
+create index if not exists scout_connections_connected_idx
+  on public.scout_connections (connected_user_id);
+
+alter table public.scout_connections enable row level security;
+
+drop policy if exists "scout_connections_select_own" on public.scout_connections;
+create policy "scout_connections_select_own"
+  on public.scout_connections
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "scout_connections_insert_own" on public.scout_connections;
+create policy "scout_connections_insert_own"
+  on public.scout_connections
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+drop policy if exists "scout_connections_delete_own" on public.scout_connections;
+create policy "scout_connections_delete_own"
+  on public.scout_connections
+  for delete
+  to authenticated
+  using (auth.uid() = user_id);
 
 create schema if not exists private;
 

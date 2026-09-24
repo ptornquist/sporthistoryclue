@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
+import FindScouts from '@/components/game/FindScouts';
 
 interface LeaderboardEntry {
   id: string;
@@ -16,8 +17,8 @@ export default function LeaderboardPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'global' | 'friends'>('global');
-  const [friendIds, setFriendIds] = useState<string[]>([]);
+  const [tab, setTab] = useState<'global' | 'network'>('global');
+  const [networkIds, setNetworkIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -34,13 +35,13 @@ export default function LeaderboardPage() {
       if (globalData) setLeaders(globalData);
 
       if (user) {
-        const { data: friendData } = await supabaseClient
-          .from('friendships')
-          .select('friend_id')
+        const { data: connectionData } = await supabaseClient
+          .from('scout_connections')
+          .select('connected_user_id')
           .eq('user_id', user.id);
 
-        if (friendData) {
-          setFriendIds(friendData.map((f) => f.friend_id));
+        if (connectionData) {
+          setNetworkIds(connectionData.map((row) => row.connected_user_id));
         }
       }
       setLoading(false);
@@ -51,7 +52,7 @@ export default function LeaderboardPage() {
 
   const displayedLeaders = tab === 'global'
     ? leaders
-    : leaders.filter((l) => l.id === currentUser?.id || friendIds.includes(l.id));
+    : leaders.filter((entry) => networkIds.includes(entry.id));
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
@@ -93,18 +94,25 @@ export default function LeaderboardPage() {
                 tab === 'global' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'
               }`}
             >
-              Global
+              Global Standings
             </button>
             <button
-              onClick={() => setTab('friends')}
+              onClick={() => setTab('network')}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                tab === 'friends' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'
+                tab === 'network' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'
               }`}
             >
-              Friends ({friendIds.length})
+              My Network ({networkIds.length})
             </button>
           </div>
         </div>
+
+        <section className="bg-white border border-zinc-200 rounded-3xl p-5 mb-8 shadow-sm">
+          <h2 className="text-sm font-black uppercase tracking-tight text-zinc-900 mb-3">
+            Find Scouts
+          </h2>
+          <FindScouts currentUserId={currentUser?.id ?? null} />
+        </section>
 
         {!loading && displayedLeaders.length >= 3 && tab === 'global' && (
           <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
@@ -150,9 +158,13 @@ export default function LeaderboardPage() {
             </div>
           ) : displayedLeaders.length === 0 ? (
             <div className="p-12 text-center">
-              <p className="text-zinc-500 text-sm mb-4">No records found for this category yet.</p>
+              <p className="text-zinc-500 text-sm mb-4">
+                {tab === 'network'
+                  ? 'No connected scouts on the board yet.'
+                  : 'No records found for this category yet.'}
+              </p>
               <Link href="/profile" className="text-xs font-bold text-blue-600 uppercase tracking-wider hover:underline">
-                Find Friends in Profile →
+                Find Scouts in Profile →
               </Link>
             </div>
           ) : (
