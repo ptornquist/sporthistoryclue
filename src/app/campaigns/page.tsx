@@ -107,7 +107,7 @@ export default function CampaignsPage() {
       <AuthGateModal
         isOpen={showAuthGate}
         onClose={() => setShowAuthGate(false)}
-        featureName="Campaigns & Eras"
+        featureName="Storylines"
       />
 
       {/* Header */}
@@ -118,7 +118,7 @@ export default function CampaignsPage() {
               Sports<span className="text-blue-600">History</span>Clue
             </Link>
             <span className="text-[10px] font-mono uppercase bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-bold">
-              Campaigns
+              Storylines
             </span>
           </div>
 
@@ -127,10 +127,10 @@ export default function CampaignsPage() {
               Daily Drop
             </Link>
             <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Disciplines
+              By Sport
             </Link>
             <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Leaderboard
+              Standings
             </Link>
           </nav>
         </div>
@@ -143,7 +143,7 @@ export default function CampaignsPage() {
             Historical Storylines
           </span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-            Campaigns &amp; Eras
+            Storylines &amp; Eras
           </h1>
           <p className="text-zinc-500 text-sm mt-1 max-w-xl">
             Play through curated thematic collections of the most iconic clashes in sports history.

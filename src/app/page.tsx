@@ -429,7 +429,7 @@ function DailyDropArena() {
                   </span>
                   <div>
                     <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-amber-600">
-                      Campaigns &amp; Eras
+                      Storylines
                     </span>
                     <span className="text-[11px] text-zinc-400 font-medium">
                       Cold War on Ice, Miracle Upsets, etc.
@@ -447,7 +447,7 @@ function DailyDropArena() {
                   </span>
                   <div>
                     <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-emerald-600">
-                      Browse by Sport
+                      By Sport
                     </span>
                     <span className="text-[11px] text-zinc-400 font-medium">
                       Hockey, Football, Olympics, Boxing
@@ -465,7 +465,7 @@ function DailyDropArena() {
                   </span>
                   <div>
                     <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-purple-600">
-                      Leaderboard
+                      Standings
                     </span>
                     <span className="text-[11px] text-zinc-400 font-medium">
                       Top scouts &amp; daily high scores
@@ -483,7 +483,7 @@ function DailyDropArena() {
                   </span>
                   <div>
                     <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-black">
-                      Scout Profile
+                      Career Stats
                     </span>
                     <span className="text-[11px] text-zinc-400 font-medium">
                       Career points, accuracy &amp; history
