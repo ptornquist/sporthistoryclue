@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import AuthGateModal from '@/components/AuthGateModal';
+import Footer from '@/components/Footer';
 
 interface ChallengeItem {
   id: string;
@@ -214,6 +215,8 @@ export default function DisciplinesPage() {
           )}
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }

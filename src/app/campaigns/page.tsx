@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import AuthGateModal from '@/components/AuthGateModal';
+import Footer from '@/components/Footer';
 
 interface CampaignMatch {
   slug: string;
@@ -217,6 +218,8 @@ export default function CampaignsPage() {
           ))}
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }

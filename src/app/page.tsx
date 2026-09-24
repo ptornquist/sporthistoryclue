@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import AuthGateModal from '@/components/AuthGateModal';
+import Footer from '@/components/Footer';
 
 interface Challenge {
   id: string;
@@ -841,9 +842,7 @@ function DailyDropArena() {
       )}
 
       {/* Footer */}
-      <footer className="py-4 text-center text-[11px] text-zinc-400 font-mono relative z-0">
-        SportsHistoryClue · New drop released daily at 00:00 UTC
-      </footer>
+      <Footer />
     </main>
   );
 }
