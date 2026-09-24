@@ -14,7 +14,7 @@ interface Challenge {
   year: number;
   options?: string[];
   story?: string;
-  fun_facts?: string[];
+  fun_facts?: string[] | any;
 }
 
 function DailyDropArena() {
@@ -34,8 +34,30 @@ function DailyDropArena() {
   const [isArchiveMode, setIsArchiveMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [playerName, setPlayerName] = useState('Scout');
 
-  // Setup options helper
+  // Load player name from profile or localStorage
+  useEffect(() => {
+    const initPlayer = async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile?.username) {
+          setPlayerName(profile.username);
+          return;
+        }
+      }
+      const saved = localStorage.getItem('shc_handle');
+      if (saved) setPlayerName(saved);
+    };
+    initPlayer();
+  }, []);
+
   const setupOptions = (item: Challenge) => {
     if (item.options && Array.isArray(item.options) && item.options.length > 0) {
       setOptions([...item.options].sort(() => Math.random() - 0.5));
@@ -50,7 +72,6 @@ function DailyDropArena() {
     }
   };
 
-  // Fetch Daily Challenge
   useEffect(() => {
     const fetchDailyChallenge = async () => {
       setLoading(true);
@@ -83,7 +104,6 @@ function DailyDropArena() {
     fetchDailyChallenge();
   }, []);
 
-  // Handler to load another random fixture from the archive
   const handlePlayAnother = async () => {
     setLoading(true);
     setIsArchiveMode(true);
@@ -98,7 +118,7 @@ function DailyDropArena() {
       .from('challenges')
       .select('*')
       .neq('id', challenge?.id || '')
-      .limit(10);
+      .limit(15);
 
     if (data && data.length > 0) {
       const randomItem = data[Math.floor(Math.random() * data.length)];
@@ -158,11 +178,26 @@ function DailyDropArena() {
     });
   };
 
+  // Wordle-style emoji grid generator
   const handleShare = () => {
-    const url = `${window.location.origin}/?vs=Scout&clues=${currentClueIdx + 1}&pts=${score}`;
-    const text = `SportsHistoryClue 🏆\nI cracked today's mystery match on Clue ${currentClueIdx + 1} (${score.toLocaleString()} PTS)!\nCan you beat my score? 👉 ${url}`;
+    const clueNumber = currentClueIdx + 1;
+    const squares = Array.from({ length: 6 })
+      .map((_, i) => (i < clueNumber ? '🟩' : '⬛'))
+      .join('');
 
-    navigator.clipboard.writeText(text);
+    const handlePrompt = playerName === 'Scout' 
+      ? prompt('Enter your name or handle for the challenge link:', 'Scout') || 'Scout'
+      : playerName;
+
+    if (handlePrompt !== 'Scout') {
+      localStorage.setItem('shc_handle', handlePrompt);
+      setPlayerName(handlePrompt);
+    }
+
+    const shareUrl = `${window.location.origin}/?vs=${encodeURIComponent(handlePrompt)}&clues=${clueNumber}&pts=${score}`;
+    const shareText = `SportsHistoryClue 🏆\n${squares} (${score.toLocaleString()} PTS)\nSolved on Clue ${clueNumber} of 6!\nCan you beat ${handlePrompt}? 👉 ${shareUrl}`;
+
+    navigator.clipboard.writeText(shareText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -178,15 +213,22 @@ function DailyDropArena() {
   if (!challenge) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="text-xl font-black uppercase text-zinc-900 mb-2">No Matches Found</h2>
+        <h2 className="text-xl font-black uppercase text-zinc-900 mb-2">No Active Match Found</h2>
         <p className="text-zinc-500 text-xs">Check your database connection.</p>
       </main>
     );
   }
 
+  // Parse fun facts safely
+  const parsedFacts = Array.isArray(challenge.fun_facts)
+    ? challenge.fun_facts
+    : typeof challenge.fun_facts === 'string'
+    ? JSON.parse(challenge.fun_facts || '[]')
+    : [];
+
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Challenger Banner (Optional) */}
+      {/* Challenger Notification Bar */}
       {challenger && !isArchiveMode && (
         <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm">
           <span>⚡</span>
@@ -196,7 +238,7 @@ function DailyDropArena() {
         </div>
       )}
 
-      {/* Header Navigation */}
+      {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -241,7 +283,7 @@ function DailyDropArena() {
         </div>
       </header>
 
-      {/* Main Play / Dossier Body */}
+      {/* Main Deduction Arena */}
       <div className="max-w-2xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
         {gameWon ? (
           <div className="space-y-6 animate-in fade-in duration-300">
@@ -257,7 +299,6 @@ function DailyDropArena() {
                 Score: {score.toLocaleString()} PTS
               </p>
 
-              {/* Action Buttons: Play Another Match is Primary */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
                 <button
                   onClick={handlePlayAnother}
@@ -269,12 +310,12 @@ function DailyDropArena() {
                   onClick={handleShare}
                   className="px-5 py-3.5 bg-zinc-100 text-zinc-800 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200 transition-all"
                 >
-                  {copied ? '✓ Copied!' : 'Challenge a Friend ⚡'}
+                  {copied ? '✓ Challenge Copied!' : 'Challenge a Friend ⚡'}
                 </button>
               </div>
             </div>
 
-            {/* Match Dossier & Facts */}
+            {/* Dynamic Historical Dossier */}
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
@@ -282,29 +323,29 @@ function DailyDropArena() {
                 </span>
                 <p className="text-zinc-700 text-sm leading-relaxed font-medium">
                   {challenge.story ||
-                    `The 1992 United States Men's Olympic Basketball Team, nicknamed the "Dream Team", was the first American Olympic team to feature active NBA superstars including Michael Jordan, Magic Johnson, and Larry Bird. They dominated Barcelona 1992, defeating opponents by an average of 43.8 points.`}
+                    'An extraordinary contest remembered as one of the defining moments in international sporting history.'}
                 </p>
               </div>
 
-              <div className="border-t border-zinc-100 pt-5">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-3">
-                  Scout Lore &amp; Trivia
-                </span>
-                <ul className="space-y-2.5 text-xs text-zinc-600 font-medium">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">✦</span>
-                    <span>Head coach Chuck Daly famously did not call a single timeout throughout the entire tournament.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">✦</span>
-                    <span>Opposing players frequently asked for autographs and photos with Jordan, Barkley, and Magic right after final whistles.</span>
-                  </li>
-                </ul>
-              </div>
+              {parsedFacts.length > 0 && (
+                <div className="border-t border-zinc-100 pt-5">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-3">
+                    Scout Lore &amp; Trivia
+                  </span>
+                  <ul className="space-y-3 text-xs text-zinc-600 font-medium">
+                    {parsedFacts.map((fact: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2.5">
+                        <span className="text-blue-600 font-bold leading-tight">✦</span>
+                        <span className="leading-relaxed">{fact}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          /* Active Match Clues */
+          /* Active Deduction Card */
           <>
             <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm text-center mb-6 relative">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-4 inline-block">
@@ -327,7 +368,7 @@ function DailyDropArena() {
               </div>
             </div>
 
-            {/* Options */}
+            {/* 4 Suggestion Cards */}
             <div className="space-y-2">
               <span className="block text-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
                 Identify This Historical Matchup
@@ -360,7 +401,7 @@ function DailyDropArena() {
         )}
       </div>
 
-      {/* Modal on match conclusion */}
+      {/* Pop-up Modal on Solve */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl relative">
@@ -394,10 +435,10 @@ function DailyDropArena() {
                 Play Another Fixture →
               </button>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleShare}
                 className="w-full py-3 bg-zinc-100 text-zinc-800 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-zinc-200 transition-all"
               >
-                Read Match Dossier &amp; Lore
+                {copied ? '✓ Challenge Copied!' : 'Challenge a Friend ⚡'}
               </button>
             </div>
           </div>
