@@ -33,6 +33,7 @@ function DailyDropArena() {
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isArchiveMode, setIsArchiveMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -102,15 +103,13 @@ function DailyDropArena() {
         }
       }
 
-      // 2. Deterministic Daily Drop (Wordle Algorithm)
-      // Fetch all matches ordered deterministically by ID
+      // 2. Deterministic Daily Drop (Day Index Algorithm)
       const { data: allMatches } = await supabaseClient
         .from('challenges')
         .select('*')
         .order('id', { ascending: true });
 
       if (allMatches && allMatches.length > 0) {
-        // Calculate day number since epoch (UTC)
         const dayNumber = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
         const dailyIndex = dayNumber % allMatches.length;
         const todaysMatch = allMatches[dailyIndex];
@@ -285,6 +284,142 @@ function DailyDropArena() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+      {/* 1. Slide-Out Navigation Drawer */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setMenuOpen(false)}
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative ml-auto w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl p-6 flex flex-col justify-between z-10 animate-in slide-in-from-right duration-200">
+            <div>
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between pb-5 border-b border-zinc-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black tracking-tight uppercase">
+                    Game Modes &amp; Hub
+                  </span>
+                </div>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center font-bold text-zinc-400 hover:text-black transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Navigation Links to Old & New Modes */}
+              <nav className="mt-6 space-y-2">
+                <Link
+                  href="/"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition-colors group"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold">
+                    📅
+                  </span>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-blue-600">
+                      Daily Drop
+                    </span>
+                    <span className="text-[11px] text-zinc-400 font-medium">
+                      Today's global mystery match
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/campaigns"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition-colors group"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold">
+                    🗺️
+                  </span>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-amber-600">
+                      Campaigns &amp; Eras
+                    </span>
+                    <span className="text-[11px] text-zinc-400 font-medium">
+                      Cold War on Ice, Miracle Upsets, etc.
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/disciplines"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition-colors group"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold">
+                    🏒
+                  </span>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-emerald-600">
+                      Browse by Sport
+                    </span>
+                    <span className="text-[11px] text-zinc-400 font-medium">
+                      Hockey, Football, Olympics, Boxing
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/leaderboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition-colors group"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-sm font-bold">
+                    🏆
+                  </span>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-purple-600">
+                      Leaderboard
+                    </span>
+                    <span className="text-[11px] text-zinc-400 font-medium">
+                      Top scouts &amp; daily high scores
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition-colors group"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center text-sm font-bold">
+                    👤
+                  </span>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider block text-zinc-900 group-hover:text-black">
+                      Scout Profile
+                    </span>
+                    <span className="text-[11px] text-zinc-400 font-medium">
+                      Career points, accuracy &amp; history
+                    </span>
+                  </div>
+                </Link>
+              </nav>
+            </div>
+
+            {/* Drawer Footer Status */}
+            <div className="pt-6 border-t border-zinc-100 space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-400">Scout Handle</span>
+                <span className="font-bold text-zinc-800">{playerName}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-400">Daily Streak</span>
+                <span className="font-bold text-amber-600">🔥 {streak} Days</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Challenger Notification Bar */}
       {challenger && !isArchiveMode && (
         <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm sticky top-0 z-30">
@@ -295,8 +430,8 @@ function DailyDropArena() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-[41px] z-20">
+      {/* Main Header with Hamburger Menu */}
+      <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Link href="/" className="text-lg font-black tracking-tighter uppercase">
@@ -307,7 +442,7 @@ function DailyDropArena() {
             </span>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4 sm:gap-5">
             <div>
               <span className="block text-[9px] font-mono font-bold uppercase text-zinc-400 text-right">Potential</span>
               <span className="font-mono font-black text-blue-600 text-sm">{score.toLocaleString()} PTS</span>
@@ -333,13 +468,19 @@ function DailyDropArena() {
             {!isArchiveMode && !specificMatch && (
               <div className="hidden sm:flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
                 <span>🔥</span>
-                <span>{streak} DAY{streak === 1 ? '' : 'S'}</span>
+                <span>{streak}D</span>
               </div>
             )}
 
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black">
-              Leaderboard
-            </Link>
+            {/* Hamburger Menu Button */}
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+              aria-label="Open Modes Menu"
+            >
+              <span>☰</span>
+              <span className="hidden sm:inline">Modes</span>
+            </button>
           </div>
         </div>
       </header>
@@ -393,6 +534,7 @@ function DailyDropArena() {
                 Score: {score.toLocaleString()} PTS
               </p>
 
+              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6 relative z-20">
                 <button
                   onClick={handlePlayAnother}
@@ -405,6 +547,12 @@ function DailyDropArena() {
                   className="px-5 py-3.5 bg-zinc-100 text-zinc-800 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200 transition-all"
                 >
                   {copied ? '✓ Result Copied!' : isDuel ? `Reply to ${challenger} ⚡` : 'Challenge a Friend ⚡'}
+                </button>
+                <button
+                  onClick={() => setMenuOpen(true)}
+                  className="px-4 py-3.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-zinc-100 transition-all"
+                >
+                  More Modes ☰
                 </button>
               </div>
             </div>
