@@ -7,6 +7,7 @@ import { supabaseClient } from '@/lib/supabase/client';
 
 interface Challenge {
   id: string;
+  slug?: string;
   title: string;
   category: string;
   clues: string[];
@@ -22,6 +23,7 @@ function DailyDropArena() {
   const challenger = searchParams.get('vs');
   const challengerClues = searchParams.get('clues');
   const challengerPts = searchParams.get('pts');
+  const specificMatch = searchParams.get('match');
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
@@ -36,7 +38,6 @@ function DailyDropArena() {
   const [copied, setCopied] = useState(false);
   const [playerName, setPlayerName] = useState('Scout');
 
-  // Load player name from profile or localStorage
   useEffect(() => {
     const initPlayer = async () => {
       const { data: { user } } = await supabaseClient.auth.getUser();
@@ -73,36 +74,51 @@ function DailyDropArena() {
   };
 
   useEffect(() => {
-    const fetchDailyChallenge = async () => {
+    const fetchChallenge = async () => {
       setLoading(true);
-      const savedDate = localStorage.getItem('shc_daily_date');
       const todayStr = new Date().toISOString().slice(0, 10);
+      let matchQuery = supabaseClient.from('challenges').select('*');
 
-      const { data } = await supabaseClient
-        .from('challenges')
-        .select('*')
-        .order('id', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      // 1. If invited to a specific match, load that exact fixture
+      if (specificMatch) {
+        matchQuery = matchQuery.or(`slug.eq.${specificMatch},id.eq.${specificMatch}`);
+      } else {
+        // 2. Otherwise load today's scheduled fixture
+        matchQuery = matchQuery.eq('drop_date', todayStr);
+      }
+
+      let { data } = await matchQuery.limit(1).maybeSingle();
+
+      // Fallback: If no match is scheduled for today's date yet, load the first available fixture
+      if (!data) {
+        const fallback = await supabaseClient
+          .from('challenges')
+          .select('*')
+          .order('id', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        data = fallback.data;
+      }
 
       if (data) {
         setChallenge(data);
         setupOptions(data);
 
-        if (savedDate === todayStr) {
-          const savedScore = localStorage.getItem('shc_daily_score');
-          if (savedScore) {
-            setScore(parseInt(savedScore, 10));
-            setGameWon(true);
-            setShowModal(false);
-          }
+        // Check if this fixture was already completed locally
+        const savedScoreKey = `shc_score_${data.slug || data.id}`;
+        const savedScore = localStorage.getItem(savedScoreKey);
+
+        if (savedScore) {
+          setScore(parseInt(savedScore, 10));
+          setGameWon(true);
+          setShowModal(false);
         }
       }
       setLoading(false);
     };
 
-    fetchDailyChallenge();
-  }, []);
+    fetchChallenge();
+  }, [specificMatch]);
 
   const handlePlayAnother = async () => {
     setLoading(true);
@@ -118,7 +134,7 @@ function DailyDropArena() {
       .from('challenges')
       .select('*')
       .neq('id', challenge?.id || '')
-      .limit(15);
+      .limit(20);
 
     if (data && data.length > 0) {
       const randomItem = data[Math.floor(Math.random() * data.length)];
@@ -140,11 +156,8 @@ function DailyDropArena() {
       setGameWon(true);
       setShowModal(true);
 
-      if (!isArchiveMode) {
-        const todayStr = new Date().toISOString().slice(0, 10);
-        localStorage.setItem('shc_daily_date', todayStr);
-        localStorage.setItem('shc_daily_score', score.toString());
-      }
+      const scoreKey = `shc_score_${challenge.slug || challenge.id}`;
+      localStorage.setItem(scoreKey, score.toString());
       saveScore(score);
     } else {
       setSelectedWrong((prev) => [...prev, option]);
@@ -178,14 +191,13 @@ function DailyDropArena() {
     });
   };
 
-  // Wordle-style emoji grid generator
   const handleShare = () => {
     const clueNumber = currentClueIdx + 1;
     const squares = Array.from({ length: 6 })
       .map((_, i) => (i < clueNumber ? '🟩' : '⬛'))
       .join('');
 
-    const handlePrompt = playerName === 'Scout' 
+    const handlePrompt = playerName === 'Scout'
       ? prompt('Enter your name or handle for the challenge link:', 'Scout') || 'Scout'
       : playerName;
 
@@ -194,7 +206,8 @@ function DailyDropArena() {
       setPlayerName(handlePrompt);
     }
 
-    const shareUrl = `${window.location.origin}/?vs=${encodeURIComponent(handlePrompt)}&clues=${clueNumber}&pts=${score}`;
+    const matchIdentifier = challenge?.slug || challenge?.id;
+    const shareUrl = `${window.location.origin}/?vs=${encodeURIComponent(handlePrompt)}&clues=${clueNumber}&pts=${score}&match=${matchIdentifier}`;
     const shareText = `SportsHistoryClue 🏆\n${squares} (${score.toLocaleString()} PTS)\nSolved on Clue ${clueNumber} of 6!\nCan you beat ${handlePrompt}? 👉 ${shareUrl}`;
 
     navigator.clipboard.writeText(shareText);
@@ -214,12 +227,11 @@ function DailyDropArena() {
     return (
       <main className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 text-center">
         <h2 className="text-xl font-black uppercase text-zinc-900 mb-2">No Active Match Found</h2>
-        <p className="text-zinc-500 text-xs">Check your database connection.</p>
+        <p className="text-zinc-500 text-xs">Verify table population in Supabase.</p>
       </main>
     );
   }
 
-  // Parse fun facts safely
   const parsedFacts = Array.isArray(challenge.fun_facts)
     ? challenge.fun_facts
     : typeof challenge.fun_facts === 'string'
@@ -287,7 +299,6 @@ function DailyDropArena() {
       <div className="max-w-2xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
         {gameWon ? (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Dossier Header Card */}
             <div className="bg-white border-2 border-blue-600 rounded-3xl p-6 md:p-8 shadow-sm text-center">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-3 inline-block">
                 Match Solved · Clue {currentClueIdx + 1} of 6
@@ -315,7 +326,6 @@ function DailyDropArena() {
               </div>
             </div>
 
-            {/* Dynamic Historical Dossier */}
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
@@ -345,7 +355,6 @@ function DailyDropArena() {
             </div>
           </div>
         ) : (
-          /* Active Deduction Card */
           <>
             <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm text-center mb-6 relative">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-4 inline-block">
@@ -368,7 +377,6 @@ function DailyDropArena() {
               </div>
             </div>
 
-            {/* 4 Suggestion Cards */}
             <div className="space-y-2">
               <span className="block text-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
                 Identify This Historical Matchup
@@ -401,7 +409,6 @@ function DailyDropArena() {
         )}
       </div>
 
-      {/* Pop-up Modal on Solve */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl relative">
@@ -445,7 +452,6 @@ function DailyDropArena() {
         </div>
       )}
 
-      {/* Footer */}
       <footer className="py-4 text-center text-[11px] text-zinc-400 font-mono">
         SportsHistoryClue · New drop released daily at 00:00 UTC
       </footer>
