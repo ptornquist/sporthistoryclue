@@ -45,50 +45,43 @@ export default function ProfilePage() {
     initProfile();
   }, [router]);
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
-      if (!e.target.files || e.target.files.length === 0 || !currentUser) {
-        return;
-      }
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !currentUser) {
+      return;
+    }
 
-      const file = e.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${currentUser.id}/avatar.${fileExt}`;
+    const file = e.target.files[0];
+    setUploading(true);
 
-      // Ladda upp till Supabase Storage ('avatars' bucket)
-      const { error: uploadError } = await supabaseClient.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        // Skapa en optimerad 160x160 avatar
+        const canvas = document.createElement('canvas');
+        const size = 160;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
 
-      if (uploadError) {
-        // Fallback: om Storage-bucket inte är konfigurerad än kan vi konvertera till data-URL
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          const base64Url = reader.result as string;
-          setAvatarUrl(base64Url);
+        if (ctx) {
+          const minDim = Math.min(img.width, img.height);
+          const startX = (img.width - minDim) / 2;
+          const startY = (img.height - minDim) / 2;
+          ctx.drawImage(img, startX, startY, minDim, minDim, 0, 0, size, size);
+          
+          const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          setAvatarUrl(optimizedBase64);
+
           await supabaseClient
             .from('profiles')
-            .upsert({ id: currentUser.id, avatar_url: base64Url });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        const { data: publicUrlData } = supabaseClient.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
-
-        const publicUrl = publicUrlData.publicUrl;
-        setAvatarUrl(publicUrl);
-
-        await supabaseClient
-          .from('profiles')
-          .upsert({ id: currentUser.id, avatar_url: publicUrl });
-      }
-    } catch (err) {
-      console.error('Error uploading avatar:', err);
-    } finally {
-      setUploading(false);
-    }
+            .upsert({ id: currentUser.id, avatar_url: optimizedBase64 });
+        }
+        setUploading(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSignOut = async () => {
@@ -114,7 +107,10 @@ export default function ProfilePage() {
           <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
             <div className="flex items-center gap-5">
               {/* Klickbar Avatar för bilduppladdning */}
-              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <div 
+                className="relative group cursor-pointer" 
+                onClick={() => fileInputRef.current?.click()}
+              >
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -127,7 +123,7 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold uppercase tracking-wider">
+                <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold uppercase tracking-wider text-center p-1">
                   {uploading ? 'Sparar...' : 'Byt bild'}
                 </div>
 
