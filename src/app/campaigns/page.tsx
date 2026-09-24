@@ -1,7 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import AuthGateModal from '@/components/AuthGateModal';
 
 interface CampaignMatch {
   slug: string;
@@ -77,8 +80,35 @@ const CAMPAIGNS: Campaign[] = [
 ];
 
 export default function CampaignsPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<unknown>(null);
+  const [showAuthGate, setShowAuthGate] = useState(false);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    supabaseClient.auth
+      .getUser()
+      .then(({ data }) => setCurrentUser(data.user ?? null))
+      .catch(() => setCurrentUser(null));
+  }, []);
+
+  // Campaign fixtures live in the Scout archive, so guests are prompted to sign up first.
+  const handleStartMatch = (slug: string) => {
+    if (!currentUser) {
+      setShowAuthGate(true);
+      return;
+    }
+    router.push(`/?match=${slug}`);
+  };
+
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
+      <AuthGateModal
+        isOpen={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        featureName="Campaigns & Eras"
+      />
+
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -148,10 +178,11 @@ export default function CampaignsPage() {
                     Fixtures in this storyline
                   </span>
                   {campaign.matches.map((match) => (
-                    <Link
+                    <button
                       key={match.slug}
-                      href={`/?match=${match.slug}`}
-                      className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 hover:bg-blue-50 border border-zinc-100 hover:border-blue-200 transition-colors group"
+                      type="button"
+                      onClick={() => handleStartMatch(match.slug)}
+                      className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-50 hover:bg-blue-50 border border-zinc-100 hover:border-blue-200 transition-colors text-left group"
                     >
                       <div>
                         <span className="text-xs font-bold text-zinc-800 group-hover:text-blue-600 block">
@@ -164,7 +195,7 @@ export default function CampaignsPage() {
                       <span className="text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                         Play →
                       </span>
-                    </Link>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -174,12 +205,13 @@ export default function CampaignsPage() {
                   {campaign.matches.length} Historical{' '}
                   {campaign.matches.length === 1 ? 'Match' : 'Matches'}
                 </span>
-                <Link
-                  href={`/?match=${campaign.matches[0].slug}`}
+                <button
+                  type="button"
+                  onClick={() => handleStartMatch(campaign.matches[0].slug)}
                   className="px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
                 >
                   Start Campaign
-                </Link>
+                </button>
               </div>
             </article>
           ))}
