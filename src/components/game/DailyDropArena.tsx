@@ -14,6 +14,7 @@ import {
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
+import { rememberSolvedCase } from '@/lib/solved-cases';
 
 interface DailyFixture {
   id: string;
@@ -240,6 +241,7 @@ export function DailyDropArena() {
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
         setGameWon(true);
+        rememberSolvedCase(challenge.id, score);
         const newStreak = streak + 1;
         setStreak(newStreak);
         localStorage.setItem('shc_streak', newStreak.toString());

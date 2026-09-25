@@ -5,14 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import AuthGateModal from '@/components/AuthGateModal';
+import { FixturePreview } from '@/components/game/FixturePreview';
+import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
-
-interface CampaignMatch {
-  slug: string;
-  title: string;
-  year: number;
-  category: string;
-}
+import { findCase, previewFromCase } from '@/lib/case-files';
 
 interface Campaign {
   id: string;
@@ -21,7 +17,7 @@ interface Campaign {
   description: string;
   icon: string;
   accent: string;
-  matches: CampaignMatch[];
+  matchSlugs: string[];
 }
 
 const CAMPAIGNS: Campaign[] = [
@@ -33,10 +29,7 @@ const CAMPAIGNS: Campaign[] = [
     accent: 'text-sky-600',
     description:
       'High-stakes geopolitical drama played out across the rinks of Moscow, Lake Placid, and Prague.',
-    matches: [
-      { slug: 'miracle-on-ice-1980', title: 'USA vs Soviet Union (Winter Olympics)', year: 1980, category: 'Ice Hockey' },
-      { slug: 'summit-series-1972', title: 'Canada vs Soviet Union (Game 8)', year: 1972, category: 'Ice Hockey' },
-    ],
+    matchSlugs: ['miracle-on-ice-1980', 'summit-series-1972'],
   },
   {
     id: 'olympic-miracles',
@@ -46,11 +39,7 @@ const CAMPAIGNS: Campaign[] = [
     accent: 'text-amber-600',
     description:
       'Generational athletes redefining greatness under the global Olympic spotlight.',
-    matches: [
-      { slug: 'comaneci-1976', title: 'Nadia Comăneci scores the first perfect 10', year: 1976, category: 'Gymnastics' },
-      { slug: 'dream-team-1992', title: 'USA Dream Team vs Croatia', year: 1992, category: 'Basketball' },
-      { slug: 'bolt-beijing-2008', title: 'Usain Bolt 100m World Record', year: 2008, category: 'Athletics' },
-    ],
+    matchSlugs: ['comaneci-1976', 'dream-team-1992', 'bolt-beijing-2008'],
   },
   {
     id: 'world-cup-epics',
@@ -60,10 +49,7 @@ const CAMPAIGNS: Campaign[] = [
     accent: 'text-emerald-600',
     description:
       'Controversy, boy prodigies, and legendary goals that defined global football.',
-    matches: [
-      { slug: 'pele-sweden-1958', title: 'Brazil vs Sweden (Pelé’s Breakthrough)', year: 1958, category: 'Football' },
-      { slug: 'hand-of-god-1986', title: 'Argentina vs England (Maradona Drama)', year: 1986, category: 'Football' },
-    ],
+    matchSlugs: ['pele-sweden-1958', 'hand-of-god-1986'],
   },
   {
     id: 'rivalries-of-the-century',
@@ -73,17 +59,27 @@ const CAMPAIGNS: Campaign[] = [
     accent: 'text-rose-600',
     description:
       'Clashes of opposite personalities, styles, and philosophies under immense pressure.',
-    matches: [
-      { slug: 'rumble-in-the-jungle-1974', title: 'Muhammad Ali vs George Foreman', year: 1974, category: 'Boxing' },
-      { slug: 'wimbledon-epic-1980', title: 'Björn Borg vs John McEnroe', year: 1980, category: 'Tennis' },
-    ],
+    matchSlugs: ['rumble-in-the-jungle-1974', 'wimbledon-epic-1980'],
   },
 ];
+
+const STORYLINES = CAMPAIGNS.map((campaign) => ({
+  ...campaign,
+  matches: campaign.matchSlugs.flatMap((slug) => {
+    const file = findCase(slug);
+    return file ? [previewFromCase(file)] : [];
+  }),
+}));
 
 export default function CampaignsPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<unknown>(null);
   const [showAuthGate, setShowAuthGate] = useState(false);
+  const solved = useSolvedFixtures(
+    STORYLINES.flatMap((campaign) =>
+      campaign.matches.map((match) => ({ key: match.key, lookupIds: match.lookupIds })),
+    ),
+  );
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -152,7 +148,7 @@ export default function CampaignsPage() {
 
         {/* Campaign Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {CAMPAIGNS.map((campaign) => (
+          {STORYLINES.map((campaign) => (
             <article
               key={campaign.id}
               className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:border-blue-200 hover:shadow-md transition-all"
@@ -178,26 +174,20 @@ export default function CampaignsPage() {
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block">
                     Fixtures in this storyline
                   </span>
-                  {campaign.matches.map((match) => (
-                    <button
-                      key={match.slug}
-                      type="button"
-                      onClick={() => handleStartMatch(match.slug)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-50 hover:bg-blue-50 border border-zinc-100 hover:border-blue-200 transition-colors text-left group"
-                    >
-                      <div>
-                        <span className="text-xs font-bold text-zinc-800 group-hover:text-blue-600 block">
-                          {match.title}
-                        </span>
-                        <span className="text-[10px] font-mono text-zinc-400">
-                          {match.year} · {match.category}
-                        </span>
-                      </div>
-                      <span className="text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Play →
-                      </span>
-                    </button>
-                  ))}
+                  {campaign.matches.map((match) => {
+                    const record = solved[match.key];
+                    return (
+                      <FixturePreview
+                        key={match.key}
+                        title={match.title}
+                        year={match.year}
+                        context={match.context}
+                        solvedScore={record?.score ?? null}
+                        matchup={record?.matchup ?? null}
+                        onDeduce={() => handleStartMatch(match.key)}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
@@ -208,7 +198,7 @@ export default function CampaignsPage() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => handleStartMatch(campaign.matches[0].slug)}
+                  onClick={() => handleStartMatch(campaign.matches[0].key)}
                   className="px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
                 >
                   Start Campaign

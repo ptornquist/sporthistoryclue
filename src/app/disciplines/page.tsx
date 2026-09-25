@@ -5,14 +5,22 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import AuthGateModal from '@/components/AuthGateModal';
+import { FixturePreview } from '@/components/game/FixturePreview';
+import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
+import {
+  CASE_FILES,
+  categoryMatchesSport,
+  previewFromArchive,
+  previewFromCase,
+  type FixturePreviewModel,
+} from '@/lib/case-files';
 
 interface ChallengeItem {
   id: string;
-  slug?: string;
-  title: string;
-  subject: string;
-  category: string;
+  slug?: string | null;
+  title?: string | null;
+  category?: string | null;
   year: number;
 }
 
@@ -26,7 +34,7 @@ interface SportGroup {
 const SPORTS: SportGroup[] = [
   { id: 'ice_hockey', name: 'Ice Hockey', icon: '🏒', description: 'Olympic shootouts, Cold War clashes & Stanley Cup lore.' },
   { id: 'football', name: 'Football', icon: '⚽', description: 'World Cup finals, miracle comebacks & golden generations.' },
-  { id: 'boxing', name: 'Boxing', icon: '🥊', description: 'Rumble in the Jungle, heavyweight wars & upset champions.' },
+  { id: 'boxing', name: 'Boxing', icon: '🥊', description: 'Heavyweight wars, long nights & upset champions.' },
   { id: 'tennis', name: 'Tennis', icon: '🎾', description: 'Historic tiebreaks, Wimbledon grass epics & five-set marathons.' },
   { id: 'athletics', name: 'Athletics', icon: '🏃', description: 'Shattered world records and iconic Olympic track moments.' },
 ];
@@ -39,6 +47,19 @@ export default function DisciplinesPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<unknown>(null);
   const [showAuthGate, setShowAuthGate] = useState(false);
+
+  const localFixtures = CASE_FILES.filter((file) => file.sport === selectedSport).map(previewFromCase);
+  const remoteFixtures = challenges
+    .filter((challenge) => categoryMatchesSport(challenge.category ?? undefined, selectedSport))
+    .map((challenge) => previewFromArchive(challenge))
+    .filter(
+      (fixture) =>
+        !localFixtures.some((local) => local.lookupIds.some((id) => fixture.lookupIds.includes(id))),
+    );
+  const fixtures: FixturePreviewModel[] = [...localFixtures, ...remoteFixtures];
+  const solved = useSolvedFixtures(
+    fixtures.map((fixture) => ({ key: fixture.key, lookupIds: fixture.lookupIds })),
+  );
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -63,7 +84,6 @@ export default function DisciplinesPage() {
       setError(null);
 
       if (!isSupabaseConfigured) {
-        setError('Supabase is not configured. Add your project keys to load fixtures.');
         setLoading(false);
         return;
       }
@@ -71,7 +91,7 @@ export default function DisciplinesPage() {
       try {
         const { data, error: queryError } = await supabaseClient
           .from('challenges')
-          .select('id, slug, title, subject, category, year')
+          .select('id, slug, title, category, year')
           .order('year', { ascending: false });
 
         if (queryError) throw queryError;
@@ -88,9 +108,6 @@ export default function DisciplinesPage() {
   }, []);
 
   const activeSport = SPORTS.find((sport) => sport.id === selectedSport);
-  const filteredChallenges = challenges.filter(
-    (challenge) => challenge.category?.toLowerCase() === selectedSport.toLowerCase(),
-  );
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
@@ -172,45 +189,35 @@ export default function DisciplinesPage() {
               <p className="text-xs text-zinc-400 mt-0.5">{activeSport?.description}</p>
             </div>
             <span className="shrink-0 text-xs font-mono font-bold text-zinc-400 bg-zinc-100 px-3 py-1 rounded-full">
-              {filteredChallenges.length} matches
+              {fixtures.length} matches
             </span>
           </div>
 
-          {loading ? (
+          {fixtures.length === 0 && loading ? (
             <div className="py-12 text-center text-xs font-mono text-zinc-400 uppercase tracking-widest">
               Loading fixtures…
             </div>
-          ) : error ? (
-            <div className="py-12 text-center text-zinc-400 text-xs font-medium">{error}</div>
-          ) : filteredChallenges.length === 0 ? (
-            <div className="py-12 text-center text-zinc-400 text-xs">
-              No matches found for this sport yet. New fixtures added weekly.
+          ) : fixtures.length === 0 ? (
+            <div className="py-12 text-center text-zinc-400 text-xs font-medium">
+              {error ?? 'No matches found for this sport yet. New fixtures added weekly.'}
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredChallenges.map((challenge) => (
-                <div
-                  key={challenge.id}
-                  className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/60 transition-all group"
-                >
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-black text-zinc-900 group-hover:text-blue-600 transition-colors truncate">
-                      {challenge.title}
-                    </h3>
-                    <p className="text-xs text-zinc-500 font-medium mt-0.5 truncate">
-                      {challenge.subject} · <span className="font-mono">{challenge.year}</span>
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDeduce(challenge.slug || challenge.id)}
-                    className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all shadow-sm"
-                  >
-                    Deduce →
-                  </button>
-                </div>
-              ))}
+              {fixtures.map((fixture) => {
+                const record = solved[fixture.key];
+                return (
+                  <FixturePreview
+                    key={fixture.key}
+                    density="row"
+                    title={fixture.title}
+                    year={fixture.year}
+                    context={fixture.context}
+                    solvedScore={record?.score ?? null}
+                    matchup={record?.matchup ?? null}
+                    onDeduce={() => handleDeduce(fixture.lookupIds[0] || fixture.key)}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
