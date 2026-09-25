@@ -1,4 +1,5 @@
 import {
+  fourDistinctOptions,
   loadDailyFixture,
   parseDateKey,
   toPublicDaily,
@@ -19,5 +20,10 @@ export async function GET(request: Request) {
   }
 
   const fixture = await loadDailyFixture(dateKey);
-  return Response.json(toPublicDaily(fixture));
+  const payload = toPublicDaily(fixture);
+  const rawOptions = Array.from(new Set(payload.options.filter(Boolean)));
+  return Response.json({
+    ...payload,
+    options: fourDistinctOptions(rawOptions, rawOptions[0] ?? "", rawOptions.slice(1)),
+  });
 }

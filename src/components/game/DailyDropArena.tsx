@@ -33,6 +33,37 @@ function dayIndexFromKey(dateKey: string): number {
   return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
+const OLYMPIC_DECOYS = [
+  '1896 Athens: First Modern Olympiad (1896)',
+  '1936 Berlin Olympics (1936)',
+  '1968 Mexico City: Black Power Salute (1968)',
+  '1988 Seoul Olympics (1988)',
+];
+
+const GENERAL_DECOYS = [
+  '1980 Lake Placid: USA vs Soviet Union',
+  '1992 Barcelona: USA Dream Team vs Croatia',
+  '1994 Lillehammer: Sweden vs Canada',
+  '1974 Munich: West Germany vs Netherlands',
+];
+
+function setupOptions(options: string[], category: string): string[] {
+  const cleanOptions = Array.from(new Set(options.filter(Boolean)));
+  const pool = /olympic/i.test(category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
+  for (const decoy of [...pool, ...GENERAL_DECOYS]) {
+    if (cleanOptions.length >= 4) break;
+    if (!cleanOptions.includes(decoy)) cleanOptions.push(decoy);
+  }
+  const four = cleanOptions.slice(0, 4);
+  for (let index = four.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    const current = four[index];
+    four[index] = four[swap];
+    four[swap] = current;
+  }
+  return four;
+}
+
 function shiftDateKey(dateKey: string, days: number): string {
   const [year, month, day] = dateKey.split('-').map(Number);
   const next = new Date(Date.UTC(year, month - 1, day));
@@ -45,6 +76,7 @@ export function DailyDropArena() {
   const [duelPts, setDuelPts] = useState(0);
 
   const [challenge, setChallenge] = useState<DailyFixture | null>(null);
+  const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
@@ -138,6 +170,7 @@ export function DailyDropArena() {
         }
         const fixture = (await response.json()) as DailyFixture;
         whistled.current = false;
+        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
         setChallenge(fixture);
       } catch {
         showToast('Could not load this drop.');
@@ -464,7 +497,7 @@ export function DailyDropArena() {
                 Identify the Historical Matchup
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {challenge.options.map((option, idx) => {
+                {choiceOptions.map((option, idx) => {
                   const isWrong = selectedWrong.includes(option);
                   return (
                     <button
