@@ -1,70 +1,59 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import AuthGateModal from '@/components/AuthGateModal';
 
-interface Challenge {
+interface DailyFixture {
   id: string;
-  slug?: string;
-  title: string;
+  date_key: string;
   category: string;
   clues: string[];
-  subject: string;
-  year: number;
-  options?: string[];
-  story?: string;
+  options: string[];
 }
 
-const FALLBACK_CHALLENGE: Challenge = {
-  id: 'miracle-1980',
-  title: 'Miracle on Ice',
-  category: 'Ice Hockey',
-  year: 1980,
-  subject: 'USA vs Soviet Union (Winter Olympics)',
-  clues: [
-    'A squad of amateur and collegiate players faces off against four-time defending gold medalists.',
-    'Contested in Lake Placid, New York.',
-    'Herb Brooks coached the underdog roster with revolutionary conditioning.',
-    'Team captain Mike Eruzione scores the historic game-winner with 10:00 remaining.',
-    'Al Michaels delivers the legendary broadcast call: "Do you believe in miracles?!"',
-    'Final score: USA 4, Soviet Union 3 on February 22, 1980.'
-  ],
-  options: [
-    'USA vs Soviet Union (1980)',
-    'Canada vs Soviet Union (1972)',
-    'USA Dream Team vs Croatia (1992)',
-    'Sweden vs Canada (1994)'
-  ]
-};
+interface Solution {
+  subject: string;
+  year: number;
+}
+
+function dayIndexFromKey(dateKey: string): number {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
+function shiftDateKey(dateKey: string, days: number): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const next = new Date(Date.UTC(year, month - 1, day));
+  next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().split('T')[0];
+}
 
 function DailyDropArena() {
   const searchParams = useSearchParams();
   const duelHandle = searchParams.get('duel');
   const duelPtsParam = searchParams.get('pts');
   const duelPts = duelPtsParam ? parseInt(duelPtsParam, 10) || 0 : 0;
-  const specificMatch = searchParams.get('match');
 
-  const [challenge, setChallenge] = useState<Challenge | null>(
-    isSupabaseConfigured ? null : FALLBACK_CHALLENGE,
-  );
+  const [challenge, setChallenge] = useState<DailyFixture | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
   const [score, setScore] = useState(10000);
-  const [options, setOptions] = useState<string[]>(() =>
-    isSupabaseConfigured ? [] : [...(FALLBACK_CHALLENGE.options ?? [])],
-  );
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
-  const [copied, setCopied] = useState(false);
+  const [guessing, setGuessing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authGateOpen, setAuthGateOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -73,101 +62,73 @@ function DailyDropArena() {
 
   useEffect(() => {
     const initPlayer = async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        setCurrentUser(user);
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('username, streak')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (profile?.username) setPlayerName(profile.username);
-        else if (user.email) setPlayerName(user.email.split('@')[0]);
-
-        if (profile?.streak) setStreak(profile.streak);
-      } else {
+      if (!isSupabaseConfigured) {
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
         const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
         setStreak(savedStreak);
+        setAuthReady(true);
+        return;
+      }
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+          setCurrentUser({ id: user.id, email: user.email });
+          const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('username, streak')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profile?.username) setPlayerName(profile.username);
+          else if (user.email) setPlayerName(user.email.split('@')[0]);
+
+          if (profile?.streak) setStreak(profile.streak);
+        } else {
+          const saved = localStorage.getItem('shc_handle');
+          if (saved) setPlayerName(saved);
+          const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
+          setStreak(savedStreak);
+        }
+      } catch {
+        const saved = localStorage.getItem('shc_handle');
+        if (saved) setPlayerName(saved);
+      } finally {
+        setAuthReady(true);
       }
     };
 
     initPlayer();
   }, []);
 
-  const setupOptions = (item: Challenge) => {
-    if (item.options && Array.isArray(item.options) && item.options.length > 0) {
-      setOptions([...item.options].sort(() => Math.random() - 0.5));
-    } else {
-      const correct = `${item.subject} (${item.year})`;
-      setOptions([
-        correct,
-        '1992 Barcelona: USA Dream Team vs Croatia',
-        '1972 Munich: USA vs Soviet Union',
-        '1994 Lillehammer: Sweden vs Canada',
-      ].sort(() => Math.random() - 0.5));
-    }
-  };
-
   useEffect(() => {
     const fetchChallenge = async () => {
-      if (!isSupabaseConfigured) {
-        setChallenge(FALLBACK_CHALLENGE);
-        setupOptions(FALLBACK_CHALLENGE);
-        setLoading(false);
-        return;
-      }
       setLoading(true);
+      setSolution(null);
+      setCurrentClueIdx(0);
+      setScore(10000);
+      setSelectedWrong([]);
+      setGameWon(false);
+      setGameOver(false);
       try {
-        if (specificMatch) {
-          const { data: matched } = await supabaseClient
-            .from('challenges')
-            .select('*')
-            .or(`slug.eq.${specificMatch},id.eq.${specificMatch}`)
-            .limit(1)
-            .maybeSingle();
-
-          if (matched) {
-            setChallenge(matched);
-            setupOptions(matched);
-            setLoading(false);
-            return;
-          }
+        const query = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
+        const response = await fetch(`/api/daily${query}`);
+        if (!response.ok) {
+          throw new Error('Daily drop unavailable');
         }
-
-        const withTimeout = <T,>(promise: PromiseLike<T>, ms = 4000): Promise<T> =>
-          Promise.race([
-            Promise.resolve(promise),
-            new Promise<T>((_, reject) => {
-              setTimeout(() => reject(new Error('Challenge request timed out.')), ms);
-            }),
-          ]);
-
-        const { data: allMatches } = await withTimeout(
-          supabaseClient.from('challenges').select('*').order('id', { ascending: true }),
-        );
-
-        if (allMatches && allMatches.length > 0) {
-          const dayNumber = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
-          const todaysMatch = allMatches[dayNumber % allMatches.length];
-          setChallenge(todaysMatch);
-          setupOptions(todaysMatch);
-        } else {
-          setChallenge(FALLBACK_CHALLENGE);
-          setupOptions(FALLBACK_CHALLENGE);
-        }
+        const fixture = (await response.json()) as DailyFixture;
+        setChallenge(fixture);
       } catch {
-        setChallenge(FALLBACK_CHALLENGE);
-        setupOptions(FALLBACK_CHALLENGE);
+        showToast('Could not load this drop.');
+        setChallenge(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchChallenge();
-  }, [specificMatch]);
+  }, [selectedDate]);
 
   const handleRevealClue = () => {
     if (!challenge) return;
@@ -177,30 +138,78 @@ function DailyDropArena() {
     }
   };
 
-  const handleGuess = (option: string) => {
-    if (!challenge || gameWon || gameOver) return;
+  const openDate = (dateKey: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    if (dateKey !== today && (!authReady || !currentUser)) {
+      setAuthGateOpen(true);
+      return;
+    }
+    setSelectedDate(dateKey === today ? null : dateKey);
+  };
 
-    const isMatch = option.includes(challenge.subject) || option.includes(challenge.year.toString());
-    if (isMatch) {
-      setGameWon(true);
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      localStorage.setItem('shc_streak', newStreak.toString());
+  const handleGuess = async (option: string) => {
+    if (!challenge || gameWon || gameOver || guessing) return;
+    setGuessing(true);
+    try {
+      const response = await fetch('/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: challenge.id,
+          date_key: challenge.date_key,
+          option,
+        }),
+      });
+      if (!response.ok) throw new Error('Verify failed');
+      const result = (await response.json()) as { correct?: boolean; subject?: string; year?: number };
 
-      if (currentUser?.id) {
-        supabaseClient
-          .from('profiles')
-          .update({ streak: newStreak })
-          .eq('id', currentUser.id)
-          .then();
+      if (result.correct) {
+        if (result.subject && result.year) {
+          setSolution({ subject: result.subject, year: result.year });
+        }
+        setGameWon(true);
+        const newStreak = streak + 1;
+        setStreak(newStreak);
+        localStorage.setItem('shc_streak', newStreak.toString());
+
+        if (currentUser?.id && isSupabaseConfigured) {
+          supabaseClient
+            .from('profiles')
+            .update({ streak: newStreak })
+            .eq('id', currentUser.id)
+            .then();
+        }
+        return;
       }
-    } else {
-      setSelectedWrong(prev => [...prev, option]);
+
+      const nextWrong = [...selectedWrong, option];
       const newScore = Math.max(0, score - 2500);
+      setSelectedWrong(nextWrong);
       setScore(newScore);
-      if (newScore <= 0 || selectedWrong.length >= 2) {
+      const closed = newScore <= 0 || nextWrong.length >= 3;
+      if (closed) {
         setGameOver(true);
+        const reveal = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: challenge.id,
+            date_key: challenge.date_key,
+            option,
+            reveal: true,
+          }),
+        });
+        if (reveal.ok) {
+          const closedCase = (await reveal.json()) as { subject?: string; year?: number };
+          if (closedCase.subject && closedCase.year) {
+            setSolution({ subject: closedCase.subject, year: closedCase.year });
+          }
+        }
       }
+    } catch {
+      showToast('Could not check that guess.');
+    } finally {
+      setGuessing(false);
     }
   };
 
@@ -274,7 +283,9 @@ function DailyDropArena() {
     gridCells[Math.min(revealedCount, slotCount - 1)] = '🟥';
   }
   const gridLine = gridCells.join(' ');
-  const matchLabel = challenge.slug || String(Math.floor(Date.now() / (1000 * 60 * 60 * 24)));
+  const matchLabel = String(dayIndexFromKey(challenge.date_key));
+  const isArchive = selectedDate !== null;
+  const todayKey = new Date().toISOString().split('T')[0];
   const playerHandle = playerName.replace(/^@/, '') || 'Scout';
   const resultUrl = `https://sportshistoryclue.com/?duel=${encodeURIComponent(playerHandle)}&pts=${userFinalScore}`;
   const resultText = [
@@ -320,6 +331,9 @@ function DailyDropArena() {
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
                 Daily Drop
               </h1>
+              <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+                DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
+              </p>
             </div>
             <div className="text-right">
               <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Potential Score</span>
@@ -327,6 +341,37 @@ function DailyDropArena() {
                 {score.toLocaleString()} <span className="text-xs text-zinc-400 font-sans">PTS</span>
               </span>
             </div>
+          </div>
+
+          <div className="mb-4 flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => openDate(shiftDateKey(challenge.date_key, -1))}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-zinc-700 hover:border-blue-600"
+            >
+              ‹ Yesterday
+            </button>
+            <button
+              type="button"
+              onClick={() => openDate(todayKey)}
+              disabled={!isArchive}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-blue-700 disabled:cursor-default disabled:text-zinc-400"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => openDate(shiftDateKey(challenge.date_key, 1))}
+              disabled={!isArchive || challenge.date_key >= todayKey}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-zinc-700 hover:border-blue-600 disabled:cursor-default disabled:text-zinc-300"
+            >
+              ›
+            </button>
+            {isArchive && (
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                Archive Match
+              </span>
+            )}
           </div>
 
           {/* Clues Box */}
@@ -366,12 +411,12 @@ function DailyDropArena() {
                 Identify the Historical Matchup
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {options.map((option, idx) => {
+                {challenge.options.map((option, idx) => {
                   const isWrong = selectedWrong.includes(option);
                   return (
                     <button
                       key={idx}
-                      disabled={isWrong}
+                      disabled={isWrong || guessing}
                       onClick={() => handleGuess(option)}
                       className={`p-4 rounded-2xl text-left text-xs font-bold transition-all border ${
                         isWrong
@@ -440,7 +485,7 @@ function DailyDropArena() {
                 {gameWon ? 'Fixture Solved!' : 'Game Over'}
               </h2>
               <p className="text-xs text-zinc-500 mb-4">
-                {challenge.subject} ({challenge.year})
+                {solution ? `${solution.subject} (${solution.year})` : 'Answer sealed until the case closes.'}
               </p>
 
               <div className="mx-auto mb-6 max-w-xs rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-center">
@@ -490,6 +535,11 @@ function DailyDropArena() {
         </div>
       </div>
       <Footer />
+      <AuthGateModal
+        isOpen={authGateOpen}
+        onClose={() => setAuthGateOpen(false)}
+        featureName="Past Drops"
+      />
     </main>
   );
 }
