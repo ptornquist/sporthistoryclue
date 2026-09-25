@@ -48,7 +48,22 @@ export function FixturePreview({
 
   if (density === "row") {
     return (
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all group hover:bg-zinc-100/80">
+      <div
+        className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all group hover:bg-zinc-100/80"
+        onClick={solved ? onDeduce : undefined}
+        onKeyDown={
+          solved
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onDeduce();
+                }
+              }
+            : undefined
+        }
+        role={solved ? "button" : undefined}
+        tabIndex={solved ? 0 : undefined}
+      >
         {body}
         {solved ? null : (
           <button
