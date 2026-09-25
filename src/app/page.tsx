@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -33,10 +32,8 @@ function shiftDateKey(dateKey: string, days: number): string {
 }
 
 function DailyDropArena() {
-  const searchParams = useSearchParams();
-  const duelHandle = searchParams.get('duel');
-  const duelPtsParam = searchParams.get('pts');
-  const duelPts = duelPtsParam ? parseInt(duelPtsParam, 10) || 0 : 0;
+  const [duelHandle, setDuelHandle] = useState<string | null>(null);
+  const [duelPts, setDuelPts] = useState(0);
 
   const [challenge, setChallenge] = useState<DailyFixture | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -100,6 +97,13 @@ function DailyDropArena() {
     };
 
     initPlayer();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setDuelHandle(params.get('duel'));
+    const pts = params.get('pts');
+    setDuelPts(pts ? parseInt(pts, 10) || 0 : 0);
   }, []);
 
   useEffect(() => {
@@ -262,7 +266,7 @@ function DailyDropArena() {
   if (loading || !challenge) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-        Loading Match Fixture...
+        {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
       </main>
     );
   }
