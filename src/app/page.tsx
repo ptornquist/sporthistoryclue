@@ -42,6 +42,8 @@ function DailyDropArena() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [challengeToast, setChallengeToast] = useState(false);
+  const [showdownToast, setShowdownToast] = useState(false);
+  const [duelChallenger, setDuelChallenger] = useState<{ username: string; pts: number } | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
   const [emailSubscribed, setEmailSubscribed] = useState(false);
@@ -76,6 +78,14 @@ function DailyDropArena() {
 
     initPlayer();
 
+    if (duelHandle) {
+      const parsedPts = Number.parseInt(searchParams.get('pts') || '0', 10);
+      setDuelChallenger({
+        username: duelHandle,
+        pts: Number.isFinite(parsedPts) ? parsedPts : 0,
+      });
+    }
+
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(
       async (_event, session) => {
         setCurrentUser(session?.user || null);
@@ -88,7 +98,7 @@ function DailyDropArena() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [duelHandle, searchParams]);
 
   const handleSignOut = async () => {
     await supabaseClient.auth.signOut();
@@ -299,6 +309,25 @@ function DailyDropArena() {
     setTimeout(() => setChallengeToast(false), 2200);
   };
 
+  const handleShareShowdown = async () => {
+    if (!duelChallenger) return;
+    const userScore = gameWon ? score : 0;
+    const handle = playerName.replace(/^@/, '') || 'scout';
+    const outcome = userScore > duelChallenger.pts
+      ? `I defeated @${duelChallenger.username}`
+      : `Close match with @${duelChallenger.username}`;
+    const text = [
+      '⚔️ DUEL SHOWDOWN on SportsHistoryClue!',
+      outcome,
+      `Me: ${userScore.toLocaleString()} PTS vs @${duelChallenger.username}: ${duelChallenger.pts.toLocaleString()} PTS`,
+      "Think you can beat us both? Play today's drop:",
+      `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${userScore}`,
+    ].join('\n');
+    await navigator.clipboard.writeText(text);
+    setShowdownToast(true);
+    setTimeout(() => setShowdownToast(false), 2200);
+  };
+
   const handleSubscribeNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsletterEmail || !newsletterEmail.includes('@')) return;
@@ -312,7 +341,7 @@ function DailyDropArena() {
       <main className="min-h-screen bg-[#fafafa] flex flex-col font-mono text-xs uppercase tracking-widest text-zinc-400">
         {duelHandle && (
           <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide normal-case">
-            Challenged by @{duelHandle} — Can you beat their {(searchParams.get('pts') ? parseInt(searchParams.get('pts') || '0', 10) : 0).toLocaleString()} PTS?
+            ⚔️ Duel Active: Beat @{duelChallenger?.username || duelHandle}&apos;s score of {(duelChallenger?.pts ?? (Number.parseInt(searchParams.get('pts') || '0', 10) || 0)).toLocaleString()} PTS!
           </div>
         )}
         <div className="flex-1 flex items-center justify-center">Loading Match Fixture...</div>
@@ -344,6 +373,64 @@ function DailyDropArena() {
   const isDuel = Boolean(challenger && !isArchiveMode);
   const playerWonDuel = isDuel && score > challengerScoreVal;
   const playerTiedDuel = isDuel && score === challengerScoreVal;
+  const showdownScore = gameWon ? score : 0;
+  const youHandle = playerName && playerName !== 'Scout' ? playerName.replace(/^@/, '') : 'You';
+  const showdownDiff = duelChallenger ? Math.abs(showdownScore - duelChallenger.pts) : 0;
+
+  const showdownCard = duelChallenger ? (
+    <section className="bg-white border border-zinc-200 rounded-3xl p-5 md:p-6 shadow-sm">
+      <div className="text-center mb-4">
+        <span className="inline-block px-3 py-1 rounded-full bg-zinc-900 text-white text-[10px] font-mono font-bold uppercase tracking-wider">
+          Head-to-Head Showdown
+        </span>
+      </div>
+      <div
+        className={`rounded-2xl px-4 py-3 text-center text-sm font-black tracking-tight text-white ${
+          showdownScore > duelChallenger.pts
+            ? 'bg-emerald-600'
+            : showdownScore < duelChallenger.pts
+            ? 'bg-rose-600'
+            : 'bg-amber-600'
+        }`}
+      >
+        {showdownScore > duelChallenger.pts
+          ? `🏆 Victory — You outperformed @${duelChallenger.username} by ${showdownDiff.toLocaleString()} PTS!`
+          : showdownScore < duelChallenger.pts
+          ? `💀 Defeat — @${duelChallenger.username} edged you out by ${showdownDiff.toLocaleString()} PTS!`
+          : '🤝 Stalemate — Identical deduction mastery!'}
+      </div>
+      <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 md:gap-4">
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 md:p-4 text-center">
+          <span className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-sm font-black text-white">
+            {duelChallenger.username.charAt(0).toUpperCase()}
+          </span>
+          <span className="block text-xs font-black text-zinc-900 truncate">@{duelChallenger.username}</span>
+          <span className="mt-1 block font-mono text-sm font-black text-zinc-900">
+            {duelChallenger.pts.toLocaleString()} PTS
+          </span>
+        </div>
+        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-[11px] font-black text-zinc-900">
+          VS
+        </span>
+        <div className="rounded-2xl border border-blue-600 bg-blue-50 p-3 md:p-4 text-center">
+          <span className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">
+            {youHandle.charAt(0).toUpperCase()}
+          </span>
+          <span className="block text-xs font-black text-zinc-900 truncate">@{youHandle}</span>
+          <span className="mt-1 block font-mono text-sm font-black text-blue-600">
+            {showdownScore.toLocaleString()} PTS
+          </span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={handleShareShowdown}
+        className="mt-5 w-full py-3.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all shadow-sm"
+      >
+        Share Showdown Result
+      </button>
+    </section>
+  ) : null;
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
@@ -539,7 +626,7 @@ function DailyDropArena() {
         <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm sticky top-0 z-30">
           <span>⚔️</span>
           <span>
-            Challenged by @{duelHandle} — Can you beat their {(duelPts ? parseInt(duelPts, 10) : 0).toLocaleString()} PTS?
+            ⚔️ Duel Active: Beat @{duelChallenger?.username || duelHandle}&apos;s score of {(duelChallenger?.pts ?? (duelPts ? parseInt(duelPts, 10) : 0)).toLocaleString()} PTS!
           </span>
         </div>
       )}
@@ -633,9 +720,10 @@ function DailyDropArena() {
 
       {/* Main Deduction Arena */}
       <div className="max-w-2xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-center relative z-10">
-        {gameWon ? (
+        {gameWon || (gameOver && duelChallenger && !isArchiveMode) ? (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {isDuel && (
+            {duelChallenger && !isArchiveMode && showdownCard}
+            {gameWon && isDuel && (
               <div
                 className={`p-5 rounded-3xl border text-center ${
                   playerWonDuel
@@ -667,6 +755,7 @@ function DailyDropArena() {
               </div>
             )}
 
+            {gameWon && (
             <div className="bg-white border-2 border-blue-600 rounded-3xl p-6 md:p-8 shadow-sm text-center relative z-10">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-3 inline-block">
                 Match Solved · Clue {currentClueIdx + 1} of 6
@@ -691,7 +780,7 @@ function DailyDropArena() {
                 >
                   {copied ? '✓ Result Copied!' : isDuel ? `Reply to ${challenger} ⚡` : 'Challenge a Friend ⚡'}
                 </button>
-                {!isArchiveMode && (
+                {!duelChallenger && !isArchiveMode && (
                   <button
                     onClick={handleChallengeScout}
                     className="px-5 py-3.5 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-black transition-all"
@@ -707,7 +796,21 @@ function DailyDropArena() {
                 </button>
               </div>
             </div>
+            )}
 
+            {!gameWon && (
+              <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm text-center">
+                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-3 inline-block">
+                  Out of clues
+                </span>
+                <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-900">
+                  {challenge.subject} ({challenge.year})
+                </h1>
+                <p className="text-sm font-mono font-black text-zinc-500 mt-1">Score: 0 PTS</p>
+              </div>
+            )}
+
+            {gameWon && (
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
@@ -766,6 +869,7 @@ function DailyDropArena() {
                 </div>
               )}
             </div>
+            )}
           </div>
         ) : (
           <>
@@ -874,7 +978,7 @@ function DailyDropArena() {
               >
                 {copied ? '✓ Copied!' : isDuel ? `Send Result to ${challenger} ⚡` : 'Challenge a Friend ⚡'}
               </button>
-              {gameWon && !isArchiveMode && (
+              {gameWon && !duelChallenger && !isArchiveMode && (
                 <button
                   onClick={handleChallengeScout}
                   className="w-full py-3 bg-zinc-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-black transition-all"
@@ -896,6 +1000,11 @@ function DailyDropArena() {
       {challengeToast && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-zinc-200 bg-zinc-900 px-4 py-2.5 text-xs font-bold text-white shadow-lg">
           Challenge link copied!
+        </div>
+      )}
+      {showdownToast && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-zinc-200 bg-zinc-900 px-4 py-2.5 text-xs font-bold text-white shadow-lg">
+          Showdown result copied!
         </div>
       )}
 
