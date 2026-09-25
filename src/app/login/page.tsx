@@ -122,7 +122,7 @@ function AuthContent() {
       <form onSubmit={handleSubmit} className="space-y-3.5">
         {mode === 'signup' && (
           <div>
-            <label className="block text-[10px] font-mono uppercase font-bold text-zinc-500 mb-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
               Scout Handle / Name
             </label>
             <input
@@ -131,13 +131,13 @@ function AuthContent() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="e.g. PeterT, PuckScout"
-              className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+              className="w-full px-4 py-2.5 rounded-xl text-zinc-900 font-medium bg-white border border-zinc-300 !border-zinc-300 focus:border-blue-600 focus:!border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none placeholder:text-zinc-400 [&:-webkit-autofill]:[text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_white_inset]"
             />
           </div>
         )}
 
         <div>
-          <label className="block text-[10px] font-mono uppercase font-bold text-zinc-500 mb-1">
+          <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
             Email
           </label>
           <input
@@ -146,12 +146,12 @@ function AuthContent() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="scout@sportshistoryclue.com"
-            className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+            className="w-full px-4 py-2.5 rounded-xl text-zinc-900 font-medium bg-white border border-zinc-300 !border-zinc-300 focus:border-blue-600 focus:!border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none placeholder:text-zinc-400 [&:-webkit-autofill]:[text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_white_inset]"
           />
         </div>
 
         <div>
-          <label className="block text-[10px] font-mono uppercase font-bold text-zinc-500 mb-1">
+          <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
             Password
           </label>
           <input
@@ -161,14 +161,14 @@ function AuthContent() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+            className="w-full px-4 py-2.5 rounded-xl text-zinc-900 font-medium bg-white border border-zinc-300 !border-zinc-300 focus:border-blue-600 focus:!border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none placeholder:text-zinc-400 [&:-webkit-autofill]:[text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_white_inset]"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full mt-2 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all disabled:opacity-50 shadow-sm"
+          className="w-full mt-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm"
         >
           {loading ? 'Processing...' : mode === 'login' ? 'Sign In →' : 'Create Free Account →'}
         </button>
