@@ -7,7 +7,8 @@ import {
   createServerSupabaseClient,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
-import { SPORT_LABEL, type Clue, type Sport } from "@/lib/types";
+import { findCase, SPORT_NAME } from "@/lib/case-files";
+import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
@@ -16,6 +17,14 @@ export interface PublicDaily {
   category: string;
   clues: string[];
   options: string[];
+  sportId?: string;
+  sportName?: string;
+}
+
+export interface ArchivePayload {
+  challenge: PublicDaily;
+  isArchive: true;
+  mode: "archive";
 }
 
 interface SecretDaily extends PublicDaily {
@@ -41,6 +50,123 @@ export function toPublicDaily(fixture: SecretDaily): PublicDaily {
     category: fixture.category,
     clues: fixture.clues,
     options: fixture.options,
+  };
+}
+
+const MATCH_KEY = /^[a-z0-9-]{1,80}$/i;
+
+const ARCHIVE_EXTRAS: Record<string, SecretDaily> = {
+  "summit-series-1972": {
+    id: "summit-series-1972",
+    date_key: "1972-09-28",
+    category: "Summit Series Decider",
+    clues: [
+      "A series billed as an exhibition has come down to a single night.",
+      "The rink is in a capital city. Eight games were scheduled. This is the last one.",
+      "One side crossed an ocean. The other wears red and has not lost this building.",
+      "The clock is inside the final minute. A goal now wins the series, not just the night.",
+      "The scorer is a left winger who had already rescued an earlier game in this city.",
+      "September 1972. The series that opened a door between two hockey worlds. Game 8.",
+    ],
+    options: ["Canada vs Soviet Union (1972)"],
+    subject: "Canada vs Soviet Union (1972)",
+    year: 1972,
+  },
+  "wimbledon-epic-1980": {
+    id: "wimbledon-epic-1980",
+    date_key: "1980-07-05",
+    category: "Wimbledon Gentlemen's Final",
+    clues: [
+      "Grass, late afternoon, and a tiebreak that refuses to end.",
+      "One player is ice. The other is fire. The crowd is standing for a single set.",
+      "The third-set board keeps climbing past what a tiebreak is supposed to be.",
+      "Eighteen points to sixteen. The championship hangs on one service game after another.",
+      "The champion is chasing a fifth straight title on this lawn.",
+      "Centre Court, 1980. The gentlemen's final that rewrote the tiebreak.",
+    ],
+    options: ["Björn Borg vs John McEnroe (1980)"],
+    subject: "Björn Borg vs John McEnroe (1980)",
+    year: 1980,
+  },
+};
+
+export function isMatchKey(value: string): boolean {
+  return MATCH_KEY.test(value);
+}
+
+export async function loadArchiveMatch(matchParam: string): Promise<SecretDaily | null> {
+  if (!isMatchKey(matchParam)) return null;
+  const fromDb = await loadMatchRow(matchParam);
+  const base = fromDb ?? fromCatalogMatch(matchParam) ?? ARCHIVE_EXTRAS[matchParam] ?? null;
+  if (!base) return null;
+
+  const decoys = await decoyLabels(base);
+  const correct =
+    base.options.find((option) => gradeOption(base, option)) ?? `${base.subject} (${base.year})`;
+  const file = findCase(matchParam);
+  return {
+    ...base,
+    id: matchParam,
+    category: file?.context || base.category,
+    options: fourDistinctOptions(base.options, correct, decoys),
+  };
+}
+
+export async function loadPublicArchive(matchParam: string): Promise<ArchivePayload | null> {
+  const fixture = await loadArchiveMatch(matchParam);
+  if (!fixture) return null;
+  const file = findCase(matchParam);
+  return {
+    challenge: {
+      ...toPublicDaily(fixture),
+      sportId: file?.sport ?? "",
+      sportName: file ? SPORT_NAME[file.sport] : fixture.category,
+    },
+    isArchive: true,
+    mode: "archive",
+  };
+}
+
+async function loadMatchRow(matchParam: string): Promise<SecretDaily | null> {
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  if (!client) return null;
+  for (const table of ["challenges", "puzzles"] as const) {
+    try {
+      const { data, error } = await client
+        .from(table)
+        .select("*")
+        .or(`slug.eq.${matchParam},id.eq.${matchParam}`)
+        .limit(1)
+        .maybeSingle();
+      if (error || !data) continue;
+      const normalized = normalizeRow(data, stringField(data, "date_key") || `${numberField(data, "year") || 1970}-01-01`);
+      if (normalized) return normalized;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function fromCatalogMatch(matchParam: string): SecretDaily | null {
+  const file = findCase(matchParam);
+  const ids = new Set([matchParam, ...(file?.ids ?? [])]);
+  const puzzle = puzzles.find((item) => ids.has(item.id));
+  if (!puzzle) return null;
+  return secretFromPuzzle(puzzle, matchParam, file?.context);
+}
+
+function secretFromPuzzle(puzzle: Puzzle, id: string, context?: string): SecretDaily | null {
+  const clues = puzzle.clues.slice(0, 6).map(clueLine);
+  if (clues.length === 0) return null;
+  return {
+    id,
+    date_key: `${puzzle.year}-01-01`,
+    category: context || SPORT_LABEL[puzzle.sport] || "Sports History",
+    clues,
+    options: [puzzle.title],
+    subject: puzzle.title,
+    year: puzzle.year,
   };
 }
 

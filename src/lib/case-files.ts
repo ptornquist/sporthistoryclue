@@ -98,6 +98,16 @@ export const CASE_FILES: CaseFile[] = [
   },
 ];
 
+export const SPORT_NAME: Record<CaseFile["sport"], string> = {
+  ice_hockey: "Ice Hockey",
+  football: "Football",
+  boxing: "Boxing",
+  tennis: "Tennis",
+  athletics: "Athletics",
+  gymnastics: "Gymnastics",
+  basketball: "Basketball",
+};
+
 const SPORT_LABELS: Record<string, string[]> = {
   ice_hockey: ["ice hockey", "hockey"],
   football: ["football", "soccer"],

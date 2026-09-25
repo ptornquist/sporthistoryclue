@@ -11,10 +11,12 @@ import {
   toggleSoundMute,
   triggerHaptic,
 } from '@/lib/audio';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { rememberSolvedCase } from '@/lib/solved-cases';
+import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 
 interface DailyFixture {
   id: string;
@@ -22,6 +24,13 @@ interface DailyFixture {
   category: string;
   clues: string[];
   options: string[];
+  sportId?: string;
+  sportName?: string;
+}
+
+interface DailyResponse extends DailyFixture {
+  challenge?: DailyFixture;
+  mode?: string;
 }
 
 interface Solution {
@@ -65,6 +74,42 @@ function setupOptions(options: string[], category: string): string[] {
   return four;
 }
 
+function MatchModeBanner({
+  campaignTitle,
+  category,
+  specificMatch,
+  campaignId,
+}: {
+  campaignTitle?: string;
+  category: string;
+  specificMatch: string;
+  campaignId: string;
+}) {
+  if (campaignId && campaignTitle) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-6 py-3 text-amber-950">
+        <span className="text-xs font-black uppercase tracking-wide">🏆 Campaign Mode · {campaignTitle}</span>
+        <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-amber-800 hover:text-amber-950">
+          ← Back to Storylines
+        </Link>
+      </div>
+    );
+  }
+  if (specificMatch) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
+        <span className="text-xs font-black uppercase tracking-wide">
+          📚 Sports Archive{category ? ` · ${category}` : ''}
+        </span>
+        <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-blue-800 hover:text-blue-950">
+          ← Back to Archive
+        </Link>
+      </div>
+    );
+  }
+  return null;
+}
+
 function shiftDateKey(dateKey: string, days: number): string {
   const [year, month, day] = dateKey.split('-').map(Number);
   const next = new Date(Date.UTC(year, month - 1, day));
@@ -72,12 +117,20 @@ function shiftDateKey(dateKey: string, days: number): string {
   return next.toISOString().split('T')[0];
 }
 
-export function DailyDropArena() {
+export function DailyDropArena({
+  specificMatch = '',
+  campaignId = '',
+  initialFixture = null,
+}: {
+  specificMatch?: string;
+  campaignId?: string;
+  initialFixture?: DailyFixture | null;
+}) {
   const [duelHandle, setDuelHandle] = useState<string | null>(null);
   const [duelPts, setDuelPts] = useState(0);
 
-  const [challenge, setChallenge] = useState<DailyFixture | null>(null);
-  const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
+  const [challenge, setChallenge] = useState<DailyFixture | null>(initialFixture);
+  const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
@@ -86,7 +139,7 @@ export function DailyDropArena() {
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [guessing, setGuessing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialFixture);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
@@ -156,7 +209,7 @@ export function DailyDropArena() {
 
   useEffect(() => {
     const fetchChallenge = async () => {
-      setLoading(true);
+      if (!specificMatch) setLoading(true);
       setSolution(null);
       setCurrentClueIdx(0);
       setScore(10000);
@@ -164,12 +217,16 @@ export function DailyDropArena() {
       setGameWon(false);
       setGameOver(false);
       try {
-        const query = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
-        const response = await fetch(`/api/daily${query}`);
+        const query = new URLSearchParams();
+        if (specificMatch) query.set('match', specificMatch);
+        else if (selectedDate) query.set('date', selectedDate);
+        const suffix = query.toString() ? `?${query.toString()}` : '';
+        const response = await fetch(`/api/daily${suffix}`);
         if (!response.ok) {
           throw new Error('Daily drop unavailable');
         }
-        const fixture = (await response.json()) as DailyFixture;
+        const payload = (await response.json()) as DailyResponse;
+        const fixture = payload.challenge ?? payload;
         whistled.current = false;
         setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
         setChallenge(fixture);
@@ -182,7 +239,7 @@ export function DailyDropArena() {
     };
 
     fetchChallenge();
-  }, [selectedDate]);
+  }, [selectedDate, specificMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -335,10 +392,21 @@ export function DailyDropArena() {
     await sharePayload('SportsHistoryClue Duel', text, url);
   };
 
+  const campaign = storylineById(campaignId);
+  const playingArchive = Boolean(specificMatch);
+
   if (loading || !challenge) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-        {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
+      <main className="min-h-screen bg-[#fafafa] flex flex-col font-mono text-xs uppercase text-zinc-400">
+        <MatchModeBanner
+          campaignTitle={campaign?.title}
+          category=""
+          specificMatch={specificMatch}
+          campaignId={campaignId}
+        />
+        <div className="flex flex-1 items-center justify-center">
+          {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
+        </div>
       </main>
     );
   }
@@ -360,7 +428,10 @@ export function DailyDropArena() {
   }
   const gridLine = gridCells.join(' ');
   const matchLabel = String(dayIndexFromKey(challenge.date_key));
-  const isArchive = selectedDate !== null;
+  const isArchive = selectedDate !== null && !playingArchive;
+  const nextMatch = nextStorylineMatch(campaignId, challenge.id);
+  const sportLabel = challenge.sportName || challenge.category;
+  const sportHref = challenge.sportId ? `/disciplines?sport=${encodeURIComponent(challenge.sportId)}` : '/disciplines';
   const todayKey = new Date().toISOString().split('T')[0];
   const playerHandle = playerName.replace(/^@/, '') || 'Scout';
   const resultUrl = `https://sportshistoryclue.com/?duel=${encodeURIComponent(playerHandle)}&pts=${userFinalScore}`;
@@ -382,6 +453,12 @@ export function DailyDropArena() {
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
       <div>
         <Navbar />
+        <MatchModeBanner
+          campaignTitle={campaign?.title}
+          category={challenge.category}
+          specificMatch={specificMatch}
+          campaignId={campaignId}
+        />
 
         {/* Duel Banner */}
         {isDuelActive && !gameWon && !gameOver && (
@@ -405,11 +482,13 @@ export function DailyDropArena() {
                 {challenge.category}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
-                Daily Drop
+                {playingArchive ? (campaign ? 'Campaign Match' : 'Archive Match') : 'Daily Drop'}
               </h1>
-              <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
-              </p>
+              {!playingArchive && (
+                <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+                  DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
+                </p>
+              )}
             </div>
             <div className="text-right">
               <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Potential Score</span>
@@ -419,6 +498,7 @@ export function DailyDropArena() {
             </div>
           </div>
 
+          {!playingArchive && (
           <div className="mb-4 flex items-center justify-center gap-2">
             <button
               type="button"
@@ -449,6 +529,7 @@ export function DailyDropArena() {
               </span>
             )}
           </div>
+          )}
 
           {/* Clues Box */}
           <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm mb-6">
@@ -595,6 +676,23 @@ export function DailyDropArena() {
                 <span className="block text-[10px] font-mono font-bold uppercase text-blue-600">Final Score</span>
                 <span className="text-3xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()} PTS</span>
               </div>
+
+              {gameWon && campaign && nextMatch && (
+                <Link
+                  href={arenaHref(nextMatch.key, campaign.id)}
+                  className="mb-4 inline-flex px-6 py-3 bg-zinc-900 hover:bg-black text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
+                >
+                  Next Campaign Match →
+                </Link>
+              )}
+              {gameWon && playingArchive && !campaign && (
+                <Link
+                  href={sportHref}
+                  className="mb-4 inline-flex px-6 py-3 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
+                >
+                  ← Back to {sportLabel} Archive
+                </Link>
+              )}
 
               {!isDuelActive && (
                 <div className="flex flex-col sm:flex-row justify-center gap-3">

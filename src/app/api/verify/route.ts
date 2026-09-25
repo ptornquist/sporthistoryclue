@@ -1,4 +1,4 @@
-import { gradeOption, loadDailyFixture, parseDateKey } from "@/lib/daily-drop";
+import { gradeOption, isMatchKey, loadArchiveMatch, loadDailyFixture, parseDateKey } from "@/lib/daily-drop";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,27 @@ export async function POST(request: Request) {
 
   const dateKey = parseDateKey(typeof body.date_key === "string" ? body.date_key : null);
   const option = typeof body.option === "string" ? body.option.trim() : "";
-  if (!dateKey || !option) {
+  const requestedId = typeof body.id === "string" ? body.id.trim() : "";
+  if (!option || (!dateKey && !requestedId)) {
+    return Response.json({ error: "A date and option are required." }, { status: 400 });
+  }
+
+  if (requestedId && isMatchKey(requestedId)) {
+    const archive = await loadArchiveMatch(requestedId);
+    if (archive) {
+      const correct = gradeOption(archive, option);
+      if (!correct && body.reveal !== true) {
+        return Response.json({ correct: false });
+      }
+      return Response.json({
+        correct,
+        subject: archive.subject,
+        year: archive.year,
+      });
+    }
+  }
+
+  if (!dateKey) {
     return Response.json({ error: "A date and option are required." }, { status: 400 });
   }
 

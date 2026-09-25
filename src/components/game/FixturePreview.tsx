@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { fixtureSubtitle } from "@/lib/case-files";
 
 interface FixturePreviewProps {
@@ -8,7 +9,7 @@ interface FixturePreviewProps {
   context: string;
   solvedScore: number | null;
   matchup: string | null;
-  onDeduce: () => void;
+  href: string;
   density?: "compact" | "row";
 }
 
@@ -18,7 +19,7 @@ export function FixturePreview({
   context,
   solvedScore,
   matchup,
-  onDeduce,
+  href,
   density = "compact",
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
@@ -46,33 +47,25 @@ export function FixturePreview({
     </div>
   );
 
-  if (density === "row") {
-    return (
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all group hover:bg-zinc-100/80">
-        {body}
-        {solved ? null : (
-          <button
-            type="button"
-            onClick={onDeduce}
-            className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
-          >
-            DEDUCE →
-          </button>
-        )}
-      </div>
-    );
-  }
+  const action = solved ? null : density === "row" ? (
+    <span className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm">
+      DEDUCE →
+    </span>
+  ) : (
+    <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCE →</span>
+  );
 
   return (
-    <button
-      type="button"
-      onClick={onDeduce}
-      className="group flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50"
+    <Link
+      href={href}
+      className={
+        density === "row"
+          ? "group flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all hover:bg-zinc-100/80"
+          : "group flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50"
+      }
     >
       {body}
-      {solved ? null : (
-        <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCE →</span>
-      )}
-    </button>
+      {action}
+    </Link>
   );
 }

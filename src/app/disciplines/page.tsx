@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
-import AuthGateModal from '@/components/AuthGateModal';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
@@ -15,6 +13,7 @@ import {
   previewFromCase,
   type FixturePreviewModel,
 } from '@/lib/case-files';
+import { arenaHref } from '@/lib/storylines';
 
 interface ChallengeItem {
   id: string;
@@ -40,13 +39,10 @@ const SPORTS: SportGroup[] = [
 ];
 
 export default function DisciplinesPage() {
-  const router = useRouter();
   const [selectedSport, setSelectedSport] = useState<string>('ice_hockey');
   const [challenges, setChallenges] = useState<ChallengeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<unknown>(null);
-  const [showAuthGate, setShowAuthGate] = useState(false);
 
   const localFixtures = CASE_FILES.filter((file) => file.sport === selectedSport).map(previewFromCase);
   const remoteFixtures = challenges
@@ -62,21 +58,11 @@ export default function DisciplinesPage() {
   );
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
-    supabaseClient.auth
-      .getUser()
-      .then(({ data }) => setCurrentUser(data.user ?? null))
-      .catch(() => setCurrentUser(null));
+    const sport = new URLSearchParams(window.location.search).get('sport');
+    if (!sport || !SPORTS.some((item) => item.id === sport)) return;
+    const apply = window.setTimeout(() => setSelectedSport(sport), 0);
+    return () => window.clearTimeout(apply);
   }, []);
-
-  // Deducing an archive fixture requires a free Scout account; the Daily Drop stays open to all.
-  const handleDeduce = (target: string) => {
-    if (!currentUser) {
-      setShowAuthGate(true);
-      return;
-    }
-    router.push(`/?match=${target}`);
-  };
 
   useEffect(() => {
     const fetchChallenges = async () => {
@@ -111,12 +97,6 @@ export default function DisciplinesPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <AuthGateModal
-        isOpen={showAuthGate}
-        onClose={() => setShowAuthGate(false)}
-        featureName="By Sport"
-      />
-
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -214,7 +194,7 @@ export default function DisciplinesPage() {
                     context={fixture.context}
                     solvedScore={record?.score ?? null}
                     matchup={record?.matchup ?? null}
-                    onDeduce={() => handleDeduce(fixture.lookupIds[0] || fixture.key)}
+                    href={arenaHref(fixture.lookupIds[0] || fixture.key)}
                   />
                 );
               })}

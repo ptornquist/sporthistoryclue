@@ -1,6 +1,8 @@
 import {
   fourDistinctOptions,
+  isMatchKey,
   loadDailyFixture,
+  loadPublicArchive,
   parseDateKey,
   toPublicDaily,
   utcTodayKey,
@@ -10,6 +12,18 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const matchParam = new URL(request.url).searchParams.get("match")?.trim() ?? "";
+  if (matchParam) {
+    if (!isMatchKey(matchParam)) {
+      return Response.json({ error: "Unknown match." }, { status: 400 });
+    }
+    const archive = await loadPublicArchive(matchParam);
+    if (!archive) {
+      return Response.json({ error: "That archive match could not be found." }, { status: 404 });
+    }
+    return Response.json(archive);
+  }
+
   const dateKey = parseDateKey(new URL(request.url).searchParams.get("date"));
   if (!dateKey) {
     return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });

@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
+import { loadPublicArchive } from '@/lib/daily-drop';
 
 type HomeSearchParams = {
   duel?: string | string[];
   pts?: string | string[];
+  match?: string | string[];
+  campaign?: string | string[];
 };
 
 function firstParam(value: string | string[] | undefined): string {
@@ -43,7 +46,16 @@ export async function generateMetadata({
   };
 }
 
-export default function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<HomeSearchParams>;
+}) {
+  const params = await searchParams;
+  const specificMatch = firstParam(params.match);
+  const campaignId = firstParam(params.campaign);
+  const archive = specificMatch ? await loadPublicArchive(specificMatch) : null;
+
   return (
     <Suspense
       fallback={
@@ -52,7 +64,12 @@ export default function Page() {
         </div>
       }
     >
-      <DailyDropArena />
+      <DailyDropArena
+        key={`${specificMatch}:${campaignId}`}
+        specificMatch={specificMatch}
+        campaignId={campaignId}
+        initialFixture={archive?.challenge ?? null}
+      />
     </Suspense>
   );
 }

@@ -1,110 +1,20 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
-import AuthGateModal from '@/components/AuthGateModal';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
-import { findCase, previewFromCase } from '@/lib/case-files';
-
-interface Campaign {
-  id: string;
-  title: string;
-  era: string;
-  description: string;
-  icon: string;
-  accent: string;
-  matchSlugs: string[];
-}
-
-const CAMPAIGNS: Campaign[] = [
-  {
-    id: 'cold-war-on-ice',
-    title: 'The Cold War on Ice',
-    era: '1972 – 1980',
-    icon: '🏒',
-    accent: 'text-sky-600',
-    description:
-      'High-stakes geopolitical drama played out across the rinks of Moscow, Lake Placid, and Prague.',
-    matchSlugs: ['miracle-on-ice-1980', 'summit-series-1972'],
-  },
-  {
-    id: 'olympic-miracles',
-    title: 'Olympic Miracles',
-    era: '1976 – 2008',
-    icon: '🥇',
-    accent: 'text-amber-600',
-    description:
-      'Generational athletes redefining greatness under the global Olympic spotlight.',
-    matchSlugs: ['comaneci-1976', 'dream-team-1992', 'bolt-beijing-2008'],
-  },
-  {
-    id: 'world-cup-epics',
-    title: 'World Cup Epics',
-    era: '1958 – 1986',
-    icon: '⚽',
-    accent: 'text-emerald-600',
-    description:
-      'Controversy, boy prodigies, and legendary goals that defined global football.',
-    matchSlugs: ['pele-sweden-1958', 'hand-of-god-1986'],
-  },
-  {
-    id: 'rivalries-of-the-century',
-    title: 'Rivalries of the Century',
-    era: '1974 – 1980',
-    icon: '🥊',
-    accent: 'text-rose-600',
-    description:
-      'Clashes of opposite personalities, styles, and philosophies under immense pressure.',
-    matchSlugs: ['rumble-in-the-jungle-1974', 'wimbledon-epic-1980'],
-  },
-];
-
-const STORYLINES = CAMPAIGNS.map((campaign) => ({
-  ...campaign,
-  matches: campaign.matchSlugs.flatMap((slug) => {
-    const file = findCase(slug);
-    return file ? [previewFromCase(file)] : [];
-  }),
-}));
+import { arenaHref, firstOpenMatch, STORYLINES } from '@/lib/storylines';
 
 export default function CampaignsPage() {
-  const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<unknown>(null);
-  const [showAuthGate, setShowAuthGate] = useState(false);
   const solved = useSolvedFixtures(
     STORYLINES.flatMap((campaign) =>
       campaign.matches.map((match) => ({ key: match.key, lookupIds: match.lookupIds })),
     ),
   );
 
-  useEffect(() => {
-    if (!isSupabaseConfigured) return;
-    supabaseClient.auth
-      .getUser()
-      .then(({ data }) => setCurrentUser(data.user ?? null))
-      .catch(() => setCurrentUser(null));
-  }, []);
-
-  // Campaign fixtures live in the Scout archive, so guests are prompted to sign up first.
-  const handleStartMatch = (slug: string) => {
-    if (!currentUser) {
-      setShowAuthGate(true);
-      return;
-    }
-    router.push(`/?match=${slug}`);
-  };
-
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <AuthGateModal
-        isOpen={showAuthGate}
-        onClose={() => setShowAuthGate(false)}
-        featureName="Storylines"
-      />
 
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
@@ -184,7 +94,7 @@ export default function CampaignsPage() {
                         context={match.context}
                         solvedScore={record?.score ?? null}
                         matchup={record?.matchup ?? null}
-                        onDeduce={() => handleStartMatch(match.key)}
+                        href={arenaHref(match.lookupIds[0] || match.key, campaign.id)}
                       />
                     );
                   })}
@@ -196,13 +106,15 @@ export default function CampaignsPage() {
                   {campaign.matches.length} Historical{' '}
                   {campaign.matches.length === 1 ? 'Match' : 'Matches'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => handleStartMatch(campaign.matches[0].key)}
+                <Link
+                  href={arenaHref(
+                    (firstOpenMatch(campaign.matches, solved)?.lookupIds[0]) || campaign.matches[0].key,
+                    campaign.id,
+                  )}
                   className="px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
                 >
                   Start Campaign
-                </button>
+                </Link>
               </div>
             </article>
           ))}
