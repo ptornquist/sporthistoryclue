@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
@@ -34,28 +34,8 @@ function parsePts(value: string | null | undefined): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function DuelParamsListener({ onParams }: { onParams: (params: ArenaParams) => void }) {
+export function GameContent() {
   const searchParams = useSearchParams();
-  const vs = searchParams?.get('vs') ?? null;
-  const clues = searchParams?.get('clues') ?? null;
-  const ptsRaw = searchParams?.get('pts') ?? null;
-  const duel = searchParams?.get('duel') ?? null;
-  const match = searchParams?.get('match') ?? null;
-
-  useEffect(() => {
-    onParams({
-      vs,
-      clues,
-      pts: ptsRaw ? parseInt(ptsRaw, 10) || 0 : 0,
-      duel,
-      match,
-    });
-  }, [vs, clues, ptsRaw, duel, match, onParams]);
-
-  return null;
-}
-
-function DailyDropArena() {
   const [params, setParams] = useState<ArenaParams>({
     vs: null,
     clues: null,
@@ -63,7 +43,15 @@ function DailyDropArena() {
     duel: null,
     match: null,
   });
-  const onParams = useCallback((next: ArenaParams) => {
+
+  useEffect(() => {
+    const next: ArenaParams = {
+      vs: searchParams.get('vs'),
+      clues: searchParams.get('clues'),
+      pts: parsePts(searchParams.get('pts')),
+      duel: searchParams.get('duel'),
+      match: searchParams.get('match'),
+    };
     setParams((prev) => (
       prev.vs === next.vs &&
       prev.clues === next.clues &&
@@ -73,7 +61,7 @@ function DailyDropArena() {
         ? prev
         : next
     ));
-  }, []);
+  }, [searchParams]);
   const challenger = params.vs;
   const challengerClues = params.clues;
   const challengerPts = params.pts ? String(params.pts) : null;
@@ -119,12 +107,14 @@ function DailyDropArena() {
         } else if (user.email) {
           setPlayerName(user.email.split('@')[0]);
         }
-      } else {
-        const saved = localStorage.getItem('shc_handle');
+      } else if (typeof window !== 'undefined') {
+        const saved = window.localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
       }
 
-      const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
+      const savedStreak = typeof window === 'undefined'
+        ? 1
+        : parseInt(window.localStorage.getItem('shc_streak') || '1', 10);
       setStreak(savedStreak);
     };
 
@@ -159,7 +149,7 @@ function DailyDropArena() {
     await supabaseClient.auth.signOut();
     setCurrentUser(null);
     setPlayerName('Scout');
-    localStorage.removeItem('shc_handle');
+    if (typeof window !== 'undefined') window.localStorage.removeItem('shc_handle');
   };
 
   const setupOptions = (item: Challenge) => {
@@ -217,7 +207,7 @@ function DailyDropArena() {
 
     const checkExistingScore = (item: Challenge) => {
       const scoreKey = `shc_score_${item.slug || item.id}`;
-      const savedScore = localStorage.getItem(scoreKey);
+      const savedScore = typeof window === 'undefined' ? null : window.localStorage.getItem(scoreKey);
       if (savedScore) {
         setScore(parseInt(savedScore, 10));
         setGameWon(true);
@@ -275,12 +265,12 @@ function DailyDropArena() {
       setShowModal(true);
 
       const scoreKey = `shc_score_${challenge.slug || challenge.id}`;
-      localStorage.setItem(scoreKey, score.toString());
+      if (typeof window !== 'undefined') window.localStorage.setItem(scoreKey, score.toString());
 
       if (!isArchiveMode && !specificMatch) {
         const newStreak = streak + 1;
         setStreak(newStreak);
-        localStorage.setItem('shc_streak', newStreak.toString());
+        if (typeof window !== 'undefined') window.localStorage.setItem('shc_streak', newStreak.toString());
         if (currentUser?.id) {
           supabaseClient
             .from('profiles')
@@ -334,7 +324,7 @@ function DailyDropArena() {
       const input = prompt('Enter your scout handle for the duel link:', 'Scout');
       if (input && input.trim()) {
         handlePrompt = input.trim();
-        localStorage.setItem('shc_handle', handlePrompt);
+        if (typeof window !== 'undefined') window.localStorage.setItem('shc_handle', handlePrompt);
         setPlayerName(handlePrompt);
       }
     }
@@ -351,7 +341,9 @@ function DailyDropArena() {
       shareText = `SportsHistoryClue 🏆\n${squares} (${score.toLocaleString()} PTS)\nSolved on Clue ${clueNumber} of 6!\nCan you beat ${handlePrompt}? 👉 ${shareUrl}`;
     }
 
-    navigator.clipboard.writeText(shareText);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(shareText);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -359,7 +351,9 @@ function DailyDropArena() {
   const handleChallengeScout = async () => {
     const username = playerName.replace(/^@/, '') || 'scout';
     const link = `https://sportshistoryclue.com/?duel=${encodeURIComponent(username)}&pts=${score}`;
-    await navigator.clipboard.writeText(link);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(link);
+    }
     setChallengeToast(true);
     setTimeout(() => setChallengeToast(false), 2200);
   };
@@ -380,7 +374,9 @@ function DailyDropArena() {
       "Think you can beat us both? Play today's drop:",
       `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${userScore}`,
     ].join('\n');
-    await navigator.clipboard.writeText(text);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+    }
     setShowdownToast(true);
     setTimeout(() => setShowdownToast(false), 2200);
   };
@@ -396,7 +392,6 @@ function DailyDropArena() {
   if (loading) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex flex-col font-mono text-xs uppercase tracking-widest text-zinc-400">
-        <DuelParamsListener onParams={onParams} />
         {duelHandle && (
           <div className="bg-blue-600 text-white px-6 py-2.5 text-center text-xs font-bold tracking-wide normal-case">
             ⚔️ Duel Active: Beat @{duelChallenger?.username || duelHandle || 'scout'}&apos;s score of {(duelChallenger?.pts ?? (params.pts ? parseInt(String(params.pts), 10) || 0 : 0)).toLocaleString()} PTS!
@@ -493,7 +488,6 @@ function DailyDropArena() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      <DuelParamsListener onParams={onParams} />
       {/* Soft-gate modal for guests reaching archive-only features */}
       <AuthGateModal
         isOpen={showAuthGate}
@@ -1074,4 +1068,4 @@ function DailyDropArena() {
   );
 }
 
-export default DailyDropArena;
+export default GameContent;
