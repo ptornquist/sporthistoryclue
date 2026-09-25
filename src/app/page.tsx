@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { supabaseClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -48,14 +48,18 @@ function DailyDropArena() {
   const duelPts = duelPtsParam ? parseInt(duelPtsParam, 10) || 0 : 0;
   const specificMatch = searchParams.get('match');
 
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [challenge, setChallenge] = useState<Challenge | null>(
+    isSupabaseConfigured ? null : FALLBACK_CHALLENGE,
+  );
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
   const [score, setScore] = useState(10000);
-  const [options, setOptions] = useState<string[]>([]);
+  const [options, setOptions] = useState<string[]>(() =>
+    isSupabaseConfigured ? [] : [...(FALLBACK_CHALLENGE.options ?? [])],
+  );
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
@@ -109,6 +113,12 @@ function DailyDropArena() {
 
   useEffect(() => {
     const fetchChallenge = async () => {
+      if (!isSupabaseConfigured) {
+        setChallenge(FALLBACK_CHALLENGE);
+        setupOptions(FALLBACK_CHALLENGE);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         if (specificMatch) {
@@ -127,10 +137,17 @@ function DailyDropArena() {
           }
         }
 
-        const { data: allMatches } = await supabaseClient
-          .from('challenges')
-          .select('*')
-          .order('id', { ascending: true });
+        const withTimeout = <T,>(promise: PromiseLike<T>, ms = 4000): Promise<T> =>
+          Promise.race([
+            Promise.resolve(promise),
+            new Promise<T>((_, reject) => {
+              setTimeout(() => reject(new Error('Challenge request timed out.')), ms);
+            }),
+          ]);
+
+        const { data: allMatches } = await withTimeout(
+          supabaseClient.from('challenges').select('*').order('id', { ascending: true }),
+        );
 
         if (allMatches && allMatches.length > 0) {
           const dayNumber = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
@@ -187,6 +204,21 @@ function DailyDropArena() {
     }
   };
 
+  const sharePayload = async (title: string, text: string, url: string) => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+      }
+    }
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(text.includes(url) ? text : `${text}\n${url}`);
+      showToast('📋 Result copied to clipboard!');
+    }
+  };
+
   const handleChallengeScout = async () => {
     const handle = playerName.replace(/^@/, '') || 'Scout';
     const link = `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${score}`;
@@ -214,10 +246,8 @@ function DailyDropArena() {
       `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${userScore}`,
     ].join('\n');
 
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
-      showToast('📋 Showdown result copied!');
-    }
+    const url = `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${userScore}`;
+    await sharePayload('SportsHistoryClue Duel', text, url);
   };
 
   if (loading || !challenge) {
@@ -234,6 +264,32 @@ function DailyDropArena() {
   const isDefeat = isDuelActive && userFinalScore < duelPts;
   const isTie = isDuelActive && userFinalScore === duelPts;
   const pointDiff = Math.abs(userFinalScore - duelPts);
+  const slotCount = 6;
+  const revealedCount = Math.min(currentClueIdx + 1, slotCount);
+  const gridCells: string[] = Array.from({ length: slotCount }, (_, index) => {
+    if (index < revealedCount) return '🟩';
+    return '⬜';
+  });
+  if (selectedWrong.length > 0) {
+    gridCells[Math.min(revealedCount, slotCount - 1)] = '🟥';
+  }
+  const gridLine = gridCells.join(' ');
+  const matchLabel = challenge.slug || String(Math.floor(Date.now() / (1000 * 60 * 60 * 24)));
+  const playerHandle = playerName.replace(/^@/, '') || 'Scout';
+  const resultUrl = `https://sportshistoryclue.com/?duel=${encodeURIComponent(playerHandle)}&pts=${userFinalScore}`;
+  const resultText = [
+    'SportsHistoryClue 🏆',
+    gridLine,
+    `🎯 Solved on Clue ${revealedCount} of 6 (${userFinalScore.toLocaleString()} PTS)`,
+    `🔥 ${streak}-Day Streak`,
+    '',
+    "Can you crack today's case?",
+    resultUrl,
+  ].join('\n');
+
+  const handleShareResult = () => {
+    sharePayload('SportsHistoryClue', resultText, resultUrl);
+  };
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
@@ -387,6 +443,21 @@ function DailyDropArena() {
                 {challenge.subject} ({challenge.year})
               </p>
 
+              <div className="mx-auto mb-6 max-w-xs rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-center">
+                <p className="text-[11px] font-black uppercase tracking-wide text-zinc-900">
+                  SportsHistoryClue #{matchLabel}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed">
+                  {gridCells.map((cell, index) => (
+                    <span key={index} className="mx-0.5 inline-block">{cell}</span>
+                  ))}
+                  <span className="ml-1 font-mono text-xs font-bold text-zinc-700">
+                    · {userFinalScore.toLocaleString()} PTS
+                  </span>
+                </p>
+                <p className="mt-1 text-xs font-bold text-amber-600">🔥 {streak}-Day Streak</p>
+              </div>
+
               <div className="inline-block bg-blue-50 border border-blue-200 px-6 py-3 rounded-2xl mb-6">
                 <span className="block text-[10px] font-mono font-bold uppercase text-blue-600">Final Score</span>
                 <span className="text-3xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()} PTS</span>
@@ -395,8 +466,20 @@ function DailyDropArena() {
               {!isDuelActive && (
                 <div className="flex flex-col sm:flex-row justify-center gap-3">
                   <button
-                    onClick={handleChallengeScout}
+                    onClick={handleShareResult}
                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+                  >
+                    Share Result
+                  </button>
+                  <button
+                    onClick={handleShareResult}
+                    className="px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
+                  >
+                    Copy Score
+                  </button>
+                  <button
+                    onClick={handleChallengeScout}
+                    className="px-6 py-3 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
                   >
                     Challenge a Scout
                   </button>
