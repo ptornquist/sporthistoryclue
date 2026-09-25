@@ -1,7 +1,16 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
+import {
+  isSoundMuted,
+  playCluePenalty,
+  playVictoryFanfare,
+  playWhistle,
+  playWrongBuzzer,
+  toggleSoundMute,
+  triggerHaptic,
+} from '@/lib/audio';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
@@ -51,6 +60,8 @@ function DailyDropArena() {
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authGateOpen, setAuthGateOpen] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(true);
+  const whistled = useRef(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -100,6 +111,10 @@ function DailyDropArena() {
   }, []);
 
   useEffect(() => {
+    setSoundMuted(isSoundMuted());
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setDuelHandle(params.get('duel'));
     const pts = params.get('pts');
@@ -122,6 +137,7 @@ function DailyDropArena() {
           throw new Error('Daily drop unavailable');
         }
         const fixture = (await response.json()) as DailyFixture;
+        whistled.current = false;
         setChallenge(fixture);
       } catch {
         showToast('Could not load this drop.');
@@ -134,9 +150,26 @@ function DailyDropArena() {
     fetchChallenge();
   }, [selectedDate]);
 
+  const openWithWhistle = () => {
+    if (whistled.current || isSoundMuted()) return;
+    whistled.current = true;
+    playWhistle();
+  };
+
+  const handleToggleSound = () => {
+    const muted = toggleSoundMute();
+    setSoundMuted(muted);
+    if (!muted) {
+      whistled.current = true;
+      playWhistle();
+    }
+  };
+
   const handleRevealClue = () => {
     if (!challenge) return;
     if (currentClueIdx < challenge.clues.length - 1) {
+      playCluePenalty();
+      triggerHaptic(20);
       setCurrentClueIdx(prev => prev + 1);
       setScore(prev => Math.max(1000, prev - 1500));
     }
@@ -171,6 +204,8 @@ function DailyDropArena() {
         if (result.subject && result.year) {
           setSolution({ subject: result.subject, year: result.year });
         }
+        playVictoryFanfare();
+        triggerHaptic([50, 50, 100]);
         setGameWon(true);
         const newStreak = streak + 1;
         setStreak(newStreak);
@@ -186,6 +221,8 @@ function DailyDropArena() {
         return;
       }
 
+      playWrongBuzzer();
+      triggerHaptic([40, 60, 40]);
       const nextWrong = [...selectedWrong, option];
       const newScore = Math.max(0, score - 2500);
       setSelectedWrong(nextWrong);
@@ -325,7 +362,7 @@ function DailyDropArena() {
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="max-w-3xl mx-auto px-6 py-8" onPointerDown={openWithWhistle}>
           {/* Header Info */}
           <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-6">
             <div>
@@ -384,9 +421,21 @@ function DailyDropArena() {
               <span className="text-xs font-mono font-bold uppercase text-zinc-400">
                 Clue {currentClueIdx + 1} of {challenge.clues.length}
               </span>
-              <span className="text-xs font-mono font-bold text-amber-600">
-                🔥 {streak} Streak
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={handleToggleSound}
+                  aria-pressed={soundMuted}
+                  aria-label={soundMuted ? 'Unmute match sounds' : 'Mute match sounds'}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-sm hover:border-blue-600"
+                >
+                  {soundMuted ? '🔇' : '🔊'}
+                </button>
+                <span className="text-xs font-mono font-bold text-amber-600">
+                  🔥 {streak} Streak
+                </span>
+              </div>
             </div>
 
             <div className="space-y-3 mb-6">
