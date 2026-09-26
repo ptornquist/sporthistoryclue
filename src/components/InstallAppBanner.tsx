@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
 const DISMISS_KEY = "shc_pwa_dismissed";
 const DISMISS_EVENT = "shc-pwa-dismiss";
@@ -61,7 +61,7 @@ export function InstallAppBannerCard({
   onDismiss: () => void;
 }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)] md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
       <div className="mx-4 mb-4 flex items-start gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg">
         <Image
           src="/icon-192x192.png"
@@ -102,8 +102,14 @@ export function InstallAppBannerCard({
 }
 
 export function InstallAppBanner() {
-  const mode = useSyncExternalStore(subscribe, readBannerMode, () => "hidden" as const);
+  const [mode, setMode] = useState<BannerMode>("hidden");
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const apply = () => setMode(readBannerMode());
+    apply();
+    return subscribe(apply);
+  }, []);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -123,7 +129,7 @@ export function InstallAppBanner() {
 
   return (
     <>
-      <div className="h-32 md:hidden" aria-hidden />
+      <div className="h-32" aria-hidden />
       <InstallAppBannerCard
         platform={mode}
         canInstall={promptEvent != null}
