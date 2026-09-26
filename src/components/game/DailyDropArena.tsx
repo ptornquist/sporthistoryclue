@@ -17,6 +17,8 @@ import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
+import { findCase } from '@/lib/case-files';
+import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { CommunityClueDistribution } from '@/components/CommunityClueDistribution';
@@ -158,6 +160,7 @@ export function DailyDropArena({
   const [guessing, setGuessing] = useState(false);
   const [loading, setLoading] = useState(!initialFixture);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [challengeOpen, setChallengeOpen] = useState(false);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
@@ -848,6 +851,13 @@ export function DailyDropArena({
 
               <div className="flex flex-col sm:flex-row justify-center gap-3">
                 <button
+                  type="button"
+                  onClick={() => setChallengeOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-2xl text-sm"
+                >
+                  ⚔️ Challenge a Friend
+                </button>
+                <button
                   onClick={handleShareResult}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
                 >
@@ -915,6 +925,16 @@ export function DailyDropArena({
         isOpen={authGateOpen}
         onClose={() => setAuthGateOpen(false)}
         featureName="Past Drops"
+      />
+      <ChallengeFriendModal
+        isOpen={challengeOpen}
+        onClose={() => setChallengeOpen(false)}
+        matchSlug={findCase(challenge.id)?.slug ?? challenge.id}
+        matchTitle={findCase(challenge.id)?.title ?? (playingArchive ? sportLabel : "Today's Daily Drop")}
+        userScore={userFinalScore > 0 ? userFinalScore : null}
+        category={challenge.category}
+        username={playerName}
+        campaignId={campaign?.id}
       />
     </main>
   );

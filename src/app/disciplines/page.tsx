@@ -14,6 +14,7 @@ import {
   type FixturePreviewModel,
 } from '@/lib/case-files';
 import { arenaHref } from '@/lib/storylines';
+import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
 
 interface ChallengeItem {
   id: string;
@@ -43,6 +44,12 @@ export default function DisciplinesPage() {
   const [challenges, setChallenges] = useState<ChallengeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [challengeTarget, setChallengeTarget] = useState<{
+    slug: string;
+    title: string;
+    score: number | null;
+    category: string;
+  } | null>(null);
 
   const localFixtures = CASE_FILES.filter((file) => file.sport === selectedSport).map(previewFromCase);
   const remoteFixtures = challenges
@@ -195,6 +202,14 @@ export default function DisciplinesPage() {
                     solvedScore={record?.score ?? null}
                     matchup={record?.matchup ?? null}
                     href={arenaHref(fixture.lookupIds[0] || fixture.key)}
+                    onChallenge={() =>
+                      setChallengeTarget({
+                        slug: fixture.lookupIds[0] || fixture.key,
+                        title: fixture.title,
+                        score: record?.score ?? null,
+                        category: fixture.context,
+                      })
+                    }
                   />
                 );
               })}
@@ -204,6 +219,14 @@ export default function DisciplinesPage() {
       </div>
 
       <Footer />
+      <ChallengeFriendModal
+        isOpen={challengeTarget != null}
+        onClose={() => setChallengeTarget(null)}
+        matchSlug={challengeTarget?.slug ?? ""}
+        matchTitle={challengeTarget?.title ?? ""}
+        userScore={challengeTarget?.score}
+        category={challengeTarget?.category}
+      />
     </main>
   );
 }

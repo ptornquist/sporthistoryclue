@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
-import { arenaHref, firstOpenMatch, STORYLINES } from '@/lib/storylines';
+import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
+import { arenaHref, firstOpenMatch, STORYLINES, type Storyline } from '@/lib/storylines';
 
 export default function CampaignsPage() {
+  const [storyChallenge, setStoryChallenge] = useState<Storyline | null>(null);
   const solved = useSolvedFixtures(
     STORYLINES.flatMap((campaign) =>
       campaign.matches.map((match) => ({ key: match.key, lookupIds: match.lookupIds })),
@@ -106,15 +109,24 @@ export default function CampaignsPage() {
                   {campaign.matches.length} Historical{' '}
                   {campaign.matches.length === 1 ? 'Match' : 'Matches'}
                 </span>
-                <Link
-                  href={arenaHref(
-                    (firstOpenMatch(campaign.matches, solved)?.lookupIds[0]) || campaign.matches[0].key,
-                    campaign.id,
-                  )}
-                  className="px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
-                >
-                  Start Campaign
-                </Link>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStoryChallenge(campaign)}
+                    className="border border-zinc-200 hover:border-blue-400 text-zinc-700 hover:text-blue-600 px-3 py-2 rounded-xl text-xs font-bold"
+                  >
+                    ⚔️ Challenge Storyline
+                  </button>
+                  <Link
+                    href={arenaHref(
+                      (firstOpenMatch(campaign.matches, solved)?.lookupIds[0]) || campaign.matches[0].key,
+                      campaign.id,
+                    )}
+                    className="px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                  >
+                    Start Campaign
+                  </Link>
+                </div>
               </div>
             </article>
           ))}
@@ -122,6 +134,16 @@ export default function CampaignsPage() {
       </div>
 
       <Footer />
+      {storyChallenge && (
+        <ChallengeFriendModal
+          isOpen
+          onClose={() => setStoryChallenge(null)}
+          matchSlug={storyChallenge.matches[0]?.lookupIds[0] || storyChallenge.matches[0]?.key || storyChallenge.id}
+          matchTitle={storyChallenge.title}
+          category={storyChallenge.era}
+          campaignId={storyChallenge.id}
+        />
+      )}
     </main>
   );
 }

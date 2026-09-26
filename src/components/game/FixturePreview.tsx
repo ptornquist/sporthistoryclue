@@ -11,6 +11,7 @@ interface FixturePreviewProps {
   matchup: string | null;
   href: string;
   density?: "compact" | "row";
+  onChallenge?: () => void;
 }
 
 export function FixturePreview({
@@ -21,6 +22,7 @@ export function FixturePreview({
   matchup,
   href,
   density = "compact",
+  onChallenge,
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
   const reveal = solved ? matchup : null;
@@ -55,17 +57,46 @@ export function FixturePreview({
     <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCE →</span>
   );
 
+  const challengeButton = onChallenge ? (
+    <button
+      type="button"
+      title="Challenge a friend to this fixture"
+      onClick={onChallenge}
+      className="shrink-0 border border-zinc-200 hover:border-blue-400 text-zinc-700 hover:text-blue-600 px-3 py-2 rounded-xl text-xs font-bold"
+    >
+      ⚔️ Challenge
+    </button>
+  ) : null;
+
+  if (!onChallenge) {
+    return (
+      <Link
+        href={href}
+        className={
+          density === "row"
+            ? "group flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all hover:bg-zinc-100/80"
+            : "group flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50"
+        }
+      >
+        {body}
+        {action}
+      </Link>
+    );
+  }
+
   return (
-    <Link
-      href={href}
+    <div
       className={
         density === "row"
-          ? "group flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all hover:bg-zinc-100/80"
-          : "group flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50"
+          ? "flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4"
+          : "flex items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3"
       }
     >
-      {body}
-      {action}
-    </Link>
+      <Link href={href} className="group flex min-w-0 flex-1 items-center justify-between gap-4 text-left">
+        {body}
+        {action}
+      </Link>
+      {challengeButton}
+    </div>
   );
 }
