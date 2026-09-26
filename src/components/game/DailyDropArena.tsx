@@ -21,6 +21,8 @@ import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { CommunityClueDistribution } from '@/components/CommunityClueDistribution';
 import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
+import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
+import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
 
 interface DailyFixture {
   id: string;
@@ -156,6 +158,8 @@ export function DailyDropArena({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
+  const [solvedDates, setSolvedDates] = useState<string[]>([]);
+  const streakLock = useRef(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authGateOpen, setAuthGateOpen] = useState(false);
@@ -168,12 +172,27 @@ export function DailyDropArena({
   };
 
   useEffect(() => {
+    const applyStoredStreak = (profileStreak?: number | null) => {
+      if (streakLock.current) return;
+      const history = loadSolvedHistory();
+      setSolvedDates(history);
+      if (history.length > 0) {
+        setStreak(activeStreak(history, utcDateKey(new Date())));
+        return;
+      }
+      if (profileStreak) {
+        setStreak(profileStreak);
+        return;
+      }
+      const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
+      setStreak(savedStreak);
+    };
+
     const initPlayer = async () => {
       if (!isSupabaseConfigured) {
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
-        const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
-        setStreak(savedStreak);
+        applyStoredStreak();
         setAuthReady(true);
         return;
       }
@@ -191,16 +210,16 @@ export function DailyDropArena({
           if (profile?.username) setPlayerName(profile.username);
           else if (user.email) setPlayerName(user.email.split('@')[0]);
 
-          if (profile?.streak) setStreak(profile.streak);
+          applyStoredStreak(profile?.streak);
         } else {
           const saved = localStorage.getItem('shc_handle');
           if (saved) setPlayerName(saved);
-          const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
-          setStreak(savedStreak);
+          applyStoredStreak();
         }
       } catch {
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
+        applyStoredStreak();
       } finally {
         setAuthReady(true);
       }
@@ -366,7 +385,12 @@ export function DailyDropArena({
         triggerHaptic([50, 50, 100]);
         setGameWon(true);
         rememberSolvedCase(challenge.id, score);
-        const newStreak = streak + 1;
+        const today = utcDateKey(new Date());
+        const solvedKey = /^\d{4}-\d{2}-\d{2}$/.test(challenge.date_key) ? challenge.date_key : today;
+        const history = specificMatch ? loadSolvedHistory() : recordSolvedDate(solvedKey);
+        const newStreak = specificMatch ? streak + 1 : activeStreak(history, today);
+        streakLock.current = true;
+        if (!specificMatch) setSolvedDates(history);
         setStreak(newStreak);
         localStorage.setItem('shc_streak', newStreak.toString());
 
@@ -679,6 +703,7 @@ export function DailyDropArena({
 
           {/* Showdown / Victory Result */}
           {(gameWon || gameOver) && (
+            <>
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
               
               {/* Head-to-Head Duel Card */}
@@ -764,15 +789,6 @@ export function DailyDropArena({
                 </div>
               )}
 
-              <div className="mb-6 space-y-4">
-                <HistoricalMiniRecap challenge={challenge} />
-                <CommunityClueDistribution
-                  challengeId={challenge.id}
-                  userSolvedClue={gameWon ? currentClueIdx + 1 : 0}
-                  refreshToken={statsRefresh}
-                />
-              </div>
-
               {gameWon && campaign && nextMatch && (
                 <Link
                   href={arenaHref(nextMatch.key, campaign.id)}
@@ -790,29 +806,67 @@ export function DailyDropArena({
                 </Link>
               )}
 
-              {!isDuelActive && (
-                <div className="flex flex-col sm:flex-row justify-center gap-3">
-                  <button
-                    onClick={handleShareResult}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
-                  >
-                    Share Result
-                  </button>
-                  <button
-                    onClick={handleShareResult}
-                    className="px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
-                  >
-                    Copy Score
-                  </button>
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <button
+                  onClick={handleShareResult}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+                >
+                  Share Result
+                </button>
+                <button
+                  onClick={() => {
+                    if (navigator.clipboard) {
+                      void navigator.clipboard.writeText(resultText).then(() => {
+                        showToast('📋 Result copied to clipboard!');
+                      });
+                    }
+                  }}
+                  className="px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
+                >
+                  Copy Score
+                </button>
+                {(playingArchive || !gameWon) && (
                   <button
                     onClick={handleChallengeScout}
                     className="px-6 py-3 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
                   >
                     Challenge a Scout
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+
+            {gameWon && !playingArchive && (
+              <DailyDropWaitHub
+                streak={streak}
+                solvedDates={solvedDates}
+                duelLink={resultUrl}
+                onCopyLink={() => {
+                  if (navigator.clipboard) {
+                    void navigator.clipboard.writeText(resultUrl).then(() => {
+                      showToast('⚔️ Duel link copied to clipboard!');
+                    });
+                  }
+                }}
+                onShareLink={() => {
+                  void sharePayload(
+                    'SportsHistoryClue Duel',
+                    `⚔️ Duel me on SportsHistoryClue. Beat ${userFinalScore.toLocaleString()} PTS.\n${resultUrl}`,
+                    resultUrl,
+                  );
+                }}
+              />
+            )}
+
+            <div className="mt-4 space-y-4">
+              <CommunityClueDistribution
+                challengeId={challenge.id}
+                userSolvedClue={gameWon ? currentClueIdx + 1 : 0}
+                refreshToken={statsRefresh}
+              />
+              <HistoricalMiniRecap challenge={challenge} />
+            </div>
+            </>
           )}
         </div>
       </div>
