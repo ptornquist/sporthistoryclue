@@ -23,6 +23,7 @@ import { CommunityClueDistribution } from '@/components/CommunityClueDistributio
 import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
 import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
 import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
+import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
 
 interface DailyFixture {
   id: string;
@@ -142,6 +143,7 @@ export function DailyDropArena({
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [statsRefresh, setStatsRefresh] = useState(0);
   const statsSent = useRef<string | null>(null);
+  const duelLogged = useRef<string | null>(null);
   const { wallet, awardSolve } = useCosmeticWallet();
 
   const [challenge, setChallenge] = useState<DailyFixture | null>(initialFixture);
@@ -361,6 +363,43 @@ export function DailyDropArena({
     setSelectedDate(dateKey === today ? null : dateKey);
   };
 
+  const logFinishedDuel = (playerScore: number) => {
+    if (!duelHandle || !challenge) return;
+    const marker = `${challenge.id}:${duelHandle}:${playerScore}`;
+    if (duelLogged.current === marker) return;
+    duelLogged.current = marker;
+    const own = duelHandleName(playerName);
+    const challengerUsername = duelHandle.replace(/^@/, '').trim();
+    const body = {
+      challengeId: challenge.id,
+      challengerUsername,
+      challengerScore: duelPts,
+      opponentUsername: own,
+      opponentScore: playerScore,
+    };
+    void fetch('/api/duels', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as { duelId?: string };
+        if (!payload.duelId) return;
+        rememberDuel({
+          id: payload.duelId,
+          created_at: new Date().toISOString(),
+          challenge_id: challenge.id,
+          challenger_username: challengerUsername,
+          challenger_score: duelPts,
+          opponent_username: own,
+          opponent_score: playerScore,
+          winner_username: decideWinner(challengerUsername, duelPts, own, playerScore),
+        });
+      })
+      .catch(() => undefined);
+  };
+
   const handleGuess = async (option: string) => {
     if (!challenge || gameWon || gameOver || guessing) return;
     setGuessing(true);
@@ -410,6 +449,7 @@ export function DailyDropArena({
           newStreak,
         });
         setCoinsEarned(reward.earned);
+        logFinishedDuel(score);
         return;
       }
 
@@ -438,6 +478,7 @@ export function DailyDropArena({
             setSolution({ subject: closedCase.subject, year: closedCase.year });
           }
         }
+        logFinishedDuel(0);
       }
     } catch {
       showToast('Could not check that guess.');
@@ -516,7 +557,6 @@ export function DailyDropArena({
   const isVictory = isDuelActive && userFinalScore > duelPts;
   const isDefeat = isDuelActive && userFinalScore < duelPts;
   const isTie = isDuelActive && userFinalScore === duelPts;
-  const pointDiff = Math.abs(userFinalScore - duelPts);
   const slotCount = 6;
   const revealedCount = Math.min(currentClueIdx + 1, slotCount);
   const gridCells: string[] = Array.from({ length: slotCount }, (_, index) => {
@@ -717,18 +757,18 @@ export function DailyDropArena({
                   </p>
                   
                   {isVictory && (
-                    <div className="inline-block bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-xs font-black uppercase mb-4">
-                      🏆 Victory — Outperformed @{duelHandle} by {pointDiff.toLocaleString()} PTS!
+                    <div className="inline-block bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-xs font-black mb-4">
+                      {duelPrompt(duelHandle ?? "", userFinalScore, duelPts)}
                     </div>
                   )}
                   {isDefeat && (
-                    <div className="inline-block bg-rose-100 text-rose-800 px-4 py-1.5 rounded-full text-xs font-black uppercase mb-4">
-                      💀 Defeat — @{duelHandle} edged you out by {pointDiff.toLocaleString()} PTS!
+                    <div className="inline-block bg-rose-100 text-rose-800 px-4 py-1.5 rounded-full text-xs font-black mb-4">
+                      {duelPrompt(duelHandle ?? "", userFinalScore, duelPts)}
                     </div>
                   )}
                   {isTie && (
-                    <div className="inline-block bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-xs font-black uppercase mb-4">
-                      🤝 Stalemate — Perfect score tie!
+                    <div className="inline-block bg-zinc-100 text-zinc-700 px-4 py-1.5 rounded-full text-xs font-black mb-4">
+                      {duelPrompt(duelHandle ?? "", userFinalScore, duelPts)}
                     </div>
                   )}
 

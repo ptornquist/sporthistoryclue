@@ -12,6 +12,8 @@ import {
   type ScoutProfile,
 } from '@/lib/supabase/network';
 import { ScoutCard } from '@/components/game/ScoutCard';
+import { DuelHistory } from '@/components/game/DuelHistory';
+import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 
@@ -220,6 +222,16 @@ export default function ProfilePage() {
           signedIn={Boolean(user)}
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
+        />
+
+        <DuelHistory
+          username={duelHandleName(profile?.username || guestHandle)}
+          playedIds={solvedSlugs}
+          ready={profileReady}
+          onToast={(message) => {
+            setActionMessage(message);
+            window.setTimeout(() => setActionMessage(null), 2500);
+          }}
         />
 
         {user && (

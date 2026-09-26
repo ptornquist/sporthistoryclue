@@ -169,3 +169,4 @@ create trigger on_auth_user_created
 -- Pro Shop columns, coin grants, and RPCs: supabase/migrations/20260926120000_pro_shop.sql
 -- Community clue totals: supabase/migrations/20260926150000_challenge_stats.sql
 -- Weekly standings columns: supabase/migrations/20260926180000_weekly_standings.sql
+-- Duel inbox: supabase/migrations/20260926190000_duels.sql
