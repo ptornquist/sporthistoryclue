@@ -60,7 +60,7 @@ export default function Navbar() {
     { name: 'Daily Drop', href: '/' },
     { name: 'Campaigns', href: '/campaigns' },
     { name: 'Disciplines', href: '/disciplines' },
-    { name: 'Leaderboard', href: '/leaderboard' },
+    { name: 'Standings', href: '/standings' },
     { name: 'Pro Shop', href: '/shop' },
   ];
 

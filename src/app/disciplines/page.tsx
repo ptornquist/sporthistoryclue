@@ -116,7 +116,7 @@ export default function DisciplinesPage() {
             <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Storylines
             </Link>
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+            <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Standings
             </Link>
           </nav>

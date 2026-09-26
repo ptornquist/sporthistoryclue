@@ -35,7 +35,7 @@ export default function CampaignsPage() {
             <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               By Sport
             </Link>
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+            <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Standings
             </Link>
           </nav>
