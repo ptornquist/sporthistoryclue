@@ -723,7 +723,7 @@ export function DailyDropArena({
             {!gameWon && !gameOver && currentClueIdx < challenge.clues.length - 1 && (
               <button
                 onClick={handleRevealClue}
-                className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider rounded-2xl transition-colors"
+                className="w-full min-h-[48px] touch-manipulation py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider rounded-2xl transition-colors active:scale-[0.98]"
               >
                 Reveal Next Clue (-1,500 PTS)
               </button>
@@ -736,7 +736,7 @@ export function DailyDropArena({
               <p className="text-xs font-mono font-bold uppercase text-zinc-400 mb-3">
                 Identify the Historical Matchup
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 touch-manipulation">
                 {choiceOptions.map((option, idx) => {
                   const isWrong = selectedWrong.includes(option);
                   return (
@@ -744,7 +744,7 @@ export function DailyDropArena({
                       key={idx}
                       disabled={isWrong || guessing}
                       onClick={() => handleGuess(option)}
-                      className={`p-4 rounded-2xl text-left text-xs font-bold transition-all border ${
+                      className={`min-h-[48px] touch-manipulation p-4 rounded-2xl text-left text-xs font-bold transition-all border active:scale-[0.98] ${
                         isWrong
                           ? 'bg-rose-50 border-rose-200 text-rose-400 line-through cursor-not-allowed'
                           : 'bg-white border-zinc-200 hover:border-blue-600 hover:shadow-md text-zinc-800'

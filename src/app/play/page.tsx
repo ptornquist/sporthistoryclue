@@ -172,7 +172,7 @@ function PlayContent() {
             {currentClueIdx < challenge.clues.length - 1 && !gameWon && !gameOver && (
               <button
                 onClick={handleUnlockClue}
-                className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors"
+                className="min-h-[48px] touch-manipulation text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors active:scale-[0.98]"
               >
                 Skip to next clue (-2,000 PTS) →
               </button>
@@ -186,7 +186,7 @@ function PlayContent() {
             Select Your Historical Deduction
           </span>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 touch-manipulation sm:grid-cols-2 gap-3.5">
             {options.map((option, idx) => {
               const isWrong = selectedWrong.includes(option);
               return (
@@ -194,12 +194,12 @@ function PlayContent() {
                   key={idx}
                   onClick={() => handleSelectOption(option)}
                   disabled={isWrong || gameWon || gameOver}
-                  className={`p-4 md:p-5 rounded-2xl border text-left font-bold text-sm transition-all duration-150 flex items-center justify-between ${
+                  className={`min-h-[48px] touch-manipulation p-4 md:p-5 rounded-2xl border text-left font-bold text-sm transition-all duration-150 flex items-center justify-between active:scale-[0.98] ${
                     isWrong
                       ? 'bg-zinc-100 border-zinc-200 text-zinc-400 line-through cursor-not-allowed opacity-60'
                       : gameWon
                       ? 'bg-zinc-50 border-zinc-200 text-zinc-400'
-                      : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm active:scale-[0.99]'
+                      : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm'
                   }`}
                 >
                   <span className="truncate pr-2">{option}</span>

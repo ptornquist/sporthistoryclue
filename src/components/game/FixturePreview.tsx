@@ -50,7 +50,7 @@ export function FixturePreview({
   );
 
   const action = solved ? null : (
-    <span className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider">
+    <span className="inline-flex min-h-[48px] shrink-0 items-center bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider active:scale-[0.98] touch-manipulation">
       PLAY →
     </span>
   );
@@ -60,7 +60,7 @@ export function FixturePreview({
       type="button"
       title="Challenge a friend to this fixture"
       onClick={onChallenge}
-      className="shrink-0 border border-zinc-200 hover:border-blue-400 text-zinc-700 hover:text-blue-600 px-3 py-2 rounded-xl text-xs font-bold"
+      className="inline-flex min-h-[48px] shrink-0 items-center border border-zinc-200 hover:border-blue-400 text-zinc-700 hover:text-blue-600 px-3 py-2 rounded-xl text-xs font-bold active:scale-[0.98] touch-manipulation"
     >
       ⚔️ Challenge
     </button>
@@ -72,8 +72,8 @@ export function FixturePreview({
         href={href}
         className={
           density === "row"
-            ? "group flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all hover:bg-zinc-100/80"
-            : "group flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50"
+            ? "group flex touch-manipulation items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all hover:bg-zinc-100/80 active:scale-[0.98]"
+            : "group flex w-full touch-manipulation items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50 active:scale-[0.98]"
         }
       >
         {body}
@@ -90,7 +90,7 @@ export function FixturePreview({
           : "flex items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3"
       }
     >
-      <Link href={href} className="group flex min-w-0 flex-1 items-center justify-between gap-4 text-left">
+      <Link href={href} className="group flex min-w-0 flex-1 touch-manipulation items-center justify-between gap-4 text-left active:scale-[0.98]">
         {body}
         {action}
       </Link>

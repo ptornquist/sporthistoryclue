@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SportsHistoryClue">
+  <rect width="512" height="512" fill="#2563eb"/>
+  <text x="256" y="300" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="196" font-weight="700" fill="#ffffff">SH</text>
+  <rect x="92" y="378" width="328" height="24" rx="12" fill="#fbbf24"/>
+</svg>

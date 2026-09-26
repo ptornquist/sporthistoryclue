@@ -1,4 +1,5 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { InstallAppBanner } from '@/components/InstallAppBanner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -6,6 +7,17 @@ export const metadata: Metadata = {
   description:
     '6 progressive clues. 10,000 points. Can you deduce iconic sporting fixtures from Olympic finals, World Cups, and legendary rivalries before Clue 6?',
   metadataBase: new URL('https://sportshistoryclue.com'),
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SportsHistoryClue',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
   openGraph: {
     title: 'SportsHistoryClue | Can You Beat My Deduction Score?',
     description:
@@ -31,6 +43,14 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: '#fafafa',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -40,6 +60,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white">
         {children}
+        <InstallAppBanner />
       </body>
     </html>
   );
