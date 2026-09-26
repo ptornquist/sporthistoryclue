@@ -1,40 +1,74 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { InstallAppBannerCard } from "./InstallAppBanner";
+import { InstallAppBannerCard, isDisplayStandalone, isIosSafari } from "./InstallAppBanner";
+
+const SHEET =
+  "fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50 bg-white border border-zinc-200 rounded-3xl p-5 shadow-2xl";
+
+describe("install platform detection", () => {
+  it("treats iPhone, iPad, and iPod as iOS unless MSStream is present", () => {
+    expect(isIosSafari("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", undefined)).toBe(true);
+    expect(isIosSafari("Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X)", undefined)).toBe(true);
+    expect(isIosSafari("Mozilla/5.0 (iPod touch; CPU iPhone OS 15_0 like Mac OS X)", undefined)).toBe(true);
+    expect(isIosSafari("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", {})).toBe(false);
+    expect(isIosSafari("Mozilla/5.0 (Linux; Android 14; Pixel 8)", undefined)).toBe(false);
+  });
+
+  it("hides the banner when the app is already standalone", () => {
+    expect(isDisplayStandalone(true, undefined)).toBe(true);
+    expect(isDisplayStandalone(false, true)).toBe(true);
+    expect(isDisplayStandalone(false, false)).toBe(false);
+    expect(isDisplayStandalone(false, undefined)).toBe(false);
+  });
+});
 
 describe("InstallAppBannerCard", () => {
-  it("tells iOS visitors how to add the stadium app", () => {
+  it("gives iOS Safari numbered share steps and no install button", () => {
     const html = renderToStaticMarkup(
       createElement(InstallAppBannerCard, {
         platform: "ios",
-        canInstall: false,
+        manualHint: false,
         onInstall: () => undefined,
         onDismiss: () => undefined,
       }),
     );
-    expect(html).toContain("Install Stadium App");
-    expect(html).toContain("Tap Share (⎙ / ⎋) then &#x27;Add to Home Screen&#x27; (+).");
-    expect(html).toContain("rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg");
-    expect(html).toContain('src="/icon-192x192.png"');
+    expect(html).toContain(SHEET);
+    expect(html).toContain("Install SportsHistoryClue");
+    expect(html).toContain("To install this app on your iPhone/iPad:");
+    expect(html).toContain("1. Tap the Share button in Safari toolbar");
+    expect(html).toContain("⎋");
+    expect(html).toContain("2. Scroll down and tap &#x27;Add to Home Screen&#x27; (+)");
     expect(html).toContain("✕");
-    expect(html).not.toContain(">Install<");
+    expect(html).not.toContain("Install App");
   });
 
-  it("offers an Install button for Android and Chrome", () => {
-    const html = renderToStaticMarkup(
+  it("offers Install App on Android and explains the browser menu when the prompt is missing", () => {
+    const ready = renderToStaticMarkup(
       createElement(InstallAppBannerCard, {
         platform: "android",
-        canInstall: true,
+        manualHint: false,
         onInstall: () => undefined,
         onDismiss: () => undefined,
       }),
     );
-    expect(html).toContain("Install Stadium App");
-    expect(html).toContain(">Install<");
-    expect(html).toContain("min-h-[48px]");
-    expect(html).toContain("active:scale-[0.98]");
-    expect(html).toContain("touch-manipulation");
-    expect(html).not.toContain("Add to Home Screen");
+    expect(ready).toContain(">Install App<");
+    expect(ready).toContain("bg-blue-600");
+    expect(ready).toContain("min-h-[48px]");
+    expect(ready).toContain("active:scale-[0.98]");
+    expect(ready).toContain("touch-manipulation");
+    expect(ready).not.toContain("3 dots menu");
+
+    const blocked = renderToStaticMarkup(
+      createElement(InstallAppBannerCard, {
+        platform: "android",
+        manualHint: true,
+        onInstall: () => undefined,
+        onDismiss: () => undefined,
+      }),
+    );
+    expect(blocked).toContain(
+      "Tap the 3 dots menu in your browser, then tap &#x27;Install app&#x27; or &#x27;Add to Home screen&#x27;",
+    );
   });
 });
