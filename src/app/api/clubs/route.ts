@@ -1,6 +1,5 @@
 import { clubError, clubSession } from "@/lib/club-api";
 import {
-  generateClubCode,
   normalizeClubCode,
   normalizeClubName,
   normalizeShareLabel,
@@ -77,44 +76,80 @@ export async function GET() {
   });
 }
 
-export async function POST(request: Request) {
-  const session = await clubSession();
-  if (!session) return Response.json({ error: "Clubs are unavailable" }, { status: 503 });
-  if (!session.user) return Response.json({ error: "Sign in required" }, { status: 401 });
+const USER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function createFailure(error: { message?: string } | null | undefined, fallback: string) {
+  return Response.json({ success: false, error: error?.message || fallback }, { status: 400 });
+}
+
+async function createClub(
+  session: Awaited<ReturnType<typeof clubSession>>,
+  body: Record<string, unknown>,
+) {
+  const name = typeof body.name === "string" ? normalizeClubName(body.name) : null;
+  if (!name) return Response.json({ success: false, error: "Check the club name" }, { status: 400 });
+
+  const bodyUserId = typeof body.userId === "string" ? body.userId.trim() : "";
+  const userId = session?.user?.id || bodyUserId;
+  if (!USER_ID.test(userId)) {
+    return Response.json({ success: false, error: "Sign in required" }, { status: 400 });
+  }
+  if (!session) {
+    return Response.json({ success: false, error: "Clubs are unavailable" }, { status: 400 });
+  }
+
+  let lastMessage = "Failed to create club";
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    if (!/^[A-Z0-9]{6}$/.test(code)) continue;
+
+    const inserted = await session.supabase
+      .from("clubs")
+      .insert({ name, code, owner_id: userId })
+      .select("id, name, code, owner_id")
+      .single();
+    if (inserted.error || !inserted.data) {
+      lastMessage = inserted.error?.message || lastMessage;
+      const duplicate = inserted.error?.code === "23505" || lastMessage.toLowerCase().includes("duplicate");
+      if (duplicate) continue;
+      return createFailure(inserted.error, lastMessage);
+    }
+
+    const newClub = inserted.data as { id: string; name: string; code: string; owner_id: string };
+    const member = await session.supabase.from("club_members").insert({
+      club_id: newClub.id,
+      user_id: userId,
+      role: "owner",
+    });
+    if (member.error) return createFailure(member.error, member.error.message);
+
+    try {
+      const profile = await session.supabase.from("profiles").update({ club_id: newClub.id }).eq("id", userId);
+      if (profile.error) {
+        // The club and owner row already exist. A missing profiles.club_id column must not undo that.
+      }
+    } catch {
+      // Profile bookkeeping is optional.
+    }
+
+    return Response.json({ success: true, club: newClub }, { status: 200 });
+  }
+
+  return Response.json({ success: false, error: lastMessage }, { status: 400 });
+}
+
+export async function POST(request: Request) {
   const body = await readJson(request);
-  if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  if (!body) return Response.json({ success: false, error: "Invalid JSON" }, { status: 400 });
   const action = typeof body.action === "string" ? body.action : "";
+  const session = await clubSession();
 
   if (action === "create") {
-    const name = typeof body.name === "string" ? normalizeClubName(body.name) : null;
-    if (!name) return Response.json({ error: "Check the club name or code" }, { status: 400 });
-
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      const code = generateClubCode(crypto.getRandomValues(new Uint8Array(6)));
-      const { data, error } = await session.supabase.rpc("create_scout_club", {
-        club_name: name,
-        club_code: code,
-      });
-      if (!error && data && typeof data === "object") {
-        const created = data as { id?: string; name?: string; code?: string; role?: string };
-        return Response.json({
-          club: {
-            id: created.id,
-            name: created.name,
-            code: created.code,
-            role: asRole(created.role),
-            memberCount: 1,
-          },
-        });
-      }
-      if (!error?.message?.includes("code taken")) {
-        const mapped = clubError(error?.message ?? "");
-        return Response.json({ error: mapped.error }, { status: mapped.status });
-      }
-    }
-    return Response.json({ error: "Could not update the club" }, { status: 500 });
+    return createClub(session, body);
   }
+
+  if (!session) return Response.json({ error: "Clubs are unavailable" }, { status: 503 });
+  if (!session.user) return Response.json({ error: "Sign in required" }, { status: 401 });
 
   if (action === "join") {
     const code = typeof body.code === "string" ? normalizeClubCode(body.code) : null;

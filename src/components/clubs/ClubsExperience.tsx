@@ -120,18 +120,88 @@ export function ClubsExperience({
     }
   };
 
-  const createClub = async () => {
+  const handleCreateClub = async () => {
     setBusy(true);
     setNotice(null);
-    const result = await postClub({ action: "create", name: clubName });
-    setBusy(false);
-    if (!result.club?.id) {
-      setNotice(result.error ?? "Could not create the club");
-      return;
+    try {
+      let userId = viewerId;
+      if (isSupabaseConfigured) {
+        const { data } = await supabaseClient.auth.getUser();
+        if (data.user?.id) {
+          userId = data.user.id;
+          setViewerId(data.user.id);
+        }
+      }
+      const result = await postClub({ action: "create", name: clubName, userId });
+      if (!result.club?.id) {
+        setNotice(result.error || "Failed to create club");
+        return;
+      }
+
+      const summary: ClubSummary = {
+        id: result.club.id,
+        name: result.club.name || clubName.trim(),
+        code: result.club.code,
+        role: "owner",
+        memberCount: 1,
+      };
+      const ownerId = userId || result.club.owner_id || result.club.id;
+      let owner: ClubMember = {
+        id: ownerId,
+        username: "Scout",
+        totalScore: 0,
+        streak: 0,
+        matchesSolved: 0,
+        equippedTitle: null,
+        equippedFrame: null,
+        avatarUrl: null,
+        role: "owner",
+      };
+      if (isSupabaseConfigured && userId) {
+        try {
+          const { data } = await supabaseClient
+            .from("profiles")
+            .select("username, total_score, streak, matches_solved, equipped_title, equipped_frame, avatar_url")
+            .eq("id", userId)
+            .maybeSingle();
+          if (data) {
+            const profile = data as {
+              username?: string | null;
+              total_score?: number | null;
+              streak?: number | null;
+              matches_solved?: number | null;
+              equipped_title?: string | null;
+              equipped_frame?: string | null;
+              avatar_url?: string | null;
+            };
+            owner = {
+              ...owner,
+              username: (profile.username || "Scout").replace(/^@/, ""),
+              totalScore: profile.total_score ?? 0,
+              streak: profile.streak ?? 0,
+              matchesSolved: profile.matches_solved ?? 0,
+              equippedTitle: profile.equipped_title ?? null,
+              equippedFrame: profile.equipped_frame ?? null,
+              avatarUrl: profile.avatar_url ?? null,
+            };
+          }
+        } catch {
+          // Opening the new club does not depend on the profile read.
+        }
+      }
+
+      setClubs((current) => [...current.filter((club) => club.id !== summary.id), summary]);
+      setActiveId(summary.id);
+      setMembers([owner]);
+      setActivity([]);
+      setShowComposer(false);
+      setClubName("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setNotice(message || "Failed to create club");
+    } finally {
+      setBusy(false);
     }
-    setClubName("");
-    setNotice(`Club created. Code ${result.club.code}.`);
-    await refresh(result.club.id);
   };
 
   const joinClub = async () => {
@@ -219,7 +289,7 @@ export function ClubsExperience({
                   busy={busy}
                   onClubName={setClubName}
                   onJoinCode={setJoinCode}
-                  onCreate={() => { void createClub(); }}
+                  onCreate={() => { void handleCreateClub(); }}
                   onJoin={() => { void joinClub(); }}
                 />
               )}
@@ -271,13 +341,19 @@ async function loadDetail(
   apply(body);
 }
 
-async function postClub(payload: Record<string, unknown>): Promise<{ club?: ClubSummary; error?: string }> {
+async function postClub(payload: Record<string, unknown>): Promise<{
+  club?: ClubSummary & { owner_id?: string };
+  error?: string;
+}> {
   const response = await fetch("/api/clubs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const body = (await response.json()) as { club?: ClubSummary; error?: string };
-  if (!response.ok) return { error: body.error || "Could not update the club" };
+  const body = (await response.json()) as { success?: boolean; club?: ClubSummary & { owner_id?: string }; error?: string };
+  if (!response.ok || body.success === false) {
+    const fallback = payload.action === "create" ? "Failed to create club" : "Could not update the club";
+    return { error: body.error || fallback };
+  }
   return body;
 }
