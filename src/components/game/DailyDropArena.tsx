@@ -18,6 +18,7 @@ import AuthGateModal from '@/components/AuthGateModal';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
+import { sanitizeClues } from '@/lib/clue-sanitation';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
@@ -35,6 +36,17 @@ interface DailyFixture {
   options: string[];
   sportId?: string;
   sportName?: string;
+}
+
+function cleanFixture(fixture: DailyFixture): DailyFixture {
+  const file = findCase(fixture.id);
+  return {
+    ...fixture,
+    clues: sanitizeClues(fixture.clues ?? [], {
+      title: file?.title || fixture.category,
+      year: file?.year,
+    }),
+  };
 }
 
 interface DailyResponse extends DailyFixture {
@@ -148,7 +160,9 @@ export function DailyDropArena({
   const duelLogged = useRef<string | null>(null);
   const { wallet, awardSolve } = useCosmeticWallet();
 
-  const [challenge, setChallenge] = useState<DailyFixture | null>(initialFixture);
+  const [challenge, setChallenge] = useState<DailyFixture | null>(
+    initialFixture ? cleanFixture(initialFixture) : null,
+  );
   const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [solution, setSolution] = useState<Solution | null>(null);
@@ -317,7 +331,7 @@ export function DailyDropArena({
           throw new Error('Daily drop unavailable');
         }
         const payload = (await response.json()) as DailyResponse;
-        const fixture = payload.challenge ?? payload;
+        const fixture = cleanFixture(payload.challenge ?? payload);
         whistled.current = false;
         setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
         setChallenge(fixture);

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
+import { findCase } from '@/lib/case-files';
+import { sanitizeClues } from '@/lib/clue-sanitation';
 import { loadPublicArchive } from '@/lib/daily-drop';
 
 type HomeSearchParams = {
@@ -58,6 +60,16 @@ export default async function Page({
   const duel = firstParam(params.duel);
   const duelPts = Number.parseInt(firstParam(params.pts), 10) || 0;
   const archive = specificMatch ? await loadPublicArchive(specificMatch) : null;
+  const file = findCase(specificMatch);
+  const initialFixture = archive?.challenge
+    ? {
+        ...archive.challenge,
+        clues: sanitizeClues(archive.challenge.clues, {
+          title: file?.title || archive.challenge.category,
+          year: file?.year,
+        }),
+      }
+    : null;
 
   return (
     <Suspense
@@ -71,7 +83,7 @@ export default async function Page({
         key={`${specificMatch}:${campaignId}:${duel}`}
         specificMatch={specificMatch}
         campaignId={campaignId}
-        initialFixture={archive?.challenge ?? null}
+        initialFixture={initialFixture}
         initialDuel={duel}
         initialDuelPts={duelPts}
       />

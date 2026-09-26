@@ -8,6 +8,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
 import { findCase, SPORT_NAME } from "@/lib/case-files";
+import { sanitizeClues } from "@/lib/clue-sanitation";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
 import { hashString } from "@/lib/utils";
 
@@ -44,11 +45,15 @@ export function parseDateKey(value: string | null, now = new Date()): string | n
 }
 
 export function toPublicDaily(fixture: SecretDaily): PublicDaily {
+  const file = findCase(fixture.id);
   return {
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: fixture.clues,
+    clues: sanitizeClues(fixture.clues, {
+      title: file?.title || fixture.category,
+      year: file?.year || fixture.year,
+    }),
     options: fixture.options,
   };
 }
