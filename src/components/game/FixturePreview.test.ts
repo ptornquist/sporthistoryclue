@@ -5,7 +5,7 @@ import { FixturePreview } from "./FixturePreview";
 import { readSolvedScoreForIds, rememberSolvedCase } from "@/lib/solved-cases";
 
 describe("FixturePreview", () => {
-  it("hides the matchup and links DEDUCE while the case is open", () => {
+  it("hides the matchup and links PLAY while the case is open", () => {
     const html = renderToStaticMarkup(
       createElement(FixturePreview, {
         title: "The 1.00 Scoreboard Anomaly",
@@ -18,7 +18,11 @@ describe("FixturePreview", () => {
     );
     expect(html).toContain("The 1.00 Scoreboard Anomaly");
     expect(html).toContain("1976 · Olympic All-Around · 6 Clues");
-    expect(html).toContain("DEDUCE →");
+    expect(html).toContain("PLAY →");
+    expect(html).toContain(
+      "bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider",
+    );
+    expect(html).not.toContain("DEDUCE");
     expect(html).toContain('href="/?match=comaneci-1976&amp;campaign=olympic-miracles"');
     expect(html).not.toContain("Nadia");
     expect(html).not.toContain("SOLVED");
@@ -41,6 +45,26 @@ describe("FixturePreview", () => {
     expect(html).toContain("Usain Bolt (2008)");
     expect(html).toContain("2008 · Olympic 100m Final · 6 Clues");
     expect(html).toContain('href="/?match=bolt-beijing-2008"');
+    expect(html).not.toContain("PLAY");
+    expect(html).not.toContain("DEDUCE");
+  });
+
+  it("uses the same PLAY button on archive rows", () => {
+    const html = renderToStaticMarkup(
+      createElement(FixturePreview, {
+        title: "The Summit Series",
+        year: 1972,
+        context: "Hockey",
+        solvedScore: null,
+        matchup: null,
+        href: "/?match=summit-series-1972",
+        density: "row",
+      }),
+    );
+    expect(html).toContain("PLAY →");
+    expect(html).toContain(
+      "bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider",
+    );
     expect(html).not.toContain("DEDUCE");
   });
 });

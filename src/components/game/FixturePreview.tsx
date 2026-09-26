@@ -49,12 +49,10 @@ export function FixturePreview({
     </div>
   );
 
-  const action = solved ? null : density === "row" ? (
-    <span className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm">
-      DEDUCE →
+  const action = solved ? null : (
+    <span className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider">
+      PLAY →
     </span>
-  ) : (
-    <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCE →</span>
   );
 
   const challengeButton = onChallenge ? (
