@@ -19,6 +19,8 @@ import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
+import { CommunityClueDistribution } from '@/components/CommunityClueDistribution';
+import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
 
 interface DailyFixture {
   id: string;
@@ -136,6 +138,8 @@ export function DailyDropArena({
   const [duelPts, setDuelPts] = useState(initialDuelPts);
   const [opponentTitle, setOpponentTitle] = useState('');
   const [coinsEarned, setCoinsEarned] = useState(0);
+  const [statsRefresh, setStatsRefresh] = useState(0);
+  const statsSent = useRef<string | null>(null);
   const { wallet, awardSolve } = useCosmeticWallet();
 
   const [challenge, setChallenge] = useState<DailyFixture | null>(initialFixture);
@@ -219,6 +223,36 @@ export function DailyDropArena({
       setDuelPts(pts ? parseInt(pts, 10) || 0 : 0);
     });
   }, []);
+
+  useEffect(() => {
+    if ((!gameWon && !gameOver) || !challenge) return;
+    const marker = `${challenge.id}:${gameWon ? currentClueIdx + 1 : 0}`;
+    if (statsSent.current === marker) return;
+    statsSent.current = marker;
+    const storageKey = `shc_stat_${challenge.id}`;
+    let clientKey = "";
+    try {
+      clientKey = window.localStorage.getItem(storageKey) || "";
+      if (!/^[a-z0-9]{8,80}$/i.test(clientKey)) {
+        clientKey = crypto.randomUUID().replace(/-/g, "").slice(0, 32);
+        window.localStorage.setItem(storageKey, clientKey);
+      }
+    } catch {
+      clientKey = "guestkey1";
+    }
+    void fetch("/api/stats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        challengeId: challenge.id,
+        clueIndex: gameWon ? currentClueIdx + 1 : 0,
+        won: gameWon,
+        clientKey,
+      }),
+    })
+      .then(() => setStatsRefresh((value) => value + 1))
+      .catch(() => setStatsRefresh((value) => value + 1));
+  }, [gameWon, gameOver, challenge, currentClueIdx]);
 
   useEffect(() => {
     if (!duelHandle || !isSupabaseConfigured) return;
@@ -729,6 +763,15 @@ export function DailyDropArena({
                   +{coinsEarned} COINS EARNED 🪙
                 </div>
               )}
+
+              <div className="mb-6 space-y-4">
+                <HistoricalMiniRecap challenge={challenge} />
+                <CommunityClueDistribution
+                  challengeId={challenge.id}
+                  userSolvedClue={gameWon ? currentClueIdx + 1 : 0}
+                  refreshToken={statsRefresh}
+                />
+              </div>
 
               {gameWon && campaign && nextMatch && (
                 <Link
