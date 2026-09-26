@@ -41,6 +41,9 @@ export default function CampaignsPage() {
             <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Standings
             </Link>
+            <Link href="/clubs" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+              Clubs
+            </Link>
           </nav>
         </div>
       </header>

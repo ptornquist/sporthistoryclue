@@ -61,6 +61,7 @@ export default function Navbar() {
     { name: 'Campaigns', href: '/campaigns' },
     { name: 'Disciplines', href: '/disciplines' },
     { name: 'Standings', href: '/standings' },
+    { name: 'Clubs', href: '/clubs' },
     { name: 'Pro Shop', href: '/shop' },
   ];
 

@@ -64,6 +64,28 @@ export function ChallengeFriendModal({
     }
   };
 
+  const shareWithClub = async () => {
+    try {
+      const response = await fetch("/api/clubs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "share", matchTitle, matchSlug, userScore: userScore ?? 0 }),
+      });
+      if (response.status === 401) {
+        setToast("Sign in to share with your club.");
+      } else if (response.status === 404) {
+        setToast("Join a club before sharing this match.");
+      } else if (!response.ok) {
+        setToast("Could not share with your club.");
+      } else {
+        setToast("⚔️ Shared with your club.");
+      }
+    } catch {
+      setToast("Could not share with your club.");
+    }
+    window.setTimeout(() => setToast(null), 2200);
+  };
+
   const nativeShare = async () => {
     if (typeof navigator.share === "function") {
       try {
@@ -145,6 +167,14 @@ export function ChallengeFriendModal({
             ✖️ Post on X / Twitter
           </a>
         </div>
+
+        <button
+          type="button"
+          onClick={() => { void shareWithClub(); }}
+          className="mt-3 w-full rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700 hover:border-blue-400"
+        >
+          ⚔️ Share with your Club
+        </button>
 
         <button
           type="button"

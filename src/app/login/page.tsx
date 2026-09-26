@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
+import { safeReturnPath } from '@/lib/clubs';
 
 function AuthContent() {
   const router = useRouter();
@@ -51,7 +52,8 @@ function AuthContent() {
             localStorage.setItem('shc_handle', username.trim());
           }
           setSuccessMsg('Account created! Logging you in...');
-          setTimeout(() => router.push('/'), 1200);
+          const next = safeReturnPath(searchParams.get('next')) ?? '/';
+          setTimeout(() => router.push(next), 1200);
         }
       } else {
         const { error } = await supabaseClient.auth.signInWithPassword({
@@ -60,7 +62,7 @@ function AuthContent() {
         });
 
         if (error) throw error;
-        router.push('/');
+        router.push(safeReturnPath(searchParams.get('next')) ?? '/');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred during authentication.');
