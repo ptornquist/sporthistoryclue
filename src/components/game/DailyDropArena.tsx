@@ -17,6 +17,8 @@ import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
+import { cosmeticName } from '@/lib/cosmetics';
+import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 
 interface DailyFixture {
   id: string;
@@ -121,13 +123,20 @@ export function DailyDropArena({
   specificMatch = '',
   campaignId = '',
   initialFixture = null,
+  initialDuel = '',
+  initialDuelPts = 0,
 }: {
   specificMatch?: string;
   campaignId?: string;
   initialFixture?: DailyFixture | null;
+  initialDuel?: string;
+  initialDuelPts?: number;
 }) {
-  const [duelHandle, setDuelHandle] = useState<string | null>(null);
-  const [duelPts, setDuelPts] = useState(0);
+  const [duelHandle, setDuelHandle] = useState<string | null>(initialDuel || null);
+  const [duelPts, setDuelPts] = useState(initialDuelPts);
+  const [opponentTitle, setOpponentTitle] = useState('');
+  const [coinsEarned, setCoinsEarned] = useState(0);
+  const { wallet, awardSolve } = useCosmeticWallet();
 
   const [challenge, setChallenge] = useState<DailyFixture | null>(initialFixture);
   const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
@@ -197,15 +206,38 @@ export function DailyDropArena({
   }, []);
 
   useEffect(() => {
-    setSoundMuted(isSoundMuted());
+    Promise.resolve().then(() => {
+      setSoundMuted(isSoundMuted());
+    });
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setDuelHandle(params.get('duel'));
-    const pts = params.get('pts');
-    setDuelPts(pts ? parseInt(pts, 10) || 0 : 0);
+    Promise.resolve().then(() => {
+      const params = new URLSearchParams(window.location.search);
+      setDuelHandle(params.get('duel'));
+      const pts = params.get('pts');
+      setDuelPts(pts ? parseInt(pts, 10) || 0 : 0);
+    });
   }, []);
+
+  useEffect(() => {
+    if (!duelHandle || !isSupabaseConfigured) return;
+    let cancelled = false;
+    void Promise.resolve(
+      supabaseClient
+        .from('profiles')
+        .select('equipped_title')
+        .ilike('username', duelHandle)
+        .maybeSingle(),
+    ).then(({ data, error }) => {
+      if (!cancelled && !error) setOpponentTitle(cosmeticName(data?.equipped_title));
+    }).catch(() => {
+      if (!cancelled) setOpponentTitle('');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [duelHandle]);
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -216,6 +248,7 @@ export function DailyDropArena({
       setSelectedWrong([]);
       setGameWon(false);
       setGameOver(false);
+      setCoinsEarned(0);
       try {
         const query = new URLSearchParams();
         if (specificMatch) query.set('match', specificMatch);
@@ -310,6 +343,15 @@ export function DailyDropArena({
             .eq('id', currentUser.id)
             .then();
         }
+        const reward = await awardSolve({
+          matchId: challenge.id,
+          pointScore: score,
+          isDaily: !specificMatch,
+          streakContinued: newStreak >= 2,
+          duelWon: Boolean(duelHandle) && score > duelPts,
+          newStreak,
+        });
+        setCoinsEarned(reward.earned);
         return;
       }
 
@@ -463,7 +505,7 @@ export function DailyDropArena({
         {/* Duel Banner */}
         {isDuelActive && !gameWon && !gameOver && (
           <div className="bg-blue-600 text-white px-4 py-2.5 text-center text-xs font-bold tracking-wide">
-            ⚔️ Duel Active: Beat @{duelHandle}&apos;s score of {duelPts.toLocaleString()} PTS!
+            ⚔️ Duel Active: VS @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''} — beat {duelPts.toLocaleString()} PTS!
           </div>
         )}
 
@@ -611,6 +653,9 @@ export function DailyDropArena({
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
                     Head-to-Head Showdown
                   </span>
+                  <p className="mb-4 text-sm font-black text-zinc-900">
+                    VS @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''}
+                  </p>
                   
                   {isVictory && (
                     <div className="inline-block bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-xs font-black uppercase mb-4">
@@ -635,7 +680,9 @@ export function DailyDropArena({
                     </div>
                     <div className="text-zinc-300 font-black text-sm">VS</div>
                     <div>
-                      <p className="text-xs font-bold text-blue-600 truncate">You (@{playerName})</p>
+                      <p className="text-xs font-bold text-blue-600 truncate">
+                        You (@{playerName}){cosmeticName(wallet.equippedTitle) ? ` ["${cosmeticName(wallet.equippedTitle)}"]` : ''}
+                      </p>
                       <p className="text-xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()}</p>
                     </div>
                   </div>
@@ -676,6 +723,12 @@ export function DailyDropArena({
                 <span className="block text-[10px] font-mono font-bold uppercase text-blue-600">Final Score</span>
                 <span className="text-3xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()} PTS</span>
               </div>
+
+              {gameWon && coinsEarned > 0 && (
+                <div className="mb-6 inline-block rounded-full border border-amber-300 bg-amber-50 px-5 py-2 text-sm font-black tracking-wide text-amber-800">
+                  +{coinsEarned} COINS EARNED 🪙
+                </div>
+              )}
 
               {gameWon && campaign && nextMatch && (
                 <Link

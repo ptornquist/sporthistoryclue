@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabaseClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
   followScout,
   getFollowingIds,
@@ -10,6 +10,13 @@ import {
   unfollowScout,
   type ScoutProfile,
 } from '@/lib/supabase/network';
+import { ScoutCard } from '@/components/game/ScoutCard';
+import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
+
+interface SessionUser {
+  id: string;
+  email?: string | null;
+}
 
 interface Profile {
   id: string;
@@ -33,8 +40,12 @@ interface MatchRecord {
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const { wallet, equip } = useCosmeticWallet();
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [guestHandle, setGuestHandle] = useState('scout');
+  const [solvedSlugs, setSolvedSlugs] = useState<string[]>([]);
+  const [profileReady, setProfileReady] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
@@ -48,9 +59,14 @@ export default function ProfilePage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadData = async () => {
+    if (!isSupabaseConfigured) {
+      setProfileReady(true);
+      return;
+    }
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
-      window.location.href = '/login';
+      setUser(null);
+      setProfileReady(true);
       return;
     }
     setUser(user);
@@ -73,7 +89,7 @@ export default function ProfilePage() {
       .order('created_at', { ascending: false });
 
     if (matchHistory) {
-      setMatches(matchHistory as any);
+      setMatches(matchHistory as unknown as MatchRecord[]);
       const sum = matchHistory.reduce((acc, curr) => acc + (curr.score || 0), 0);
       setTotalScore(sum);
     }
@@ -89,16 +105,26 @@ export default function ProfilePage() {
     } else {
       setNetwork([]);
     }
+    setProfileReady(true);
   };
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      const slugs: string[] = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key?.startsWith('shc_score_')) slugs.push(key.slice('shc_score_'.length));
+      }
+      setSolvedSlugs(slugs);
+      const saved = localStorage.getItem('shc_handle');
+      if (saved) setGuestHandle(saved);
+      void loadData();
+    });
   }, []);
 
   useEffect(() => {
     const needle = scoutQuery.trim();
     if (!user || needle.length < 1) {
-      setScoutHits([]);
       return;
     }
     const timer = window.setTimeout(async () => {
@@ -127,7 +153,7 @@ export default function ProfilePage() {
     if (error) {
       alert(`Could not save username: ${error.message}`);
     } else {
-      setProfile((prev: any) => ({ ...prev, username: clean, display_name: clean }));
+      setProfile((prev) => (prev ? { ...prev, username: clean, display_name: clean } : prev));
       setActionMessage('Username updated!');
       setTimeout(() => setActionMessage(null), 3000);
     }
@@ -161,18 +187,27 @@ export default function ProfilePage() {
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
               Arena
             </Link>
+            <Link href="/shop" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
+              Pro Shop
+            </Link>
             <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
               Standings
             </Link>
-            <button
-              onClick={async () => {
-                await supabaseClient.auth.signOut();
-                window.location.href = '/login';
-              }}
-              className="text-xs font-medium text-zinc-400 hover:text-zinc-600"
-            >
-              Sign Out
-            </button>
+            {user ? (
+              <button
+                onClick={async () => {
+                  await supabaseClient.auth.signOut();
+                  window.location.href = '/login';
+                }}
+                className="text-xs font-medium text-zinc-400 hover:text-zinc-600"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link href="/login" className="text-xs font-bold uppercase tracking-wider text-blue-600">
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -184,52 +219,42 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Profile Card */}
-        <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm flex flex-col md:flex-row justify-between gap-8 items-start md:items-center">
-          <div>
-            <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
-              Scout Handle
-            </span>
-            <h1 className="text-3xl font-black tracking-tight text-zinc-900 uppercase mt-1">
-              @{profile?.username || 'scout'}
-            </h1>
-            <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
+        <ScoutCard
+          handle={profile?.username || guestHandle}
+          email={user?.email}
+          avatarUrl={profile?.avatar_url}
+          wallet={wallet}
+          careerScore={Math.max(wallet.totalScore, profile?.total_score ?? 0, totalScore)}
+          solvedCount={Math.max(wallet.matchesSolved, matches.length)}
+          currentStreak={Math.max(wallet.streak, profile?.streak ?? 0)}
+          bestStreak={Math.max(wallet.bestStreak, wallet.streak, profile?.streak ?? 0)}
+          solvedSlugs={solvedSlugs}
+          signedIn={Boolean(user)}
+          profileReady={profileReady}
+          onEquip={(itemId) => { void equip(itemId); }}
+        />
 
-            <form onSubmit={handleUpdateUsername} className="flex gap-2 mt-4">
-              <input
-                type="text"
-                value={usernameInput}
-                onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="Change handle"
-                className="bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-600"
-              />
-              <button
-                type="submit"
-                disabled={savingUsername}
-                className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black"
-              >
-                {savingUsername ? 'Saving...' : 'Save'}
-              </button>
-            </form>
-          </div>
+        {user && (
+          <form onSubmit={handleUpdateUsername} className="flex gap-2">
+            <input
+              type="text"
+              value={usernameInput}
+              onChange={(e) => setUsernameInput(e.target.value)}
+              placeholder="Change handle"
+              className="bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-600"
+            />
+            <button
+              type="submit"
+              disabled={savingUsername}
+              className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black"
+            >
+              {savingUsername ? 'Saving...' : 'Save'}
+            </button>
+          </form>
+        )}
 
-          <div className="flex gap-6 border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8 w-full md:w-auto">
-            <div>
-              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Career Score</span>
-              <span className="text-3xl font-black font-mono text-blue-600">
-                {totalScore.toLocaleString()}
-              </span>
-            </div>
-            <div>
-              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Fixtures Cleared</span>
-              <span className="text-3xl font-black font-mono text-zinc-900">
-                {matches.length}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Social / Friends Section */}
+        {user && (
+        <>
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
           <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">Find Scouts</h2>
           <p className="text-xs text-zinc-500 font-medium mt-0.5 mb-4">
@@ -246,9 +271,9 @@ export default function ProfilePage() {
           {searchingScouts && (
             <p className="text-[11px] font-bold text-zinc-400 mt-3">Searching…</p>
           )}
-          {scoutHits.length > 0 && (
+          {(scoutQuery.trim() && user ? scoutHits : []).length > 0 && (
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {scoutHits.map((scout) => {
+              {(scoutQuery.trim() && user ? scoutHits : []).map((scout) => {
                 const handle = scout.username || 'scout';
                 const following = followingIds.includes(scout.id);
                 return (
@@ -362,6 +387,8 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        </>
+        )}
       </div>
     </main>
   );

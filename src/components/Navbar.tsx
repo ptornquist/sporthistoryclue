@@ -4,11 +4,16 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
+import { cosmeticName } from '@/lib/cosmetics';
+import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
+import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const { wallet } = useCosmeticWallet();
+  const [user, setUser] = useState<{ id: string; email?: string | null } | null>(null);
   const [profile, setProfile] = useState<{ username?: string; avatar_url?: string } | null>(null);
+  const [localHandle, setLocalHandle] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -24,6 +29,10 @@ export default function Navbar() {
         setProfile(data);
       }
     };
+
+    Promise.resolve().then(() => {
+      setLocalHandle(window.localStorage.getItem('shc_handle'));
+    });
 
     fetchUserData();
 
@@ -43,13 +52,16 @@ export default function Navbar() {
     window.location.href = '/';
   };
 
-  const displayName = profile?.username || user?.email?.split('@')[0] || 'Scout';
+  const displayName = profile?.username || localHandle || user?.email?.split('@')[0] || 'Scout';
+  const equippedTitle = cosmeticName(wallet.equippedTitle);
+  const pillLabel = equippedTitle ? `@${displayName} · ${equippedTitle}` : `@${displayName}`;
 
   const NAV_LINKS = [
     { name: 'Daily Drop', href: '/' },
     { name: 'Campaigns', href: '/campaigns' },
     { name: 'Disciplines', href: '/disciplines' },
     { name: 'Leaderboard', href: '/leaderboard' },
+    { name: 'Pro Shop', href: '/shop' },
   ];
 
   return (
@@ -85,27 +97,23 @@ export default function Navbar() {
 
         {/* User Badge / Auth Buttons */}
         <div className="flex items-center gap-3">
-          {user ? (
+          {(user || localHandle) && (
             <Link
               href="/profile"
               className="flex items-center gap-2 p-1.5 pr-3 rounded-full bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 transition-all group"
             >
-              {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={displayName}
-                  className="w-7 h-7 rounded-full object-cover border border-white"
-                />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="text-xs font-black text-zinc-800 max-w-[100px] truncate group-hover:text-blue-600">
-                {displayName}
+              <ScoutAvatar
+                frameId={wallet.equippedFrame}
+                avatarUrl={profile?.avatar_url}
+                label={displayName}
+                size="sm"
+              />
+              <span className="text-xs font-black text-zinc-800 max-w-[220px] truncate group-hover:text-blue-600">
+                {pillLabel}
               </span>
             </Link>
-          ) : (
+          )}
+          {!user && (
             <div className="hidden sm:flex items-center gap-2">
               <Link
                 href="/login"

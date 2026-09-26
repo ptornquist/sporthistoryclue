@@ -54,6 +54,8 @@ export default async function Page({
   const params = await searchParams;
   const specificMatch = firstParam(params.match);
   const campaignId = firstParam(params.campaign);
+  const duel = firstParam(params.duel);
+  const duelPts = Number.parseInt(firstParam(params.pts), 10) || 0;
   const archive = specificMatch ? await loadPublicArchive(specificMatch) : null;
 
   return (
@@ -65,10 +67,12 @@ export default async function Page({
       }
     >
       <DailyDropArena
-        key={`${specificMatch}:${campaignId}`}
+        key={`${specificMatch}:${campaignId}:${duel}`}
         specificMatch={specificMatch}
         campaignId={campaignId}
         initialFixture={archive?.challenge ?? null}
+        initialDuel={duel}
+        initialDuelPts={duelPts}
       />
     </Suspense>
   );

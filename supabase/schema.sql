@@ -166,3 +166,4 @@ create trigger on_auth_user_created
   for each row execute function private.handle_new_user();
 
 -- After this file, run supabase/seed.sql to load catalog answer sheets.
+-- Pro Shop columns, coin grants, and RPCs: supabase/migrations/20260926120000_pro_shop.sql
