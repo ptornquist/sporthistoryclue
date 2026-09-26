@@ -14,17 +14,16 @@ const DEFINITIONS: Array<Omit<Storyline, "matches"> & { matchSlugs: string[] }> 
   {
     id: "cold-war-on-ice",
     title: "The Cold War on Ice",
-    era: "1972 – 1980",
+    era: "COLD WAR ERA",
     icon: "🏒",
     accent: "text-sky-600",
-    description:
-      "High-stakes geopolitical drama played out across the rinks of Moscow, Lake Placid, and Prague.",
+    description: "High-stakes geopolitical drama played out across the rinks of two hockey worlds.",
     matchSlugs: ["miracle-on-ice-1980", "summit-series-1972"],
   },
   {
     id: "olympic-miracles",
     title: "Olympic Miracles",
-    era: "1976 – 2008",
+    era: "OLYMPIC ERA",
     icon: "🥇",
     accent: "text-amber-600",
     description: "Generational athletes redefining greatness under the global Olympic spotlight.",
@@ -33,7 +32,7 @@ const DEFINITIONS: Array<Omit<Storyline, "matches"> & { matchSlugs: string[] }> 
   {
     id: "world-cup-epics",
     title: "World Cup Epics",
-    era: "1958 – 1986",
+    era: "CLASSIC ERA",
     icon: "⚽",
     accent: "text-emerald-600",
     description: "Controversy, boy prodigies, and legendary goals that defined global football.",
@@ -42,7 +41,7 @@ const DEFINITIONS: Array<Omit<Storyline, "matches"> & { matchSlugs: string[] }> 
   {
     id: "rivalries-of-the-century",
     title: "Rivalries of the Century",
-    era: "1974 – 1980",
+    era: "RIVALRY ERA",
     icon: "🥊",
     accent: "text-rose-600",
     description: "Clashes of opposite personalities, styles, and philosophies under immense pressure.",

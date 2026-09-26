@@ -17,9 +17,9 @@ describe("challenge links", () => {
   });
 
   it("names the public fixture on the challenge preview", () => {
-    expect(publicFixtureName("miracle-1980")).toBe("The Lake Placid Frequency");
-    expect(ogChallengeHeadline("alex", "The Lake Placid Frequency")).toBe(
-      "CHALLENGE FROM @alex ON 'The Lake Placid Frequency'",
+    expect(publicFixtureName("miracle-1980")).toBe("The Frozen Miracle");
+    expect(ogChallengeHeadline("alex", "The Frozen Miracle")).toBe(
+      "CHALLENGE FROM @alex ON 'The Frozen Miracle'",
     );
     expect(ogChallengeHeadline("", null)).toBe("Test Your Sports History IQ");
   });

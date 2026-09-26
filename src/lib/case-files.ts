@@ -27,7 +27,7 @@ export const CASE_FILES: CaseFile[] = [
   {
     slug: "miracle-on-ice-1980",
     ids: ["miracle-on-ice-1980", "miracle-1980"],
-    title: "The Lake Placid Frequency",
+    title: "The Frozen Miracle",
     year: 1980,
     context: "Olympic Medal Round",
     sport: "ice_hockey",
@@ -59,7 +59,7 @@ export const CASE_FILES: CaseFile[] = [
   {
     slug: "bolt-beijing-2008",
     ids: ["bolt-beijing-2008", "bolt-2008"],
-    title: "The Beijing Lightning Bolt",
+    title: "The Golden Spikes",
     year: 2008,
     context: "Olympic 100m Final",
     sport: "athletics",
@@ -127,6 +127,17 @@ export function caseIdsFor(id: string): string[] {
   return findCase(id)?.ids ?? [id];
 }
 
+const TITLE_RENAMES: Record<string, string> = {
+  "the beijing lightning bolt": "The Golden Spikes",
+  "the lake placid frequency": "The Frozen Miracle",
+  "the masterpiece in hamilton": "The 87th Symphony",
+};
+
+export function publicCaseTitle(title: string | null | undefined): string {
+  const value = title?.trim() ?? "";
+  return TITLE_RENAMES[value.toLowerCase()] ?? value;
+}
+
 export function fixtureSubtitle(year: number, context: string): string {
   return `${year} · ${context} · 6 Clues`;
 }
@@ -142,9 +153,9 @@ export function isSpoilerHeading(title: string | undefined | null): boolean {
 
 export function safeHeading(title: string | undefined, year: number, id?: string): string {
   const file = findCase(id);
-  if (file) return file.title;
+  if (file) return publicCaseTitle(file.title);
   const candidate = title?.trim();
-  if (candidate && !isSpoilerHeading(candidate)) return candidate;
+  if (candidate && !isSpoilerHeading(candidate)) return publicCaseTitle(candidate);
   return `Case File ${year}`;
 }
 
@@ -171,7 +182,7 @@ export function previewFromCase(file: CaseFile): FixturePreviewModel {
   return {
     key: file.slug,
     lookupIds: file.ids,
-    title: file.title,
+    title: publicCaseTitle(file.title),
     year: file.year,
     context: file.context,
   };

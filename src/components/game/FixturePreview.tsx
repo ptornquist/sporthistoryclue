@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { fixtureSubtitle } from "@/lib/case-files";
+import { fixtureSubtitle, publicCaseTitle } from "@/lib/case-files";
 
 interface FixturePreviewProps {
   title: string;
@@ -26,7 +26,7 @@ export function FixturePreview({
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
   const reveal = solved ? matchup : null;
-  const subtitle = fixtureSubtitle(year, context);
+  const heading = publicCaseTitle(title);
 
   const body = (
     <div className="min-w-0 text-left">
@@ -35,9 +35,17 @@ export function FixturePreview({
           density === "row" ? "text-sm font-black truncate" : "text-xs"
         }`}
       >
-        {title}
+        {heading}
       </span>
-      <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">{subtitle}</span>
+      {solved ? (
+        <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">
+          {fixtureSubtitle(year, context)}
+        </span>
+      ) : (
+        <p className="text-xs font-mono text-zinc-400 font-medium">
+          Classified Dossier · 6 Clues · 10 000 Max PTS
+        </p>
+      )}
       {solved ? (
         <span className="mt-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
           ✓ SOLVED · {solvedScore} PTS

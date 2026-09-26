@@ -5,6 +5,7 @@ import {
   isSpoilerHeading,
   previewFromArchive,
   previewFromCase,
+  publicCaseTitle,
   safeHeading,
 } from "./case-files";
 import { scoreStorageKey } from "./solved-cases";
@@ -31,7 +32,7 @@ describe("mystery case files", () => {
     const perfectTen = CASE_FILES.find((file) => file.slug === "comaneci-1976");
     const bolt = CASE_FILES.find((file) => file.slug === "bolt-beijing-2008");
     expect(perfectTen?.title).toBe("The 1.00 Scoreboard Anomaly");
-    expect(bolt?.title).toBe("The Beijing Lightning Bolt");
+    expect(bolt?.title).toBe("The Golden Spikes");
     expect(fixtureSubtitle(1994, "Olympic Final Shootout")).toBe(
       "1994 · Olympic Final Shootout · 6 Clues",
     );
@@ -51,9 +52,11 @@ describe("mystery case files", () => {
     expect(isSpoilerHeading("Nadia Comăneci scores the first perfect 10")).toBe(true);
     expect(isSpoilerHeading("Usain Bolt 100m World Record")).toBe(true);
     expect(isSpoilerHeading("Sweden vs Canada 1994")).toBe(true);
-    expect(isSpoilerHeading("The Beijing Lightning Bolt")).toBe(false);
+    expect(isSpoilerHeading("The Golden Spikes")).toBe(false);
+    expect(publicCaseTitle("The Masterpiece in Hamilton")).toBe("The 87th Symphony");
+    expect(publicCaseTitle("The Lake Placid Frequency")).toBe("The Frozen Miracle");
     expect(safeHeading("USA vs Soviet Union (Winter Olympics)", 1980, "miracle-on-ice-1980")).toBe(
-      "The Lake Placid Frequency",
+      "The Frozen Miracle",
     );
     const archived = previewFromArchive({
       id: "row-1",
