@@ -107,10 +107,15 @@ describe("applySolveReward", () => {
 
 describe("badgeUnlocked", () => {
   it("opens featured badges from career milestones", () => {
-    const wallet = { ...defaultWallet(), matchesSolved: 1, bestStreak: 7 };
-    expect(badgeUnlocked("first-blood", wallet, [])).toBe(true);
-    expect(badgeUnlocked("week-1-streak", wallet, [])).toBe(true);
-    expect(badgeUnlocked("cold-war-veteran", wallet, ["summit-series-1972"])).toBe(true);
-    expect(badgeUnlocked("cold-war-veteran", defaultWallet(), [])).toBe(false);
+    const wallet = { ...defaultWallet(), bestStreak: 7, duelWins: 1 };
+    expect(badgeUnlocked("iron-scout", wallet, [])).toBe(true);
+    expect(badgeUnlocked("showdown-victor", wallet, [])).toBe(true);
+    expect(badgeUnlocked("summit-stanley", wallet, ["summit-series-1972"])).toBe(true);
+    expect(badgeUnlocked("five-rings", wallet, ["bolt-beijing-2008"])).toBe(true);
+    expect(badgeUnlocked("jules-rimet", wallet, ["pele-1958"])).toBe(true);
+    expect(badgeUnlocked("rumble-centre", wallet, ["wimbledon-epic-1980"])).toBe(true);
+    expect(badgeUnlocked("first-clue-sniper", defaultWallet(), [], [10000])).toBe(true);
+    expect(badgeUnlocked("summit-stanley", defaultWallet(), [])).toBe(false);
+    expect(badgeUnlocked("first-clue-sniper", defaultWallet(), [], [8500])).toBe(false);
   });
 });

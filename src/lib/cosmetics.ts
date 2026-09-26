@@ -23,6 +23,7 @@ export interface CosmeticWallet {
   streak: number;
   bestStreak: number;
   grantedMatchIds: string[];
+  duelWins: number;
 }
 
 export const COSMETIC_STORAGE_KEY = "shc_cosmetics";
@@ -148,12 +149,56 @@ export const VIP_ITEMS: CosmeticItem[] = [
 export const COSMETICS: CosmeticItem[] = [...TITLES, ...FRAMES, ...VIP_ITEMS];
 
 export const FEATURED_BADGES = [
-  { id: "first-blood", name: "First Blood", detail: "Solve your first fixture." },
-  { id: "cold-war-veteran", name: "Cold War Veteran", detail: "Close a Cold War on Ice case." },
-  { id: "week-1-streak", name: "Week 1 Streak", detail: "Hold a seven-day streak." },
+  {
+    id: "summit-stanley",
+    name: "Summit Series & Stanley Lore",
+    emoji: "🏒",
+    detail: "Solve a Summit Series or Olympic ice hockey case.",
+  },
+  {
+    id: "five-rings",
+    name: "Five Rings Luminary",
+    emoji: "🥇",
+    detail: "Solve an Olympic fixture.",
+  },
+  {
+    id: "jules-rimet",
+    name: "Jules Rimet Guardian",
+    emoji: "⚽",
+    detail: "Solve a World Cup fixture.",
+  },
+  {
+    id: "rumble-centre",
+    name: "Rumble & Centre Court",
+    emoji: "🥊",
+    detail: "Solve a heavyweight or Wimbledon rivalry.",
+  },
+  {
+    id: "showdown-victor",
+    name: "Showdown Victor",
+    emoji: "⚔️",
+    detail: "Win a head-to-head duel.",
+  },
+  {
+    id: "iron-scout",
+    name: "Iron Scout (7-Day Streak)",
+    emoji: "🔥",
+    detail: "Hold a seven-day streak.",
+  },
+  {
+    id: "first-clue-sniper",
+    name: "First-Clue Sniper",
+    emoji: "🎯",
+    detail: "Solve a fixture on the first clue.",
+  },
 ] as const;
 
-const COLD_WAR_IDS = ["miracle-on-ice-1980", "miracle-1980", "summit-series-1972"];
+const HOCKEY_IDS = ["miracle-on-ice-1980", "miracle-1980", "summit-series-1972"];
+const OLYMPIC_IDS = ["comaneci-1976", "dream-team-1992", "bolt-beijing-2008", "bolt-2008", "miracle-on-ice-1980", "miracle-1980"];
+const WORLD_CUP_IDS = ["pele-sweden-1958", "pele-1958", "hand-of-god-1986", "maradona-1986"];
+const RIVALRY_IDS = ["rumble-in-the-jungle-1974", "ali-1974", "wimbledon-epic-1980"];
+const FIRST_CLUE_SCORE = 10000;
+export const BADGE_TIME_KEY = "shc_badge_times";
 
 export function defaultWallet(): CosmeticWallet {
   return {
@@ -167,6 +212,7 @@ export function defaultWallet(): CosmeticWallet {
     streak: 0,
     bestStreak: 0,
     grantedMatchIds: [],
+    duelWins: 0,
   };
 }
 
@@ -193,38 +239,36 @@ export function scoutLevel(totalScore: number): { level: number; progress: numbe
 export function frameClassName(frameId: string | null | undefined): string {
   switch (frameId) {
     case "golden-glow":
-      return "ring-2 ring-amber-300 shadow-[0_0_28px_rgba(251,191,36,0.8)]";
+      return "ring-4 ring-amber-400 shadow-md";
     case "arena-lights":
-      return "ring-2 ring-blue-400 shadow-[0_0_24px_rgba(37,99,235,0.75)]";
+      return "ring-4 ring-blue-500 shadow-md";
     case "ice-rink":
-      return "ring-2 ring-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.65)]";
+      return "ring-4 ring-cyan-400 shadow-md";
     case "velvet-rope":
-      return "ring-2 ring-fuchsia-400 shadow-[0_0_22px_rgba(232,121,249,0.7)]";
+      return "ring-4 ring-purple-400 shadow-md";
     default:
-      return "ring-2 ring-zinc-500";
+      return "ring-4 ring-zinc-200";
   }
 }
 
 export function titleClassName(titleId: string | null | undefined): string {
   const item = titleId ? findCosmetic(titleId) : undefined;
-  if (titleId === "hall-of-famer" || item?.rarity === "LEGENDARY") {
-    return "text-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.85)]";
-  }
-  if (item?.rarity === "EPIC") return "text-fuchsia-300";
-  if (item?.rarity === "RARE") return "text-sky-300";
+  if (titleId === "hall-of-famer" || item?.rarity === "LEGENDARY") return "text-amber-800";
+  if (item?.rarity === "EPIC") return "text-purple-700";
+  if (item?.rarity === "RARE") return "text-blue-700";
   return "text-zinc-600";
 }
 
 export function rarityClassName(rarity: Rarity): string {
   switch (rarity) {
     case "LEGENDARY":
-      return "border-amber-300 text-amber-200 shadow-[0_0_22px_rgba(251,191,36,0.35)]";
+      return "border-amber-300 bg-amber-50/60 text-amber-800 ring-1 ring-amber-400/20";
     case "EPIC":
-      return "border-fuchsia-400 text-fuchsia-200 shadow-[0_0_18px_rgba(217,70,239,0.35)]";
+      return "border-purple-200 bg-purple-50/50 text-purple-700";
     case "RARE":
-      return "border-sky-400 text-sky-200 shadow-[0_0_16px_rgba(56,189,248,0.3)]";
+      return "border-blue-200 bg-blue-50/50 text-blue-700";
     default:
-      return "border-zinc-600 text-zinc-300";
+      return "border-zinc-200 bg-zinc-50/50 text-zinc-600";
   }
 }
 
@@ -323,16 +367,58 @@ export function applySolveReward(
       totalScore,
       streak: input.newStreak,
       bestStreak,
+      duelWins: already ? wallet.duelWins : wallet.duelWins + (input.duelWon ? 1 : 0),
       grantedMatchIds: already ? wallet.grantedMatchIds : [...wallet.grantedMatchIds, input.matchId],
     },
   };
 }
 
-export function badgeUnlocked(badgeId: string, wallet: CosmeticWallet, solvedSlugs: string[]): boolean {
-  if (badgeId === "first-blood") return wallet.matchesSolved >= 1;
-  if (badgeId === "week-1-streak") return wallet.bestStreak >= 7 || wallet.streak >= 7;
-  if (badgeId === "cold-war-veteran") return solvedSlugs.some((slug) => COLD_WAR_IDS.includes(slug));
+function solvedAny(solvedSlugs: string[], ids: string[]): boolean {
+  return solvedSlugs.some((slug) => ids.includes(slug));
+}
+
+export function badgeUnlocked(
+  badgeId: string,
+  wallet: CosmeticWallet,
+  solvedSlugs: string[],
+  scores: number[] = [],
+): boolean {
+  if (badgeId === "summit-stanley") return solvedAny(solvedSlugs, HOCKEY_IDS);
+  if (badgeId === "five-rings") return solvedAny(solvedSlugs, OLYMPIC_IDS);
+  if (badgeId === "jules-rimet") return solvedAny(solvedSlugs, WORLD_CUP_IDS);
+  if (badgeId === "rumble-centre") return solvedAny(solvedSlugs, RIVALRY_IDS);
+  if (badgeId === "showdown-victor") return wallet.duelWins >= 1;
+  if (badgeId === "iron-scout") return wallet.bestStreak >= 7 || wallet.streak >= 7;
+  if (badgeId === "first-clue-sniper") return scores.some((score) => score >= FIRST_CLUE_SCORE);
   return false;
+}
+
+export function loadBadgeTimes(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(BADGE_TIME_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function rememberBadgeTimes(ids: string[], existing: Record<string, string>): Record<string, string> {
+  const next = { ...existing };
+  let changed = false;
+  const now = new Date().toISOString();
+  for (const id of ids) {
+    if (!next[id]) {
+      next[id] = now;
+      changed = true;
+    }
+  }
+  if (changed && typeof window !== "undefined") {
+    window.localStorage.setItem(BADGE_TIME_KEY, JSON.stringify(next));
+  }
+  return next;
 }
 
 export function loadWallet(): CosmeticWallet {
@@ -347,6 +433,7 @@ export function loadWallet(): CosmeticWallet {
       unlockedTitles: unique([...(parsed.unlockedTitles ?? []), "rookie"]),
       unlockedFrames: unique([...(parsed.unlockedFrames ?? []), "standard"]),
       grantedMatchIds: parsed.grantedMatchIds ?? [],
+      duelWins: parsed.duelWins ?? 0,
     };
   } catch {
     return defaultWallet();
@@ -356,6 +443,7 @@ export function loadWallet(): CosmeticWallet {
 export function saveWallet(wallet: CosmeticWallet): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(COSMETIC_STORAGE_KEY, JSON.stringify(wallet));
+  window.dispatchEvent(new Event("shc-cosmetics"));
 }
 
 export function walletFromProfile(row: {

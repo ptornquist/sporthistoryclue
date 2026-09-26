@@ -16,7 +16,7 @@ export function ScoutAvatar({
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800 text-amber-100 ${frameClassName(frameId)} ${dim}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-white ${frameClassName(frameId)} ${dim}`}
     >
       {avatarUrl ? (
         <img src={avatarUrl} alt="" className="h-full w-full object-cover" />

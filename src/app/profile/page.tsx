@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
   followScout,
@@ -12,6 +13,7 @@ import {
 } from '@/lib/supabase/network';
 import { ScoutCard } from '@/components/game/ScoutCard';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
+import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 
 interface SessionUser {
   id: string;
@@ -45,6 +47,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [guestHandle, setGuestHandle] = useState('scout');
   const [solvedSlugs, setSolvedSlugs] = useState<string[]>([]);
+  const [solvedScores, setSolvedScores] = useState<number[]>([]);
+  const [badgeTimes, setBadgeTimes] = useState<Record<string, string>>({});
   const [profileReady, setProfileReady] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
@@ -111,16 +115,36 @@ export default function ProfilePage() {
   useEffect(() => {
     Promise.resolve().then(() => {
       const slugs: string[] = [];
+      const scores: number[] = [];
       for (let index = 0; index < localStorage.length; index += 1) {
         const key = localStorage.key(index);
-        if (key?.startsWith('shc_score_')) slugs.push(key.slice('shc_score_'.length));
+        if (!key?.startsWith('shc_score_')) continue;
+        slugs.push(key.slice('shc_score_'.length));
+        const score = Number.parseInt(localStorage.getItem(key) || '', 10);
+        if (Number.isFinite(score)) scores.push(score);
       }
       setSolvedSlugs(slugs);
+      setSolvedScores(scores);
       const saved = localStorage.getItem('shc_handle');
       if (saved) setGuestHandle(saved);
       void loadData();
     });
   }, []);
+
+  useEffect(() => {
+    const unlocked = FEATURED_BADGES.filter((badge) =>
+      badgeUnlocked(badge.id, wallet, solvedSlugs, solvedScores),
+    ).map((badge) => badge.id);
+    Promise.resolve().then(() => {
+      const next = rememberBadgeTimes(unlocked, loadBadgeTimes());
+      setBadgeTimes((current) => {
+        const currentKeys = Object.keys(current);
+        const nextKeys = Object.keys(next);
+        const same = currentKeys.length === nextKeys.length && nextKeys.every((id) => current[id] === next[id]);
+        return same ? current : next;
+      });
+    });
+  }, [wallet, solvedSlugs, solvedScores]);
 
   useEffect(() => {
     const needle = scoutQuery.trim();
@@ -171,47 +195,9 @@ export default function ProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <header className="bg-white border-b border-zinc-200 px-6 py-4 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl font-black tracking-tighter uppercase">
-              Sports<span className="text-blue-600">History</span>Clue
-            </Link>
-            <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
-              Career Stats
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
-              Arena
-            </Link>
-            <Link href="/shop" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
-              Pro Shop
-            </Link>
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
-              Standings
-            </Link>
-            {user ? (
-              <button
-                onClick={async () => {
-                  await supabaseClient.auth.signOut();
-                  window.location.href = '/login';
-                }}
-                className="text-xs font-medium text-zinc-400 hover:text-zinc-600"
-              >
-                Sign Out
-              </button>
-            ) : (
-              <Link href="/login" className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                Sign In
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
+    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
+      <div>
+      <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
         {actionMessage && (
           <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold text-center">
@@ -229,6 +215,8 @@ export default function ProfilePage() {
           currentStreak={Math.max(wallet.streak, profile?.streak ?? 0)}
           bestStreak={Math.max(wallet.bestStreak, wallet.streak, profile?.streak ?? 0)}
           solvedSlugs={solvedSlugs}
+          solvedScores={solvedScores}
+          badgeTimes={badgeTimes}
           signedIn={Boolean(user)}
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
@@ -390,6 +378,8 @@ export default function ProfilePage() {
         </>
         )}
       </div>
+      </div>
+      <Footer />
     </main>
   );
 }

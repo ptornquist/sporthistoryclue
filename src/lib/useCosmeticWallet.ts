@@ -5,6 +5,7 @@ import {
   applyEquip,
   applyPurchase,
   applySolveReward,
+  defaultWallet,
   findCosmetic,
   isUnlocked,
   loadWallet,
@@ -37,26 +38,16 @@ function rpcMissing(error: { code?: string; message?: string } | null): boolean 
   );
 }
 
-function payloadWallet(data: CosmeticPayload, grantedMatchIds: string[]): CosmeticWallet {
+function payloadWallet(data: CosmeticPayload, grantedMatchIds: string[], duelWins: number): CosmeticWallet {
   return {
     ...walletFromProfile(data),
     grantedMatchIds,
+    duelWins,
   };
 }
 
 export function useCosmeticWallet() {
-  const [wallet, setWallet] = useState<CosmeticWallet>(() => ({
-    coins: 0,
-    unlockedTitles: ["rookie"],
-    unlockedFrames: ["standard"],
-    equippedTitle: "rookie",
-    equippedFrame: "standard",
-    totalScore: 0,
-    matchesSolved: 0,
-    streak: 0,
-    bestStreak: 0,
-    grantedMatchIds: [],
-  }));
+  const [wallet, setWallet] = useState<CosmeticWallet>(() => defaultWallet());
   const [userId, setUserId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const walletRef = useRef(wallet);
@@ -94,13 +85,20 @@ export function useCosmeticWallet() {
           .eq("id", user.id)
           .maybeSingle();
         if (cancelled || error || !data) return;
-        commit(payloadWallet(data, local.grantedMatchIds));
+        commit(payloadWallet(data, local.grantedMatchIds, local.duelWins));
       } catch {
         // Local wallet already covers guest and offline play.
       }
     });
+    const onStore = () => {
+      const next = loadWallet();
+      walletRef.current = next;
+      setWallet(next);
+    };
+    window.addEventListener("shc-cosmetics", onStore);
     return () => {
       cancelled = true;
+      window.removeEventListener("shc-cosmetics", onStore);
     };
   }, []);
 
@@ -118,7 +116,7 @@ export function useCosmeticWallet() {
     if (userIdRef.current && isSupabaseConfigured) {
       const { data, error } = await supabaseClient.rpc("purchase_cosmetic", { item_id: itemId });
       if (!error && data && typeof data === "object") {
-        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds);
+        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds, current.duelWins);
         commit(next);
         return { wallet: next, ok: true as const };
       }
@@ -144,7 +142,7 @@ export function useCosmeticWallet() {
     if (userIdRef.current && isSupabaseConfigured) {
       const { data, error } = await supabaseClient.rpc("equip_cosmetic", { item_id: itemId });
       if (!error && data && typeof data === "object") {
-        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds);
+        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds, current.duelWins);
         commit(next);
         return next;
       }
@@ -180,7 +178,7 @@ export function useCosmeticWallet() {
       });
       if (!error && data && typeof data === "object") {
         const payload = data as CosmeticPayload;
-        const next = payloadWallet(payload, preview.wallet.grantedMatchIds);
+        const next = payloadWallet(payload, preview.wallet.grantedMatchIds, preview.wallet.duelWins);
         commit(next);
         return { wallet: next, earned: payload.earned ?? preview.earned };
       }
