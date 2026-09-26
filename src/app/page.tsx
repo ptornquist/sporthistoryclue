@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
 import { findCase } from '@/lib/case-files';
+import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
 import { loadPublicArchive } from '@/lib/daily-drop';
+import { selectChallengeOptions } from '@/lib/decoy-options';
 
 type HomeSearchParams = {
   duel?: string | string[];
@@ -64,10 +66,14 @@ export default async function Page({
   const initialFixture = archive?.challenge
     ? {
         ...archive.challenge,
-        clues: sanitizeClues(archive.challenge.clues, {
-          title: file?.title || archive.challenge.category,
-          year: file?.year,
-        }),
+        clues: arrangeClueLadder(
+          sanitizeClues(archive.challenge.clues, {
+            title: file?.title || archive.challenge.category,
+            year: file?.year,
+          }),
+          { category: file?.context || archive.challenge.category },
+        ),
+        options: selectChallengeOptions(archive.optionSource),
       }
     : null;
 

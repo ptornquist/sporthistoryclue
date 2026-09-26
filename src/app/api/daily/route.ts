@@ -1,5 +1,5 @@
+import { arrangeClueLadder } from "@/lib/clue-ladder";
 import {
-  fourDistinctOptions,
   isMatchKey,
   loadDailyFixture,
   loadPublicArchive,
@@ -8,6 +8,7 @@ import {
   utcTodayKey,
   viewerCanOpenArchive,
 } from "@/lib/daily-drop";
+import { selectChallengeOptions } from "@/lib/decoy-options";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,15 @@ export async function GET(request: Request) {
     if (!archive) {
       return Response.json({ error: "That archive match could not be found." }, { status: 404 });
     }
-    return Response.json(archive);
+    const { optionSource, challenge, ...rest } = archive;
+    return Response.json({
+      ...rest,
+      challenge: {
+        ...challenge,
+        options: selectChallengeOptions(optionSource),
+        clues: arrangeClueLadder(challenge.clues, { category: challenge.category }),
+      },
+    });
   }
 
   const dateKey = parseDateKey(new URL(request.url).searchParams.get("date"));
@@ -35,9 +44,9 @@ export async function GET(request: Request) {
 
   const fixture = await loadDailyFixture(dateKey);
   const payload = toPublicDaily(fixture);
-  const rawOptions = Array.from(new Set(payload.options.filter(Boolean)));
   return Response.json({
     ...payload,
-    options: fourDistinctOptions(rawOptions, rawOptions[0] ?? "", rawOptions.slice(1)),
+    options: fixture.optionSource ? selectChallengeOptions(fixture.optionSource) : payload.options,
+    clues: arrangeClueLadder(payload.clues, { category: payload.category }),
   });
 }

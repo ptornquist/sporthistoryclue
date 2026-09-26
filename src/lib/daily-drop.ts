@@ -8,7 +8,17 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
 import { findCase, SPORT_NAME } from "@/lib/case-files";
+import { arrangeClueLadder } from "@/lib/clue-ladder";
 import { sanitizeClues } from "@/lib/clue-sanitation";
+import {
+  canonicalSport,
+  isUnrelatedEra,
+  optionMatchesChallenge,
+  selectChallengeOptions,
+  sportSearchTokens,
+  type DecoyChallenge,
+  type DecoyPeer,
+} from "@/lib/decoy-options";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
 import { hashString } from "@/lib/utils";
 
@@ -26,11 +36,14 @@ export interface ArchivePayload {
   challenge: PublicDaily;
   isArchive: true;
   mode: "archive";
+  optionSource: DecoyChallenge;
 }
 
 interface SecretDaily extends PublicDaily {
   subject: string;
   year: number;
+  decoys?: string[];
+  optionSource?: DecoyChallenge;
 }
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -50,10 +63,13 @@ export function toPublicDaily(fixture: SecretDaily): PublicDaily {
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: sanitizeClues(fixture.clues, {
-      title: file?.title || fixture.category,
-      year: file?.year || fixture.year,
-    }),
+    clues: arrangeClueLadder(
+      sanitizeClues(fixture.clues, {
+        title: file?.title || fixture.category,
+        year: file?.year || fixture.year,
+      }),
+      { category: file?.context || fixture.category },
+    ),
     options: fixture.options,
   };
 }
@@ -105,15 +121,17 @@ export async function loadArchiveMatch(matchParam: string): Promise<SecretDaily 
   const base = fromDb ?? fromCatalogMatch(matchParam) ?? ARCHIVE_EXTRAS[matchParam] ?? null;
   if (!base) return null;
 
-  const decoys = await decoyLabels(base);
-  const correct =
-    base.options.find((option) => gradeOption(base, option)) ?? `${base.subject} (${base.year})`;
   const file = findCase(matchParam);
-  return {
+  const shaped: SecretDaily = {
     ...base,
     id: matchParam,
     category: file?.context || base.category,
-    options: fourDistinctOptions(base.options, correct, decoys),
+  };
+  const optionSource = await buildDecoySource(shaped);
+  return {
+    ...shaped,
+    optionSource,
+    options: selectChallengeOptions(optionSource),
   };
 }
 
@@ -126,6 +144,13 @@ export async function loadPublicArchive(matchParam: string): Promise<ArchivePayl
       ...toPublicDaily(fixture),
       sportId: file?.sport ?? "",
       sportName: file ? SPORT_NAME[file.sport] : fixture.category,
+    },
+    optionSource: fixture.optionSource ?? {
+      subject: fixture.subject,
+      year: fixture.year,
+      category: fixture.category,
+      sport: file?.sport,
+      decoys: fixture.decoys,
     },
     isArchive: true,
     mode: "archive",
@@ -186,64 +211,34 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
   }
 }
 
-const OLYMPIC_DECOYS = [
-  "1896 Athens: First Modern Olympiad (1896)",
-  "1936 Berlin Olympics (1936)",
-  "1968 Mexico City: Black Power Salute (1968)",
-  "1988 Seoul Olympics (1988)",
-];
-
-const GENERAL_DECOYS = [
-  "1980 Lake Placid: USA vs Soviet Union",
-  "1992 Barcelona: USA Dream Team vs Croatia",
-  "1994 Lillehammer: Sweden vs Canada",
-  "1974 Munich: West Germany vs Netherlands",
-];
-
-export function fourDistinctOptions(rawOptions: string[], correct: string, decoys: string[]): string[] {
-  const clean = Array.from(new Set([correct, ...rawOptions].map((option) => option.trim()).filter(Boolean)));
-  for (const decoy of decoys) {
-    if (clean.length >= 4) break;
-    if (!clean.includes(decoy)) clean.push(decoy);
-  }
-  const picked = [clean[0], ...clean.slice(1)].slice(0, 4);
-  return shuffle(picked);
-}
-
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
   const fromChallenges = await loadFromTable("challenges", dateKey);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
-  const decoys = await decoyLabels(fixture);
-  const correct =
-    fixture.options.find((option) => gradeOption(fixture, option)) ??
-    `${fixture.subject} (${fixture.year})`;
+  const optionSource = await buildDecoySource(fixture);
   return {
     ...fixture,
-    options: fourDistinctOptions(fixture.options, correct, decoys),
+    optionSource,
+    options: selectChallengeOptions(optionSource),
   };
 }
 
 export function gradeOption(fixture: SecretDaily, option: string): boolean {
-  const guess = option.trim().toLowerCase();
-  const subject = fixture.subject.trim().toLowerCase();
-  if (!guess || !subject) return false;
-  if (guess === subject) return true;
-  if (guess === `${subject} (${fixture.year})`) return true;
-  return guess.includes(subject) && guess.includes(String(fixture.year));
+  return optionMatchesChallenge(option, {
+    subject: fixture.subject,
+    year: fixture.year,
+    category: fixture.category,
+    sport: findCase(fixture.id)?.sport,
+  });
 }
 
 function fromCatalog(dateKey: string): SecretDaily {
   const puzzle = puzzles[hashString(dateKey) % puzzles.length];
-  const decoys = puzzles
-    .filter((item) => item.id !== puzzle.id)
-    .slice(0, 3)
-    .map((item) => item.title);
   return {
     id: puzzle.id,
     date_key: dateKey,
     category: SPORT_LABEL[puzzle.sport] ?? puzzle.sport,
     clues: puzzle.clues.slice(0, 6).map(clueLine),
-    options: [puzzle.title, ...decoys],
+    options: [puzzle.title],
     subject: puzzle.title,
     year: puzzle.year,
   };
@@ -258,46 +253,59 @@ function clueLine(clue: Clue): string {
   return clue.kicker ?? "A detail from the archive.";
 }
 
-function shuffle(items: string[]): string[] {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(Math.random() * (index + 1));
-    const current = copy[index];
-    copy[index] = copy[swap];
-    copy[swap] = current;
-  }
-  return copy;
+async function buildDecoySource(fixture: SecretDaily): Promise<DecoyChallenge> {
+  const sport = findCase(fixture.id)?.sport || fixture.category;
+  return {
+    id: fixture.id,
+    subject: fixture.subject,
+    year: fixture.year,
+    category: fixture.category,
+    sport,
+    decoys: fixture.decoys,
+    peers: await sameSportPeers(fixture, canonicalSport(sport)),
+  };
 }
 
-async function decoyLabels(fixture: SecretDaily): Promise<string[]> {
-  const themed = /olympic/i.test(fixture.category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
-  const fromArchive = await challengeDecoys(fixture);
-  const fromCatalog = puzzles
-    .filter((puzzle) => puzzle.title !== fixture.subject)
-    .map((puzzle) => puzzle.title);
-  return [...fromArchive, ...fromCatalog, ...themed, ...GENERAL_DECOYS];
-}
+async function sameSportPeers(fixture: SecretDaily, sport: string): Promise<DecoyPeer[]> {
+  const catalogPeers = puzzles
+    .filter((puzzle) => canonicalSport(puzzle.sport) === sport)
+    .filter((puzzle) => puzzle.id !== fixture.id && puzzle.title.trim().toLowerCase() !== fixture.subject.trim().toLowerCase())
+    .filter((puzzle) => !isUnrelatedEra(fixture.year, puzzle.year))
+    .filter((puzzle) => /\bvs\.?\b/i.test(puzzle.title))
+    .map((puzzle) => ({
+      subject: puzzle.title,
+      year: puzzle.year,
+      category: SPORT_LABEL[puzzle.sport] ?? puzzle.sport,
+      sport: puzzle.sport,
+    }));
 
-async function challengeDecoys(fixture: SecretDaily): Promise<string[]> {
   const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
-  if (!client) return [];
+  const sportFilter = sportSearchTokens(sport)
+    .flatMap((token) => [`sport.ilike.%${token}%`, `category.ilike.%${token}%`])
+    .join(",");
+  if (!client || !sportFilter) return catalogPeers;
   try {
-    const { data, error } = await client.from("challenges").select("subject, year, category").limit(8);
-    if (error || !data?.length) return [];
-    const sameCategory = data.filter((row) => {
+    const { data, error } = await client
+      .from("challenges")
+      .select("subject, title, year, category, sport, id, slug")
+      .or(sportFilter)
+      .limit(80);
+    if (error || !data?.length) return catalogPeers;
+    const rows = data.flatMap((row) => {
+      const subject = stringField(row, "subject") || stringField(row, "title");
+      const year = numberField(row, "year");
       const category = stringField(row, "category");
-      return category && category.toLowerCase() === fixture.category.toLowerCase();
+      const rowSport = stringField(row, "sport") || category;
+      const id = stringField(row, "slug") || stringField(row, "id");
+      if (!subject || !year) return [];
+      if (id === fixture.id || subject.toLowerCase() === fixture.subject.toLowerCase()) return [];
+      if (canonicalSport(rowSport) !== sport && canonicalSport(category) !== sport) return [];
+      if (isUnrelatedEra(fixture.year, year)) return [];
+      return [{ subject, year, category, sport: rowSport }];
     });
-    const pool = (sameCategory.length >= 3 ? sameCategory : data).slice(0, 5);
-    return pool
-      .map((row) => {
-        const subject = stringField(row, "subject");
-        const year = numberField(row, "year");
-        return subject && year ? `${subject} (${year})` : "";
-      })
-      .filter(Boolean);
+    return [...rows, ...catalogPeers];
   } catch {
-    return [];
+    return catalogPeers;
   }
 }
 
@@ -351,6 +359,7 @@ function normalizeRow(row: Record<string, unknown>, dateKey: string): SecretDail
     category,
     clues: clues.slice(0, 6),
     options: correct ? options : [`${subject} (${year})`, ...options],
+    decoys: stringList(row.decoys),
     subject,
     year,
   };

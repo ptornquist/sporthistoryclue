@@ -4,6 +4,8 @@ import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
+import { arrangeClueLadder } from '@/lib/clue-ladder';
+import { optionMatchesChallenge, selectChallengeOptions } from '@/lib/decoy-options';
 
 interface Challenge {
   id: string;
@@ -39,19 +41,20 @@ function PlayContent() {
         .maybeSingle();
 
       if (data) {
-        setChallenge(data);
-
-        if (data.options && Array.isArray(data.options) && data.options.length > 0) {
-          setOptions([...data.options].sort(() => Math.random() - 0.5));
-        } else {
-          const correctAnswer = `${data.subject} (${data.year})`;
-          setOptions([
-            correctAnswer,
-            'Canada vs Soviet Union (1972)',
-            'USA vs Soviet Union (1980)',
-            'Sweden vs Finland (2006)',
-          ].sort(() => Math.random() - 0.5));
-        }
+        const clues = arrangeClueLadder(clueTexts(data.clues), { category: data.category });
+        const subject = typeof data.subject === 'string' && data.subject.trim() ? data.subject : data.title;
+        const year = typeof data.year === 'number' ? data.year : Number(data.year) || 0;
+        setChallenge({ ...data, subject, year, clues });
+        setOptions(
+          selectChallengeOptions({
+            id: data.id,
+            subject,
+            year,
+            category: data.category || category,
+            sport: data.sport || data.category || category,
+            decoys: stringList(data.decoys),
+          }),
+        );
       }
       setLoading(false);
     };
@@ -62,10 +65,12 @@ function PlayContent() {
   const handleSelectOption = (option: string) => {
     if (selectedWrong.includes(option) || gameWon || gameOver || !challenge) return;
 
-    const isCorrect =
-      option.toLowerCase().includes(challenge.subject.toLowerCase()) ||
-      option.toLowerCase().includes(challenge.title.toLowerCase()) ||
-      (challenge.options && option === challenge.options[0]);
+    const isCorrect = optionMatchesChallenge(option, {
+      subject: challenge.subject,
+      year: challenge.year,
+      category: challenge.category,
+      sport: challenge.category,
+    });
 
     if (isCorrect) {
       setGameWon(true);
@@ -255,6 +260,35 @@ function PlayContent() {
       <div className="h-6"></div>
     </main>
   );
+}
+
+function clueTexts(value: unknown): string[] {
+  const list = Array.isArray(value) ? value : [];
+  return list
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (item && typeof item === 'object') {
+        const row = item as { body?: unknown; quote?: unknown; kicker?: unknown };
+        const text = [row.body, row.quote, row.kicker].find((part) => typeof part === 'string' && part.trim());
+        return typeof text === 'string' ? text.trim() : '';
+      }
+      return '';
+    })
+    .filter((item) => item.length > 0);
+}
+
+function stringList(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      return stringList(JSON.parse(trimmed));
+    } catch {
+      return [trimmed];
+    }
+  }
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 }
 
 export default function PlayArenaPage() {

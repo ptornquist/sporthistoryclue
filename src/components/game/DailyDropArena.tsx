@@ -18,6 +18,7 @@ import AuthGateModal from '@/components/AuthGateModal';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
+import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
 import { cosmeticName } from '@/lib/cosmetics';
@@ -40,12 +41,16 @@ interface DailyFixture {
 
 function cleanFixture(fixture: DailyFixture): DailyFixture {
   const file = findCase(fixture.id);
+  const category = file?.context || fixture.category;
   return {
     ...fixture,
-    clues: sanitizeClues(fixture.clues ?? [], {
-      title: file?.title || fixture.category,
-      year: file?.year,
-    }),
+    clues: arrangeClueLadder(
+      sanitizeClues(fixture.clues ?? [], {
+        title: file?.title || fixture.category,
+        year: file?.year,
+      }),
+      { category },
+    ),
   };
 }
 
@@ -64,28 +69,8 @@ function dayIndexFromKey(dateKey: string): number {
   return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
-const OLYMPIC_DECOYS = [
-  '1896 Athens: First Modern Olympiad (1896)',
-  '1936 Berlin Olympics (1936)',
-  '1968 Mexico City: Black Power Salute (1968)',
-  '1988 Seoul Olympics (1988)',
-];
-
-const GENERAL_DECOYS = [
-  '1980 Lake Placid: USA vs Soviet Union',
-  '1992 Barcelona: USA Dream Team vs Croatia',
-  '1994 Lillehammer: Sweden vs Canada',
-  '1974 Munich: West Germany vs Netherlands',
-];
-
-function setupOptions(options: string[], category: string): string[] {
-  const cleanOptions = Array.from(new Set(options.filter(Boolean)));
-  const pool = /olympic/i.test(category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
-  for (const decoy of [...pool, ...GENERAL_DECOYS]) {
-    if (cleanOptions.length >= 4) break;
-    if (!cleanOptions.includes(decoy)) cleanOptions.push(decoy);
-  }
-  const four = cleanOptions.slice(0, 4);
+function setupOptions(options: string[]): string[] {
+  const four = Array.from(new Set(options.filter(Boolean))).slice(0, 4);
   for (let index = four.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(Math.random() * (index + 1));
     const current = four[index];
@@ -333,7 +318,7 @@ export function DailyDropArena({
         const payload = (await response.json()) as DailyResponse;
         const fixture = cleanFixture(payload.challenge ?? payload);
         whistled.current = false;
-        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
+        setChoiceOptions(setupOptions(fixture.options ?? []));
         setChallenge(fixture);
       } catch {
         showToast('Could not load this drop.');
