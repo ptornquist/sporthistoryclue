@@ -3,12 +3,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
-  isSoundMuted,
-  playUnlockClick,
-  playVictoryFanfare,
+  isSoundEnabled,
+  playCorrect,
+  playIncorrect,
   playWhistle,
-  playWrongBuzzer,
-  toggleSoundMute,
+  setSoundEnabled,
   triggerHaptic,
 } from '@/lib/audio';
 import Link from 'next/link';
@@ -202,7 +201,7 @@ export function DailyDropArena({
   const streakLock = useRef(false);
   const challengeIdRef = useRef('');
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
-  const [soundMuted, setSoundMuted] = useState(true);
+  const [soundEnabled, setSoundEnabledState] = useState(true);
   const whistled = useRef(false);
 
   const showToast = (msg: string) => {
@@ -280,7 +279,7 @@ export function DailyDropArena({
 
   useEffect(() => {
     Promise.resolve().then(() => {
-      setSoundMuted(isSoundMuted());
+      setSoundEnabledState(isSoundEnabled());
     });
   }, []);
 
@@ -383,15 +382,16 @@ export function DailyDropArena({
   }, [activeArchiveDate, specificMatch]);
 
   const openWithWhistle = () => {
-    if (whistled.current || isSoundMuted()) return;
+    if (whistled.current || !isSoundEnabled()) return;
     whistled.current = true;
     playWhistle();
   };
 
   const handleToggleSound = () => {
-    const muted = toggleSoundMute();
-    setSoundMuted(muted);
-    if (!muted) {
+    const next = !soundEnabled;
+    setSoundEnabledState(next);
+    setSoundEnabled(next);
+    if (next) {
       whistled.current = true;
       playWhistle();
     }
@@ -406,8 +406,6 @@ export function DailyDropArena({
       return;
     }
     if (gameWon || gameOver) return;
-    playUnlockClick();
-    triggerHaptic(12);
     setUnlockedTiles((prev) => (prev.includes(tile.id) ? prev : [...prev, tile.id]));
     setActiveTile(tile.id);
     setScore((prev) => applyTileCost(prev, tile.cost));
@@ -483,8 +481,8 @@ export function DailyDropArena({
         if (result.subject && result.year) {
           setSolution({ subject: result.subject, year: result.year });
         }
-        playVictoryFanfare();
-        triggerHaptic([50, 50, 100]);
+        playCorrect();
+        triggerHaptic('success');
         setGameWon(true);
         rememberSolvedCase(challenge.id, score);
         const today = utcDateKey(new Date());
@@ -522,8 +520,8 @@ export function DailyDropArena({
         return;
       }
 
-      playWrongBuzzer();
-      triggerHaptic([40, 60, 40]);
+      playIncorrect();
+      triggerHaptic('error');
       const nextWrong = [...selectedWrong, option];
       const newScore = Math.max(0, score - 2500);
       setSelectedWrong(nextWrong);
@@ -755,11 +753,11 @@ export function DailyDropArena({
                   type="button"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={handleToggleSound}
-                  aria-pressed={soundMuted}
-                  aria-label={soundMuted ? 'Unmute match sounds' : 'Mute match sounds'}
+                  aria-pressed={soundEnabled}
+                  aria-label={soundEnabled ? 'Mute match sounds' : 'Unmute match sounds'}
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-sm hover:border-blue-600"
                 >
-                  {soundMuted ? '🔇' : '🔊'}
+                  {soundEnabled ? '🔊' : '🔇'}
                 </button>
                 <span className="text-xs font-mono font-bold text-amber-600">
                   🔥 {streak} Streak

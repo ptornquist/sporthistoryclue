@@ -1,4 +1,17 @@
-const MUTE_KEY = 'shc_muted';
+const SOUND_KEY = 'shc_sound_enabled';
+const LEGACY_MUTE_KEY = 'shc_muted';
+
+export const HAPTIC_PATTERNS = {
+  light: 15,
+  medium: 35,
+  success: [40, 60, 80],
+  error: [60, 50, 60],
+} as const;
+
+export type HapticType = keyof typeof HAPTIC_PATTERNS;
+
+/** C5, E5, G5. */
+export const CORRECT_NOTES = [523.25, 659.25, 783.99] as const;
 
 type AudioCtor = typeof AudioContext;
 
@@ -17,18 +30,33 @@ function getContext(): AudioContext | null {
   return audioContext;
 }
 
-export function isSoundMuted(): boolean {
+/** Missing key means sound is on. `'false'` is the muted preference. */
+export function isSoundEnabled(): boolean {
   if (typeof window === 'undefined') return true;
-  return window.localStorage.getItem(MUTE_KEY) === 'true';
+  const stored = window.localStorage.getItem(SOUND_KEY);
+  if (stored === 'false') return false;
+  if (stored === 'true') return true;
+  return window.localStorage.getItem(LEGACY_MUTE_KEY) !== 'true';
+}
+
+export function setSoundEnabled(enabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(SOUND_KEY, enabled ? 'true' : 'false');
+}
+
+export function toggleSoundEnabled(): boolean {
+  const enabled = !isSoundEnabled();
+  setSoundEnabled(enabled);
+  if (enabled) void runningContext();
+  return enabled;
+}
+
+export function isSoundMuted(): boolean {
+  return !isSoundEnabled();
 }
 
 export function toggleSoundMute(): boolean {
-  const muted = !isSoundMuted();
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(MUTE_KEY, muted ? 'true' : 'false');
-  }
-  if (!muted) void runningContext();
-  return muted;
+  return !toggleSoundEnabled();
 }
 
 async function runningContext(): Promise<AudioContext | null> {
@@ -106,39 +134,88 @@ export function playCluePenalty(): void {
   });
 }
 
-export function playUnlockClick(): void {
+function noiseTick(ctx: AudioContext, start: number, duration: number, peak: number) {
+  const length = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.setValueAtTime(1400, start);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(peak, start);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  source.start(start);
+  source.stop(start + duration);
+}
+
+/** Crisp mechanical tile tick. */
+export function playTileUnlock(): void {
   void runningContext().then((ctx) => {
     if (!ctx) return;
     const start = ctx.currentTime;
-    tone(ctx, start, 880, 0.045, 'sine', 0.045);
-    tone(ctx, start + 0.05, 1320, 0.06, 'sine', 0.035);
+    noiseTick(ctx, start, 0.018, 0.22);
+    tone(ctx, start, 1860, 0.035, 'square', 0.045, 980);
   });
 }
 
-export function playWrongBuzzer(): void {
+/** Two rapid clicks, like a camera shutter. */
+export function playPhotoReveal(): void {
   void runningContext().then((ctx) => {
     if (!ctx) return;
     const start = ctx.currentTime;
-    tone(ctx, start, 150, 0.16, 'square', 0.08);
-    tone(ctx, start + 0.2, 110, 0.2, 'square', 0.08);
+    noiseTick(ctx, start, 0.012, 0.2);
+    tone(ctx, start, 2400, 0.02, 'square', 0.04);
+    noiseTick(ctx, start + 0.045, 0.014, 0.16);
+    tone(ctx, start + 0.045, 1500, 0.028, 'square', 0.035);
   });
 }
 
-export function playVictoryFanfare(): void {
+/** C5 → E5 → G5. */
+export function playCorrect(): void {
   void runningContext().then((ctx) => {
     if (!ctx) return;
     const start = ctx.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.5];
-    notes.forEach((frequency, index) => {
-      tone(ctx, start + index * 0.12, frequency, 0.22, 'triangle', 0.1);
+    CORRECT_NOTES.forEach((frequency, index) => {
+      tone(ctx, start + index * 0.13, frequency, 0.22, 'triangle', 0.1);
     });
   });
 }
 
-export function triggerHaptic(pattern: number | number[]): void {
+/** Low double thud. */
+export function playIncorrect(): void {
+  void runningContext().then((ctx) => {
+    if (!ctx) return;
+    const start = ctx.currentTime;
+    tone(ctx, start, 120, 0.09, 'square', 0.08);
+    tone(ctx, start + 0.13, 78, 0.14, 'square', 0.08);
+  });
+}
+
+export function playUnlockClick(): void {
+  playTileUnlock();
+}
+
+export function playWrongBuzzer(): void {
+  playIncorrect();
+}
+
+export function playVictoryFanfare(): void {
+  playCorrect();
+}
+
+export function triggerHaptic(type: HapticType): void {
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
   try {
-    navigator.vibrate(pattern);
+    const pattern = HAPTIC_PATTERNS[type];
+    navigator.vibrate(typeof pattern === 'number' ? pattern : [...pattern]);
   } catch {
     // Some browsers expose vibrate but reject the call.
   }

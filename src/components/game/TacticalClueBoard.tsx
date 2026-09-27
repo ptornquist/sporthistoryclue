@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
+import { playPhotoReveal, playTileUnlock, triggerHaptic } from "@/lib/audio";
 import type { TacticalTile } from "@/lib/tactical-board";
 import { FREE_TILE_ID, formatTileCost } from "@/lib/tactical-board";
 import { cn } from "@/lib/utils";
@@ -107,7 +108,17 @@ export function TacticalClueBoard({
               key={tile.id}
               type="button"
               disabled={locked && !revealed}
-              onClick={() => onSelect(index)}
+              onClick={() => {
+                if (!revealed) {
+                  playTileUnlock();
+                  triggerHaptic("light");
+                  if (tile.id === "archive") {
+                    playPhotoReveal();
+                    triggerHaptic("medium");
+                  }
+                }
+                onSelect(index);
+              }}
               className={cn(
                 "flex w-[46%] shrink-0 snap-start min-h-[4.25rem] cursor-pointer flex-col items-start justify-between text-left disabled:cursor-default sm:w-auto sm:min-h-[6.5rem] sm:shrink",
                 TACTILE,
