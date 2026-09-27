@@ -615,7 +615,7 @@ export function DailyDropArena({
 
   if (loading || !challenge) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex flex-col font-mono text-xs uppercase text-zinc-400">
+      <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fafafa] flex flex-col font-mono text-xs uppercase text-zinc-400">
         <MatchModeBanner
           campaignTitle={campaign?.title}
           category=""
@@ -669,7 +669,7 @@ export function DailyDropArena({
   };
 
   return (
-    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
       <div>
         <Navbar />
         <MatchModeBanner

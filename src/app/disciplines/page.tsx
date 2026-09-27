@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
@@ -114,41 +114,8 @@ export default function DisciplinesPage() {
   const activeSport = SPORTS.find((sport) => sport.id === selectedSport);
 
   return (
-    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      {/* Header */}
-      <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="text-lg font-black tracking-tighter uppercase">
-              Sports<span className="text-blue-600">History</span>Clue
-            </Link>
-            <span className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold">
-              By Sport
-            </span>
-          </div>
-
-          <nav className="flex items-center gap-4">
-            <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Daily Drop
-            </Link>
-            <Link href="/archive" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Archive
-            </Link>
-            <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Storylines
-            </Link>
-            <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Standings
-            </Link>
-            <Link href="/derby" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Derby
-            </Link>
-            <Link href="/clubs" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Clubs
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
+      <Navbar />
 
       {/* Main Container */}
       <div className="max-w-4xl mx-auto px-6 py-10">
