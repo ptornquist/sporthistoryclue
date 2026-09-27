@@ -6,7 +6,6 @@ import {
   parseDateKey,
   toPublicDaily,
   utcTodayKey,
-  viewerCanOpenArchive,
 } from "@/lib/daily-drop";
 import { selectChallengeOptions } from "@/lib/decoy-options";
 
@@ -38,8 +37,8 @@ export async function GET(request: Request) {
     return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });
   }
 
-  if (dateKey !== utcTodayKey() && !(await viewerCanOpenArchive())) {
-    return Response.json({ error: "Sign in to open past drops." }, { status: 401 });
+  if (dateKey > utcTodayKey()) {
+    return Response.json({ error: "That drop has not been released." }, { status: 400 });
   }
 
   const fixture = await loadDailyFixture(dateKey);

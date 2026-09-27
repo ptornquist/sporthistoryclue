@@ -4,7 +4,7 @@ import { DailyDropArena } from '@/components/game/DailyDropArena';
 import { findCase } from '@/lib/case-files';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
-import { loadPublicArchive } from '@/lib/daily-drop';
+import { loadPublicArchive, utcTodayKey } from '@/lib/daily-drop';
 import { selectChallengeOptions } from '@/lib/decoy-options';
 
 type HomeSearchParams = {
@@ -12,6 +12,8 @@ type HomeSearchParams = {
   pts?: string | string[];
   match?: string | string[];
   campaign?: string | string[];
+  date?: string | string[];
+  training?: string | string[];
 };
 
 function firstParam(value: string | string[] | undefined): string {
@@ -61,6 +63,9 @@ export default async function Page({
   const campaignId = firstParam(params.campaign);
   const duel = firstParam(params.duel);
   const duelPts = Number.parseInt(firstParam(params.pts), 10) || 0;
+  const requestedDate = firstParam(params.date);
+  const archiveDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate <= utcTodayKey() ? requestedDate : '';
+  const training = firstParam(params.training) === '1';
   const archive = specificMatch ? await loadPublicArchive(specificMatch) : null;
   const file = findCase(specificMatch);
   const initialFixture = archive?.challenge
@@ -86,12 +91,14 @@ export default async function Page({
       }
     >
       <DailyDropArena
-        key={`${specificMatch}:${campaignId}:${duel}`}
+        key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${training ? 'training' : 'play'}`}
         specificMatch={specificMatch}
         campaignId={campaignId}
         initialFixture={initialFixture}
         initialDuel={duel}
         initialDuelPts={duelPts}
+        archiveDate={archiveDate}
+        training={training}
       />
     </Suspense>
   );

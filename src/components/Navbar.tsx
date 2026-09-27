@@ -58,11 +58,12 @@ export default function Navbar() {
 
   const NAV_LINKS = [
     { name: 'Daily Drop', href: '/' },
-    { name: 'Campaigns', href: '/campaigns' },
-    { name: 'Disciplines', href: '/disciplines' },
+    { name: 'Archive', href: '/archive' },
+    { name: 'Storylines', href: '/campaigns' },
     { name: 'Standings', href: '/standings' },
-    { name: 'Derby', href: '/derby' },
     { name: 'Clubs', href: '/clubs' },
+    { name: 'Derby', href: '/derby' },
+    { name: 'Disciplines', href: '/disciplines' },
     { name: 'Pro Shop', href: '/shop' },
   ];
 

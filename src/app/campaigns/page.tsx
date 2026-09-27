@@ -35,6 +35,9 @@ export default function CampaignsPage() {
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Daily Drop
             </Link>
+            <Link href="/archive" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+              Archive
+            </Link>
             <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               By Sport
             </Link>

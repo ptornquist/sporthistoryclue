@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { optionMatchesChallenge, selectChallengeOptions } from '@/lib/decoy-options';
+import { DailyDropArena } from '@/components/game/DailyDropArena';
+import { isDateKey } from '@/lib/archive-calendar';
 
 interface Challenge {
   id: string;
@@ -19,7 +21,19 @@ interface Challenge {
 
 function PlayContent() {
   const searchParams = useSearchParams();
-  const category = searchParams.get('category') || 'ice_hockey';
+  const requestedDate = searchParams.get('date') || '';
+  if (isDateKey(requestedDate)) {
+    return (
+      <DailyDropArena
+        archiveDate={requestedDate}
+        training={searchParams.get('training') === '1'}
+      />
+    );
+  }
+  return <CategoryPlay category={searchParams.get('category') || 'ice_hockey'} />;
+}
+
+function CategoryPlay({ category }: { category: string }) {
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);

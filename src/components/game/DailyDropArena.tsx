@@ -27,6 +27,8 @@ import { CommunityClueDistribution } from '@/components/CommunityClueDistributio
 import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
 import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
 import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
+import { formatArchiveDate, isDateKey } from '@/lib/archive-calendar';
+import { rememberDailyCompletion } from '@/lib/daily-completions';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
 import {
   FAVORITE_CLUB_KEY,
@@ -91,11 +93,15 @@ function MatchModeBanner({
   category,
   specificMatch,
   campaignId,
+  archiveDate = '',
+  training = false,
 }: {
   campaignTitle?: string;
   category: string;
   specificMatch: string;
   campaignId: string;
+  archiveDate?: string;
+  training?: boolean;
 }) {
   if (campaignId && campaignTitle) {
     return (
@@ -114,7 +120,20 @@ function MatchModeBanner({
           📚 Sports Archive{category ? ` · ${category}` : ''}
         </span>
         <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-blue-800 hover:text-blue-950">
-          ← Back to Archive
+          ← Back to Disciplines
+        </Link>
+      </div>
+    );
+  }
+  if (isDateKey(archiveDate)) {
+    const label = training ? 'SCOUT TRAINING' : 'ARCHIVE DOSSIER';
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
+        <span className="text-xs font-black tracking-wide">
+          {label} · {formatArchiveDate(archiveDate)}
+        </span>
+        <Link href="/archive" className="text-xs font-bold tracking-wider text-blue-800 hover:text-blue-950">
+          Back to Calendar
         </Link>
       </div>
     );
@@ -135,12 +154,16 @@ export function DailyDropArena({
   initialFixture = null,
   initialDuel = '',
   initialDuelPts = 0,
+  archiveDate = '',
+  training = false,
 }: {
   specificMatch?: string;
   campaignId?: string;
   initialFixture?: DailyFixture | null;
   initialDuel?: string;
   initialDuelPts?: number;
+  archiveDate?: string;
+  training?: boolean;
 }) {
   const [duelHandle, setDuelHandle] = useState<string | null>(initialDuel || null);
   const [duelPts, setDuelPts] = useState(initialDuelPts);
@@ -156,7 +179,7 @@ export function DailyDropArena({
     initialFixture ? cleanFixture(initialFixture) : null,
   );
   const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(isDateKey(archiveDate) ? archiveDate : null);
   const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
   const [score, setScore] = useState(10000);
@@ -448,7 +471,13 @@ export function DailyDropArena({
         setGameWon(true);
         rememberSolvedCase(challenge.id, score);
         const today = utcDateKey(new Date());
-        const solvedKey = /^\d{4}-\d{2}-\d{2}$/.test(challenge.date_key) ? challenge.date_key : today;
+        const solvedKey = isDateKey(challenge.date_key) ? challenge.date_key : today;
+        if (!specificMatch) {
+          void rememberDailyCompletion(
+            { dropDate: solvedKey, solved: true, score, challengeId: challenge.id },
+            currentUser?.id ?? null,
+          );
+        }
         const history = specificMatch ? loadSolvedHistory() : recordSolvedDate(solvedKey);
         const newStreak = specificMatch ? streak + 1 : activeStreak(history, today);
         streakLock.current = true;
@@ -485,6 +514,14 @@ export function DailyDropArena({
       const closed = newScore <= 0 || nextWrong.length >= 3;
       if (closed) {
         setGameOver(true);
+        if (!specificMatch) {
+          const today = utcDateKey(new Date());
+          const dropDate = isDateKey(challenge.date_key) ? challenge.date_key : today;
+          void rememberDailyCompletion(
+            { dropDate, solved: false, score: newScore, challengeId: challenge.id },
+            currentUser?.id ?? null,
+          );
+        }
         const reveal = await fetch('/api/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -567,6 +604,8 @@ export function DailyDropArena({
           category=""
           specificMatch={specificMatch}
           campaignId={campaignId}
+          archiveDate={selectedDate ?? archiveDate}
+          training={training}
         />
         <div className="flex flex-1 items-center justify-center">
           {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
@@ -622,6 +661,8 @@ export function DailyDropArena({
           category={challenge.category}
           specificMatch={specificMatch}
           campaignId={campaignId}
+          archiveDate={selectedDate ?? archiveDate}
+          training={training}
         />
 
         {/* Duel Banner */}
