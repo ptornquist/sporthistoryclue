@@ -26,14 +26,14 @@ describe("TacticalClueBoard", () => {
     );
     expect(html).toContain("grid-cols-2");
     expect(html).toContain("hover:border-blue-500 hover:shadow-sm cursor-pointer transition-all");
-    expect(html).toContain("UPPLÅST / GRATIS");
-    expect(html).toContain("AKTIV LEDTRÅD: 🏟️ Arenan &amp; Ramen");
+    expect(html).toContain("FREE / UNLOCKED");
+    expect(html).toContain("ACTIVE INTEL: 🏟️ The Arena &amp; Stakes");
     expect(html).toContain("text-base md:text-lg text-zinc-900 font-medium leading-relaxed bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm");
-    expect(html).toContain("Läs startledtråden nedan.");
+    expect(html).toContain("Review the opening briefing below.");
     expect(html).toContain("The rink is loud.");
-    expect(html).toContain("-1 500 PTS");
-    expect(html).toContain("-3 500 PTS");
-    expect(html).not.toContain("-1 000 PTS");
+    expect(html).toContain("REVEAL -1,500 PTS");
+    expect(html).toContain("REVEAL -3,500 PTS");
+    expect(html).not.toContain("REVEAL -1,000 PTS");
     expect(html).not.toContain("A winter of amateurs.");
     expect(html).not.toContain("flooded sheet");
   });
@@ -49,9 +49,9 @@ describe("TacticalClueBoard", () => {
         onSelect: () => undefined,
       }),
     );
-    expect(html).toContain("AKTIV LEDTRÅD: ⏱️ Epoken &amp; Kontexten");
+    expect(html).toContain("ACTIVE INTEL: ⏱️ Era &amp; Context");
     expect(html).toContain("A winter of amateurs.");
-    expect(html).toContain("Arenan &amp; Ramen");
+    expect(html).toContain("The Arena &amp; Stakes");
     expect(html).not.toContain("The rink is loud.");
   });
 

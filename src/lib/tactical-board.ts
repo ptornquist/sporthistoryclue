@@ -10,11 +10,11 @@ export interface TacticalTile {
 }
 
 const TACTICAL_TILES: readonly Omit<TacticalTile, "text">[] = [
-  { id: "arena", icon: "🏟️", name: "Arenan & Ramen", cost: 1000, image: false },
-  { id: "epoch", icon: "⏱️", name: "Epoken & Kontexten", cost: 1500, image: false },
-  { id: "profiles", icon: "📋", name: "Profilerna & Taktiken", cost: 2000, image: false },
-  { id: "archive", icon: "📸", name: "Arkivbilden", cost: 2500, image: true },
-  { id: "decisive", icon: "⚡", name: "Avgörandet", cost: 3500, image: false },
+  { id: "arena", icon: "🏟️", name: "The Arena & Stakes", cost: 1000, image: false },
+  { id: "epoch", icon: "⏱️", name: "Era & Context", cost: 1500, image: false },
+  { id: "profiles", icon: "📋", name: "Lineup & Tactics", cost: 2000, image: false },
+  { id: "archive", icon: "📸", name: "Archive Photo", cost: 2500, image: true },
+  { id: "decisive", icon: "⚡", name: "The Climax", cost: 3500, image: false },
 ];
 
 export const FREE_TILE_ID = "arena";
@@ -26,7 +26,8 @@ export function formatPoints(value: number): string {
 }
 
 export function formatTileCost(cost: number): string {
-  return `-${formatPoints(cost)} PTS`;
+  const formatted = Math.max(0, Math.round(cost)).toLocaleString("en-US");
+  return `-${formatted} PTS`;
 }
 
 export function applyTileCost(score: number, cost: number): number {
@@ -46,7 +47,7 @@ export function safeImageUrl(value: string | null | undefined): string | null {
 
 /**
  * Older dossiers store a plain `clues` array. The first five strings fill the
- * tactical tiles in order. A sixth string stays on Avgörandet.
+ * tactical tiles in order. A sixth string stays on The Climax.
  */
 export function buildTacticalBoard(clues: readonly string[]): TacticalTile[] {
   const lines = clues.map((clue) => clue.trim()).filter((clue) => clue.length > 0);

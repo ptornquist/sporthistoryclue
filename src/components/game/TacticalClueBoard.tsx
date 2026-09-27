@@ -4,7 +4,7 @@ import type { TacticalTile } from "@/lib/tactical-board";
 import { FREE_TILE_ID, formatTileCost } from "@/lib/tactical-board";
 
 const PROMPT =
-  "Läs startledtråden nedan. Köp fler taktiska brickor för poängavdrag om du behöver mer information för att gissa matchen.";
+  "Review the opening briefing below. Unlock additional tactical intel tiles to deduce the fixture if needed.";
 
 export function TacticalClueBoard({
   tiles,
@@ -51,11 +51,11 @@ export function TacticalClueBoard({
               </span>
               {revealed ? (
                 <span className="mt-2 rounded-full bg-emerald-100 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-800">
-                  {tile.id === FREE_TILE_ID ? "UPPLÅST / GRATIS" : "✓"}
+                  {tile.id === FREE_TILE_ID ? "FREE / UNLOCKED" : "UNLOCKED"}
                 </span>
               ) : (
                 <span className="mt-2 rounded-full bg-zinc-100 px-2 py-0.5 font-mono text-[10px] font-bold text-zinc-600">
-                  {formatTileCost(tile.cost)}
+                  REVEAL {formatTileCost(tile.cost)}
                 </span>
               )}
             </button>
@@ -67,7 +67,7 @@ export function TacticalClueBoard({
         <section className="mt-4">
           <div className="mb-2 flex flex-wrap items-center gap-2">
               <h2 className="text-xs font-black tracking-wide text-zinc-900">
-                AKTIV LEDTRÅD: {active.icon} {active.name}
+                ACTIVE INTEL: {active.icon} {active.name}
               </h2>
             {openTiles.length > 1 && (
               <div className="flex flex-wrap gap-1">

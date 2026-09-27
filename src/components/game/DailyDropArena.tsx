@@ -742,7 +742,7 @@ export function DailyDropArena({
           <section className="mb-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
-                Taktiktavlan
+                Tactical Board
               </span>
               <div className="flex items-center gap-2">
                 <button
