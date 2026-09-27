@@ -7,6 +7,7 @@ import { supabaseClient } from '@/lib/supabase/client';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
+import { HowToPlayModal, rememberTutorialSeen, requestHowToPlay } from '@/components/HowToPlayModal';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -15,6 +16,20 @@ export default function Navbar() {
   const [profile, setProfile] = useState<{ username?: string; avatar_url?: string } | null>(null);
   const [localHandle, setLocalHandle] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const openHelp = () => {
+    if (pathname === '/') {
+      requestHowToPlay();
+      return;
+    }
+    setHelpOpen(true);
+  };
+
+  const closeHelp = () => {
+    rememberTutorialSeen();
+    setHelpOpen(false);
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -100,6 +115,15 @@ export default function Navbar() {
 
         {/* User Badge / Auth Buttons */}
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={openHelp}
+            className="w-8 h-8 rounded-full border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 flex items-center justify-center font-bold text-xs transition-colors"
+            title="How to Play"
+            aria-label="How to Play"
+          >
+            ?
+          </button>
           {(user || localHandle) && (
             <Link
               href="/profile"
@@ -184,6 +208,7 @@ export default function Navbar() {
           )}
         </div>
       )}
+      {pathname !== '/' && <HowToPlayModal open={helpOpen} onClose={closeHelp} />}
     </header>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
+import { FirstVisitBriefing } from '@/components/HowToPlayModal';
 import { findCase } from '@/lib/case-files';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
@@ -83,23 +84,26 @@ export default async function Page({
     : null;
 
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-          Loading Drop...
-        </div>
-      }
-    >
-      <DailyDropArena
-        key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${training ? 'training' : 'play'}`}
-        specificMatch={specificMatch}
-        campaignId={campaignId}
-        initialFixture={initialFixture}
-        initialDuel={duel}
-        initialDuelPts={duelPts}
-        archiveDate={archiveDate}
-        training={training}
-      />
-    </Suspense>
+    <>
+      <FirstVisitBriefing />
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
+            Loading Drop...
+          </div>
+        }
+      >
+        <DailyDropArena
+          key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${training ? 'training' : 'play'}`}
+          specificMatch={specificMatch}
+          campaignId={campaignId}
+          initialFixture={initialFixture}
+          initialDuel={duel}
+          initialDuelPts={duelPts}
+          archiveDate={archiveDate}
+          training={training}
+        />
+      </Suspense>
+    </>
   );
 }
