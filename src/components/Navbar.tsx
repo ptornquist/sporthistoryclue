@@ -8,6 +8,7 @@ import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 import { HowToPlayModal, rememberTutorialSeen, requestHowToPlay } from '@/components/HowToPlayModal';
+import { AVATAR_UPDATED_EVENT } from '@/lib/avatars';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -51,11 +52,19 @@ export default function Navbar() {
 
     fetchUserData();
 
+    const onAvatar = (event: Event) => {
+      const url = (event as CustomEvent<string>).detail;
+      if (typeof url !== 'string' || !url) return;
+      setProfile((current) => ({ ...(current ?? {}), avatar_url: url }));
+    };
+    window.addEventListener(AVATAR_UPDATED_EVENT, onAvatar);
+
     const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
 
     return () => {
+      window.removeEventListener(AVATAR_UPDATED_EVENT, onAvatar);
       listener.subscription.unsubscribe();
     };
   }, []);

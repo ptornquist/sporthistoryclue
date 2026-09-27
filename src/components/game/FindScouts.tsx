@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { followScout, searchScouts, type ScoutProfile } from '@/lib/supabase/network';
+import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 
 interface FindScoutsProps {
   currentUserId: string | null;
@@ -111,17 +112,7 @@ export default function FindScouts({ currentUserId, onConnected }: FindScoutsPro
                   className="bg-white p-3 rounded-xl border border-zinc-200 flex justify-between items-center gap-3"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    {scout.avatar_url ? (
-                      <img
-                        src={scout.avatar_url}
-                        alt=""
-                        className="w-8 h-8 rounded-full object-cover border border-zinc-200"
-                      />
-                    ) : (
-                      <span className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
-                        {handle.charAt(0).toUpperCase()}
-                      </span>
-                    )}
+                    <ScoutAvatar avatarUrl={scout.avatar_url} label={handle} size="sm" />
                     <span className="font-bold text-xs text-zinc-900 truncate">@{handle}</span>
                   </div>
                   <button

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   FEATURED_BADGES,
@@ -26,6 +27,7 @@ export function ScoutCard({
   signedIn,
   profileReady,
   onEquip,
+  avatarSlot,
 }: {
   handle: string;
   email?: string | null;
@@ -41,6 +43,7 @@ export function ScoutCard({
   signedIn: boolean;
   profileReady: boolean;
   onEquip: (itemId: string) => void;
+  avatarSlot?: ReactNode;
 }) {
   const level = scoutLevel(careerScore);
   const average = solvedCount > 0 ? Math.round(careerScore / solvedCount) : 0;
@@ -63,7 +66,9 @@ export function ScoutCard({
     <section className="space-y-6">
       <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <ScoutAvatar frameId={wallet.equippedFrame} avatarUrl={avatarUrl} label={handle} size="lg" />
+          {avatarSlot ?? (
+            <ScoutAvatar frameId={wallet.equippedFrame} avatarUrl={avatarUrl} label={handle} size="lg" />
+          )}
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-black tracking-tight text-zinc-900">@{handle}</h1>
             <p className={`mt-2 inline-flex rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-bold uppercase tracking-wider ${titleClassName(wallet.equippedTitle)}`}>

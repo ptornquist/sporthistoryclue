@@ -17,6 +17,8 @@ import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 import { ClubAllegianceCard } from '@/components/derby/ClubAllegianceCard';
+import { AvatarPickerModal, ProfileAvatarButton } from '@/components/game/AvatarPickerModal';
+import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 
 interface SessionUser {
   id: string;
@@ -65,6 +67,7 @@ export default function ProfilePage() {
   const [scoutHits, setScoutHits] = useState<ScoutProfile[]>([]);
   const [searchingScouts, setSearchingScouts] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   const loadData = async () => {
     if (!isSupabaseConfigured) {
@@ -204,7 +207,7 @@ export default function ProfilePage() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
         {actionMessage && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold text-center">
+          <div role="status" className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold text-center">
             {actionMessage}
           </div>
         )}
@@ -213,6 +216,13 @@ export default function ProfilePage() {
           handle={profile?.username || guestHandle}
           email={user?.email}
           avatarUrl={profile?.avatar_url}
+          avatarSlot={
+            <ProfileAvatarButton
+              avatarUrl={profile?.avatar_url}
+              label={profile?.username || guestHandle}
+              onClick={() => setAvatarOpen(true)}
+            />
+          }
           wallet={wallet}
           careerScore={Math.max(wallet.totalScore, profile?.total_score ?? 0, totalScore)}
           solvedCount={Math.max(wallet.matchesSolved, matches.length)}
@@ -224,6 +234,29 @@ export default function ProfilePage() {
           signedIn={Boolean(user)}
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
+        />
+
+        <AvatarPickerModal
+          open={avatarOpen}
+          userId={user?.id ?? null}
+          currentUrl={profile?.avatar_url}
+          onClose={() => setAvatarOpen(false)}
+          onSaved={(avatarUrl) => {
+            setProfile((prev) =>
+              prev
+                ? { ...prev, avatar_url: avatarUrl }
+                : {
+                    id: user?.id ?? '',
+                    username: guestHandle,
+                    display_name: guestHandle,
+                    avatar_url: avatarUrl,
+                  },
+            );
+          }}
+          onToast={(message) => {
+            setActionMessage(message);
+            window.setTimeout(() => setActionMessage(null), 3000);
+          }}
         />
 
         <ClubAllegianceCard
@@ -291,13 +324,7 @@ export default function ProfilePage() {
                 return (
                   <div key={scout.id} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      {scout.avatar_url ? (
-                        <img src={scout.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-200" />
-                      ) : (
-                        <span className="w-9 h-9 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
-                          {handle.charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                      <ScoutAvatar avatarUrl={scout.avatar_url} label={handle} size="sm" />
                       <span className="font-black text-xs text-zinc-900 truncate">@{handle}</span>
                     </div>
                     <button
@@ -333,13 +360,7 @@ export default function ProfilePage() {
                 return (
                   <div key={scout.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      {scout.avatar_url ? (
-                        <img src={scout.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border border-zinc-200" />
-                      ) : (
-                        <span className="w-10 h-10 rounded-full bg-blue-600 text-white text-sm font-black flex items-center justify-center shrink-0">
-                          {handle.charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                      <ScoutAvatar avatarUrl={scout.avatar_url} label={handle} size="md" />
                       <div className="min-w-0">
                         <span className="font-black text-xs text-zinc-900 block truncate">@{handle}</span>
                         <span className="text-[10px] font-mono text-blue-600 font-bold block">
