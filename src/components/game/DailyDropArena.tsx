@@ -35,6 +35,14 @@ import {
   findPremierLeagueClub,
   isPremierLeagueClub,
 } from '@/lib/premier-league';
+import { TacticalClueBoard } from '@/components/game/TacticalClueBoard';
+import {
+  STARTING_SCORE,
+  applyTileCost,
+  buildTacticalBoard,
+  formatPoints,
+  safeImageUrl,
+} from '@/lib/tactical-board';
 
 interface DailyFixture {
   id: string;
@@ -44,6 +52,7 @@ interface DailyFixture {
   options: string[];
   sportId?: string;
   sportName?: string;
+  imageUrl?: string | null;
 }
 
 function cleanFixture(fixture: DailyFixture): DailyFixture {
@@ -173,8 +182,9 @@ export function DailyDropArena({
   const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
   const activeArchiveDate = isDateKey(archiveDate) ? archiveDate : null;
   const [solution, setSolution] = useState<Solution | null>(null);
-  const [currentClueIdx, setCurrentClueIdx] = useState(0);
-  const [score, setScore] = useState(10000);
+  const [openedTiles, setOpenedTiles] = useState<number[]>([]);
+  const [archiveImage, setArchiveImage] = useState<string | null>(null);
+  const [score, setScore] = useState(STARTING_SCORE);
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -186,6 +196,7 @@ export function DailyDropArena({
   const [streak, setStreak] = useState(1);
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
   const streakLock = useRef(false);
+  const challengeIdRef = useRef('');
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
   const [soundMuted, setSoundMuted] = useState(true);
   const whistled = useRef(false);
@@ -280,7 +291,7 @@ export function DailyDropArena({
 
   useEffect(() => {
     if ((!gameWon && !gameOver) || !challenge) return;
-    const marker = `${challenge.id}:${gameWon ? currentClueIdx + 1 : 0}`;
+    const marker = `${challenge.id}:${gameWon ? Math.max(openedTiles.length, 1) : 0}`;
     if (statsSent.current === marker) return;
     statsSent.current = marker;
     const storageKey = `shc_stat_${challenge.id}`;
@@ -299,14 +310,14 @@ export function DailyDropArena({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         challengeId: challenge.id,
-        clueIndex: gameWon ? currentClueIdx + 1 : 0,
+        clueIndex: gameWon ? Math.min(6, Math.max(openedTiles.length, 1)) : 0,
         won: gameWon,
         clientKey,
       }),
     })
       .then(() => setStatsRefresh((value) => value + 1))
       .catch(() => setStatsRefresh((value) => value + 1));
-  }, [gameWon, gameOver, challenge, currentClueIdx]);
+  }, [gameWon, gameOver, challenge, openedTiles.length]);
 
   useEffect(() => {
     if (!duelHandle || !isSupabaseConfigured) return;
@@ -331,8 +342,10 @@ export function DailyDropArena({
     const fetchChallenge = async () => {
       if (!specificMatch) setLoading(true);
       setSolution(null);
-      setCurrentClueIdx(0);
-      setScore(10000);
+      setOpenedTiles([]);
+      setArchiveImage(null);
+      setScore(STARTING_SCORE);
+      challengeIdRef.current = '';
       setSelectedWrong([]);
       setGameWon(false);
       setGameOver(false);
@@ -349,6 +362,7 @@ export function DailyDropArena({
         const payload = (await response.json()) as DailyResponse;
         const fixture = cleanFixture(payload.challenge ?? payload);
         whistled.current = false;
+        challengeIdRef.current = fixture.id;
         setChoiceOptions(setupOptions(fixture.options ?? []));
         setChallenge(fixture);
       } catch {
@@ -377,14 +391,24 @@ export function DailyDropArena({
     }
   };
 
-  const handleRevealClue = () => {
-    if (!challenge) return;
-    if (currentClueIdx < challenge.clues.length - 1) {
-      playCluePenalty();
-      triggerHaptic(20);
-      setCurrentClueIdx(prev => prev + 1);
-      setScore(prev => Math.max(1000, prev - 1500));
-    }
+  const revealTile = (index: number) => {
+    if (!challenge || gameWon || gameOver || openedTiles.includes(index)) return;
+    const tile = buildTacticalBoard(challenge.clues)[index];
+    if (!tile) return;
+    playCluePenalty();
+    triggerHaptic(20);
+    setOpenedTiles((prev) => (prev.includes(index) ? prev : [...prev, index]));
+    setScore((prev) => applyTileCost(prev, tile.cost));
+    if (!tile.image || archiveImage || challenge.imageUrl) return;
+    const requestedId = challenge.id;
+    void fetch(`/api/daily/photo?id=${encodeURIComponent(requestedId)}`)
+      .then(async (response) => (response.ok ? response.json() : null))
+      .then((payload: { imageUrl?: string | null } | null) => {
+        const url = safeImageUrl(payload?.imageUrl);
+        if (!url || challengeIdRef.current !== requestedId) return;
+        setArchiveImage(url);
+      })
+      .catch(() => undefined);
   };
 
   const logFinishedDuel = (playerScore: number) => {
@@ -598,8 +622,8 @@ export function DailyDropArena({
   const isVictory = isDuelActive && userFinalScore > duelPts;
   const isDefeat = isDuelActive && userFinalScore < duelPts;
   const isTie = isDuelActive && userFinalScore === duelPts;
-  const slotCount = 6;
-  const revealedCount = Math.min(currentClueIdx + 1, slotCount);
+  const slotCount = 5;
+  const revealedCount = Math.min(openedTiles.length, slotCount);
   const gridCells: string[] = Array.from({ length: slotCount }, (_, index) => {
     if (index < revealedCount) return '🟩';
     return '⬜';
@@ -618,7 +642,7 @@ export function DailyDropArena({
   const resultText = [
     'SportsHistoryClue 🏆',
     gridLine,
-    `🎯 Solved on Clue ${revealedCount} of 6 (${userFinalScore.toLocaleString()} PTS)`,
+    `🎯 Solved with ${revealedCount} of 5 tactical clues (${formatPoints(userFinalScore)} PTS)`,
     `🔥 ${streak}-Day Streak`,
     '',
     "Can you crack today's case?",
@@ -675,7 +699,7 @@ export function DailyDropArena({
             <div className="text-right">
               <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Potential Score</span>
               <span className="text-2xl font-black text-blue-600 font-mono">
-                {score.toLocaleString()} <span className="text-xs text-zinc-400 font-sans">PTS</span>
+                {formatPoints(score)} <span className="text-xs text-zinc-400 font-sans">PTS</span>
               </span>
             </div>
           </div>
@@ -706,11 +730,10 @@ export function DailyDropArena({
             </div>
           )}
 
-          {/* Clues Box */}
-          <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-mono font-bold uppercase text-zinc-400">
-                Clue {currentClueIdx + 1} of {challenge.clues.length}
+          <section className="mb-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
+                Taktiktavlan
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -728,33 +751,21 @@ export function DailyDropArena({
                 </span>
               </div>
             </div>
+            <TacticalClueBoard
+              tiles={buildTacticalBoard(challenge.clues)}
+              opened={openedTiles}
+              imageUrl={safeImageUrl(archiveImage || challenge.imageUrl)}
+              locked={gameWon || gameOver}
+              onReveal={revealTile}
+            />
+          </section>
 
-            <div className="space-y-3 mb-6">
-              {challenge.clues.slice(0, currentClueIdx + 1).map((clue, idx) => (
-                <div key={idx} className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-sm font-medium text-zinc-800">
-                  <span className="font-mono text-xs text-blue-600 font-bold mr-2">#{idx + 1}</span>
-                  {clue}
-                </div>
-              ))}
-            </div>
-
-            {!gameWon && !gameOver && currentClueIdx < challenge.clues.length - 1 && (
-              <button
-                onClick={handleRevealClue}
-                className="w-full min-h-[48px] touch-manipulation py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider rounded-2xl transition-colors active:scale-[0.98]"
-              >
-                Reveal Next Clue (-1,500 PTS)
-              </button>
-            )}
-          </div>
-
-          {/* Options / Deduction Grid */}
           {!gameWon && !gameOver && (
-            <div>
-              <p className="text-xs font-mono font-bold uppercase text-zinc-400 mb-3">
+            <div className="sticky bottom-2 z-20 rounded-3xl border border-zinc-200 bg-white/95 p-3 shadow-md backdrop-blur sm:static sm:bottom-auto sm:z-auto sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
+              <p className="mb-3 text-xs font-mono font-bold uppercase text-zinc-400">
                 Identify the Historical Matchup
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 touch-manipulation">
+              <div className="grid grid-cols-1 gap-2 touch-manipulation sm:grid-cols-2 sm:gap-3">
                 {choiceOptions.map((option, idx) => {
                   const isWrong = selectedWrong.includes(option);
                   return (
@@ -762,10 +773,10 @@ export function DailyDropArena({
                       key={idx}
                       disabled={isWrong || guessing}
                       onClick={() => handleGuess(option)}
-                      className={`min-h-[48px] touch-manipulation p-4 rounded-2xl text-left text-xs font-bold transition-all border active:scale-[0.98] ${
+                      className={`min-h-[48px] touch-manipulation rounded-2xl border p-3 text-left text-xs font-bold transition-all active:scale-[0.98] sm:p-4 ${
                         isWrong
-                          ? 'bg-rose-50 border-rose-200 text-rose-400 line-through cursor-not-allowed'
-                          : 'bg-white border-zinc-200 hover:border-blue-600 hover:shadow-md text-zinc-800'
+                          ? 'cursor-not-allowed border-rose-200 bg-rose-50 text-rose-400 line-through'
+                          : 'border-zinc-200 bg-white text-zinc-800 hover:border-blue-600 hover:shadow-md'
                       }`}
                     >
                       {option}
@@ -954,7 +965,7 @@ export function DailyDropArena({
             <div className="mt-4 space-y-4">
               <CommunityClueDistribution
                 challengeId={challenge.id}
-                userSolvedClue={gameWon ? currentClueIdx + 1 : 0}
+                userSolvedClue={gameWon ? Math.min(6, Math.max(openedTiles.length, 1)) : 0}
                 refreshToken={statsRefresh}
               />
               <HistoricalMiniRecap challenge={challenge} />

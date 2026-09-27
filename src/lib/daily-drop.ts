@@ -115,6 +115,28 @@ export function isMatchKey(value: string): boolean {
   return MATCH_KEY.test(value);
 }
 
+export async function loadChallengeImage(id: string): Promise<string | null> {
+  if (!isMatchKey(id)) return null;
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  if (!client) return null;
+  for (const table of ["challenges", "puzzles"] as const) {
+    try {
+      const { data, error } = await client
+        .from(table)
+        .select("image_url")
+        .or(`slug.eq.${id},id.eq.${id}`)
+        .limit(1)
+        .maybeSingle();
+      if (error || !data) continue;
+      const url = stringField(data, "image_url");
+      if (url.startsWith("https://")) return url;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 export async function loadArchiveMatch(matchParam: string): Promise<SecretDaily | null> {
   if (!isMatchKey(matchParam)) return null;
   const fromDb = await loadMatchRow(matchParam);
