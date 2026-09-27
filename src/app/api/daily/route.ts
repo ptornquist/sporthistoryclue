@@ -3,6 +3,7 @@ import {
   isMatchKey,
   loadDailyFixture,
   loadPublicArchive,
+  loadPublicChallengeById,
   parseDateKey,
   toPublicDaily,
   utcTodayKey,
@@ -33,6 +34,18 @@ export async function GET(request: Request) {
           : arrangeClueLadder(challenge.clues, { category: challenge.category }),
       },
     });
+  }
+
+  const idParam = new URL(request.url).searchParams.get("id")?.trim() ?? "";
+  if (idParam) {
+    if (!isMatchKey(idParam)) {
+      return Response.json({ error: "Unknown fixture." }, { status: 400 });
+    }
+    const byId = await loadPublicChallengeById(idParam);
+    if (!byId) {
+      return Response.json({ error: "That archive fixture could not be found." }, { status: 404 });
+    }
+    return Response.json(byId);
   }
 
   const dateKey = parseDateKey(new URL(request.url).searchParams.get("date"));

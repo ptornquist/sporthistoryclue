@@ -170,6 +170,7 @@ export function DailyDropArena({
   initialDuel = '',
   initialDuelPts = 0,
   archiveDate = '',
+  archiveId = '',
   training = false,
 }: {
   specificMatch?: string;
@@ -178,6 +179,7 @@ export function DailyDropArena({
   initialDuel?: string;
   initialDuelPts?: number;
   archiveDate?: string;
+  archiveId?: string;
   training?: boolean;
 }) {
   const [duelHandle, setDuelHandle] = useState<string | null>(initialDuel || null);
@@ -297,12 +299,12 @@ export function DailyDropArena({
   }, []);
 
   useEffect(() => {
-    if (specificMatch || activeArchiveDate) return;
+    if (specificMatch || activeArchiveDate || archiveId) return;
     clearStaleGameSession(window.localStorage, utcDateKey(new Date()), {
       loadingLatest: true,
       challengeId: challenge?.id,
     });
-  }, [specificMatch, activeArchiveDate, challenge?.id]);
+  }, [specificMatch, activeArchiveDate, archiveId, challenge?.id]);
 
   useEffect(() => {
     Promise.resolve().then(() => {
@@ -379,6 +381,7 @@ export function DailyDropArena({
       try {
         const query = new URLSearchParams();
         if (specificMatch) query.set('match', specificMatch);
+        else if (archiveId) query.set('id', archiveId);
         else if (activeArchiveDate) query.set('date', activeArchiveDate);
         const suffix = query.toString() ? `?${query.toString()}` : '';
         const response = await fetch(`/api/daily${suffix}`, { cache: 'no-store' });
@@ -400,7 +403,7 @@ export function DailyDropArena({
     };
 
     fetchChallenge();
-  }, [activeArchiveDate, specificMatch]);
+  }, [activeArchiveDate, archiveId, specificMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -719,6 +722,13 @@ export function DailyDropArena({
           {/* Header Info */}
           <div className="mb-3 flex items-center justify-between border-b border-zinc-200 pb-3 sm:mb-6 sm:pb-4">
             <div>
+              {(isDateKey(archiveDate) || archiveId) && (
+                <div className="mb-2">
+                  <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
+                    📅 ARCHIVE FIXTURE
+                  </span>
+                </div>
+              )}
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
                 {challenge.category}
               </span>
@@ -758,8 +768,7 @@ export function DailyDropArena({
                   href="/archive"
                   className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
                 >
-                  <span>📅 Browse Archive</span>
-                  <span className="text-zinc-400">→</span>
+                  BROWSE ARCHIVE →
                 </Link>
               )}
             </div>

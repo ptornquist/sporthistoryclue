@@ -1,6 +1,10 @@
-import { ArchiveCalendar } from "@/components/archive/ArchiveCalendar";
-import { utcTodayKey } from "@/lib/daily-drop";
+import { ArchiveVault } from "@/components/archive/ArchiveVault";
+import { loadArchiveIndex } from "@/lib/daily-drop";
 
-export default function ArchivePage() {
-  return <ArchiveCalendar todayKey={utcTodayKey()} />;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function ArchivePage() {
+  const fixtures = await loadArchiveIndex();
+  return <ArchiveVault fixtures={fixtures} />;
 }

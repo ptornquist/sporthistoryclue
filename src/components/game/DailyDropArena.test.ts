@@ -39,5 +39,22 @@ describe("DailyDropArena tactical board", () => {
     expect(html).not.toContain("REVEAL -1,000 PTS");
     expect(html).not.toContain("Reveal Next Clue");
     expect(html).not.toContain("Yesterday");
+    expect(html).toContain("BROWSE ARCHIVE →");
+    expect(html).toContain('href="/archive"');
+    expect(html).not.toContain("ARCHIVE FIXTURE");
+  });
+
+  it("marks a dated or identified fixture as an archive dossier", () => {
+    const dated = renderToStaticMarkup(
+      createElement(DailyDropArena, { initialFixture: fixture, archiveDate: "2026-09-20" }),
+    );
+    const identified = renderToStaticMarkup(
+      createElement(DailyDropArena, { initialFixture: fixture, archiveId: "miracle-1980" }),
+    );
+    const badge =
+      "bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider";
+    expect(dated).toContain(badge);
+    expect(dated).toContain("📅 ARCHIVE FIXTURE");
+    expect(identified).toContain("📅 ARCHIVE FIXTURE");
   });
 });

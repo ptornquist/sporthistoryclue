@@ -21,6 +21,7 @@ import {
 } from "@/lib/decoy-options";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
 import { fetchDailyChallengeRow, readStoredChallenge, resolveGuessOptions } from "@/lib/daily-challenge-query";
+import { fetchArchiveFixtures, type ArchiveFixture } from "@/lib/archive-vault";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
@@ -250,15 +251,43 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
   }
 }
 
-export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily> {
-  const today = now.toISOString().split("T")[0];
-  const fixture = await loadDailyFixture(today);
+export async function loadArchiveIndex(now = new Date()): Promise<ArchiveFixture[]> {
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  if (!client) return [];
+  try {
+    return await fetchArchiveFixtures(
+      client as unknown as Parameters<typeof fetchArchiveFixtures>[0],
+      utcTodayKey(now),
+    );
+  } catch (error) {
+    console.error("Supabase query error:", error);
+    return [];
+  }
+}
+
+export async function loadPublicChallengeById(id: string): Promise<PublicDaily | null> {
+  const fixture = await loadArchiveMatch(id);
+  if (!fixture) return null;
+  return withSport(fixture);
+}
+
+export async function loadDatedPublicDrop(dateKey: string, now = new Date()): Promise<PublicDaily | null> {
+  if (!DATE_KEY.test(dateKey) || dateKey > utcTodayKey(now)) return null;
+  return withSport(await loadDailyFixture(dateKey));
+}
+
+function withSport(fixture: SecretDaily): PublicDaily {
   const file = findCase(fixture.id);
   return {
     ...toPublicDaily(fixture),
     sportId: file?.sport,
     sportName: file ? SPORT_NAME[file.sport] : fixture.category,
   };
+}
+
+export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily> {
+  const today = now.toISOString().split("T")[0];
+  return withSport(await loadDailyFixture(today));
 }
 
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
