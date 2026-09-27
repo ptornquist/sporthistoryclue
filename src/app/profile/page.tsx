@@ -243,17 +243,15 @@ export default function ProfilePage() {
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
           headerActions={
-            user ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void signOut();
-                }}
-                className="border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 hover:text-red-600 font-semibold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors"
-              >
-                Log Out
-              </button>
-            ) : null
+            <button
+              type="button"
+              onClick={() => {
+                void signOut();
+              }}
+              className="border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 hover:text-red-600 font-semibold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors"
+            >
+              Log Out
+            </button>
           }
         />
 
