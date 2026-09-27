@@ -14,7 +14,6 @@ import {
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import AuthGateModal from '@/components/AuthGateModal';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
@@ -141,13 +140,6 @@ function MatchModeBanner({
   return null;
 }
 
-function shiftDateKey(dateKey: string, days: number): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const next = new Date(Date.UTC(year, month - 1, day));
-  next.setUTCDate(next.getUTCDate() + days);
-  return next.toISOString().split('T')[0];
-}
-
 export function DailyDropArena({
   specificMatch = '',
   campaignId = '',
@@ -179,7 +171,7 @@ export function DailyDropArena({
     initialFixture ? cleanFixture(initialFixture) : null,
   );
   const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
-  const [selectedDate, setSelectedDate] = useState<string | null>(isDateKey(archiveDate) ? archiveDate : null);
+  const activeArchiveDate = isDateKey(archiveDate) ? archiveDate : null;
   const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
   const [score, setScore] = useState(10000);
@@ -195,8 +187,6 @@ export function DailyDropArena({
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
   const streakLock = useRef(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
-  const [authReady, setAuthReady] = useState(false);
-  const [authGateOpen, setAuthGateOpen] = useState(false);
   const [soundMuted, setSoundMuted] = useState(true);
   const whistled = useRef(false);
 
@@ -230,7 +220,6 @@ export function DailyDropArena({
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
         applyStoredStreak();
-        setAuthReady(true);
         return;
       }
 
@@ -268,8 +257,6 @@ export function DailyDropArena({
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
         applyStoredStreak();
-      } finally {
-        setAuthReady(true);
       }
     };
 
@@ -353,7 +340,7 @@ export function DailyDropArena({
       try {
         const query = new URLSearchParams();
         if (specificMatch) query.set('match', specificMatch);
-        else if (selectedDate) query.set('date', selectedDate);
+        else if (activeArchiveDate) query.set('date', activeArchiveDate);
         const suffix = query.toString() ? `?${query.toString()}` : '';
         const response = await fetch(`/api/daily${suffix}`);
         if (!response.ok) {
@@ -373,7 +360,7 @@ export function DailyDropArena({
     };
 
     fetchChallenge();
-  }, [selectedDate, specificMatch]);
+  }, [activeArchiveDate, specificMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -398,15 +385,6 @@ export function DailyDropArena({
       setCurrentClueIdx(prev => prev + 1);
       setScore(prev => Math.max(1000, prev - 1500));
     }
-  };
-
-  const openDate = (dateKey: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    if (dateKey !== today && (!authReady || !currentUser)) {
-      setAuthGateOpen(true);
-      return;
-    }
-    setSelectedDate(dateKey === today ? null : dateKey);
   };
 
   const logFinishedDuel = (playerScore: number) => {
@@ -604,7 +582,7 @@ export function DailyDropArena({
           category=""
           specificMatch={specificMatch}
           campaignId={campaignId}
-          archiveDate={selectedDate ?? archiveDate}
+          archiveDate={activeArchiveDate ?? ''}
           training={training}
         />
         <div className="flex flex-1 items-center justify-center">
@@ -631,11 +609,10 @@ export function DailyDropArena({
   }
   const gridLine = gridCells.join(' ');
   const matchLabel = String(dayIndexFromKey(challenge.date_key));
-  const isArchive = selectedDate !== null && !playingArchive;
+  const viewingArchiveDate = activeArchiveDate !== null;
   const nextMatch = nextStorylineMatch(campaignId, challenge.id);
   const sportLabel = challenge.sportName || challenge.category;
   const sportHref = challenge.sportId ? `/disciplines?sport=${encodeURIComponent(challenge.sportId)}` : '/disciplines';
-  const todayKey = new Date().toISOString().split('T')[0];
   const playerHandle = playerName.replace(/^@/, '') || 'Scout';
   const resultUrl = `https://sportshistoryclue.com/?duel=${encodeURIComponent(playerHandle)}&pts=${userFinalScore}`;
   const resultText = [
@@ -661,7 +638,7 @@ export function DailyDropArena({
           category={challenge.category}
           specificMatch={specificMatch}
           campaignId={campaignId}
-          archiveDate={selectedDate ?? archiveDate}
+          archiveDate={activeArchiveDate ?? ''}
           training={training}
         />
 
@@ -704,36 +681,29 @@ export function DailyDropArena({
           </div>
 
           {!playingArchive && (
-          <div className="mb-4 flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => openDate(shiftDateKey(challenge.date_key, -1))}
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-zinc-700 hover:border-blue-600"
-            >
-              ‹ Yesterday
-            </button>
-            <button
-              type="button"
-              onClick={() => openDate(todayKey)}
-              disabled={!isArchive}
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-blue-700 disabled:cursor-default disabled:text-zinc-400"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => openDate(shiftDateKey(challenge.date_key, 1))}
-              disabled={!isArchive || challenge.date_key >= todayKey}
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-zinc-700 hover:border-blue-600 disabled:cursor-default disabled:text-zinc-300"
-            >
-              ›
-            </button>
-            {isArchive && (
-              <span className="rounded-full bg-amber-100 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                Archive Match
-              </span>
-            )}
-          </div>
+            <div className="mb-6 flex items-center justify-center gap-4">
+              {viewingArchiveDate ? (
+                <>
+                  <Link href="/" className="text-blue-600 font-bold text-xs hover:underline">
+                    ← Back to Today
+                  </Link>
+                  <Link
+                    href="/archive"
+                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
+                  >
+                    <span>📅 Full Calendar</span>
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  href="/archive"
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
+                >
+                  <span>📅 Browse Archive</span>
+                  <span className="text-zinc-400">→</span>
+                </Link>
+              )}
+            </div>
           )}
 
           {/* Clues Box */}
@@ -994,11 +964,6 @@ export function DailyDropArena({
         </div>
       </div>
       <Footer />
-      <AuthGateModal
-        isOpen={authGateOpen}
-        onClose={() => setAuthGateOpen(false)}
-        featureName="Past Drops"
-      />
       <ChallengeFriendModal
         isOpen={challengeOpen}
         onClose={() => setChallengeOpen(false)}
