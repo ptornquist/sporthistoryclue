@@ -30,6 +30,9 @@ describe("DailyDropArena tactical board", () => {
     expect(html).toContain("REVEAL -1,500 PTS");
     expect(html).toContain("REVEAL -3,500 PTS");
     expect(html).toContain("Identify the Historical Matchup");
+    expect(html).toContain("🔊");
+    expect(html).toContain('aria-label="Mute match sounds"');
+    expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("grid grid-cols-2 gap-2.5 touch-manipulation sm:gap-3");
     expect(html).toContain("p-3 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold");
     expect(html).toContain("1980 Olympics: USA vs Soviet Union");
