@@ -5,8 +5,11 @@ import { FirstVisitBriefing } from '@/components/HowToPlayModal';
 import { findCase } from '@/lib/case-files';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
-import { loadPublicArchive, utcTodayKey } from '@/lib/daily-drop';
+import { loadPublicArchive, loadTodayPublicDrop, utcTodayKey } from '@/lib/daily-drop';
 import { selectChallengeOptions } from '@/lib/decoy-options';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 type HomeSearchParams = {
   duel?: string | string[];
@@ -68,6 +71,7 @@ export default async function Page({
   const archiveDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate <= utcTodayKey() ? requestedDate : '';
   const training = firstParam(params.training) === '1';
   const archive = specificMatch ? await loadPublicArchive(specificMatch) : null;
+  const todayDrop = !specificMatch && !archiveDate ? await loadTodayPublicDrop() : null;
   const file = findCase(specificMatch);
   const initialFixture = archive?.challenge
     ? {
@@ -81,7 +85,7 @@ export default async function Page({
         ),
         options: selectChallengeOptions(archive.optionSource),
       }
-    : null;
+    : todayDrop;
 
   return (
     <>

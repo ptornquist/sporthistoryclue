@@ -20,6 +20,7 @@ import {
   type DecoyPeer,
 } from "@/lib/decoy-options";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
+import { fetchDailyChallengeRow } from "@/lib/daily-challenge-query";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
@@ -233,6 +234,17 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
   }
 }
 
+export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily> {
+  const today = now.toISOString().split("T")[0];
+  const fixture = await loadDailyFixture(today);
+  const file = findCase(fixture.id);
+  return {
+    ...toPublicDaily(fixture),
+    sportId: file?.sport,
+    sportName: file ? SPORT_NAME[file.sport] : fixture.category,
+  };
+}
+
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
   const fromChallenges = await loadFromTable("challenges", dateKey);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
@@ -339,6 +351,14 @@ async function loadFromTable(
   if (!client) return null;
 
   try {
+    if (table === "challenges") {
+      const today = new Date().toISOString().split("T")[0];
+      const row = await fetchDailyChallengeRow(client as unknown as Parameters<typeof fetchDailyChallengeRow>[0], dateKey, {
+        allowLatestFallback: dateKey === today,
+      });
+      return row ? normalizeRow(row, dateKey) : null;
+    }
+
     const matched = await client
       .from(table)
       .select("*")

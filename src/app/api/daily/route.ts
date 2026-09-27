@@ -10,6 +10,7 @@ import {
 import { selectChallengeOptions } from "@/lib/decoy-options";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const matchParam = new URL(request.url).searchParams.get("match")?.trim() ?? "";

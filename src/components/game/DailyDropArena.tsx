@@ -361,7 +361,7 @@ export function DailyDropArena({
         if (specificMatch) query.set('match', specificMatch);
         else if (activeArchiveDate) query.set('date', activeArchiveDate);
         const suffix = query.toString() ? `?${query.toString()}` : '';
-        const response = await fetch(`/api/daily${suffix}`);
+        const response = await fetch(`/api/daily${suffix}`, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error('Daily drop unavailable');
         }
