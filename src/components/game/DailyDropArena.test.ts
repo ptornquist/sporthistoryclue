@@ -39,5 +39,6 @@ describe("DailyDropArena tactical board", () => {
     expect(html).not.toContain("REVEAL -1,000 PTS");
     expect(html).not.toContain("Reveal Next Clue");
     expect(html).not.toContain("Yesterday");
+    expect(html).not.toContain("FIXTURE SOLVED");
   });
 });
