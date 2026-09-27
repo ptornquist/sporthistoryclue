@@ -69,20 +69,12 @@ export default function Navbar() {
     };
   }, []);
 
-  const handleSignOut = async () => {
-    await supabaseClient.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    window.location.href = '/';
-  };
-
   const displayName = profile?.username || localHandle || user?.email?.split('@')[0] || 'Scout';
   const equippedTitle = cosmeticName(wallet.equippedTitle);
   const pillLabel = equippedTitle ? `@${displayName} · ${equippedTitle}` : `@${displayName}`;
 
   const NAV_LINKS = [
     { name: 'Daily Drop', href: '/' },
-    { name: 'Archive', href: '/archive' },
     { name: 'Storylines', href: '/campaigns' },
     { name: 'Standings', href: '/standings' },
     { name: 'Clubs', href: '/clubs' },
@@ -190,7 +182,7 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
-          {!user ? (
+          {!user && (
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100">
               <Link
                 href="/login"
@@ -207,13 +199,6 @@ export default function Navbar() {
                 Join
               </Link>
             </div>
-          ) : (
-            <button
-              onClick={() => { setMenuOpen(false); handleSignOut(); }}
-              className="w-full text-left px-3 py-2 text-xs font-bold uppercase text-rose-600 hover:bg-rose-50 rounded-lg"
-            >
-              Log Out
-            </button>
           )}
         </div>
       )}

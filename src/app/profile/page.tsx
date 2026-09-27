@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
@@ -48,6 +49,7 @@ interface MatchRecord {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { wallet, equip } = useCosmeticWallet();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -191,6 +193,12 @@ export default function ProfilePage() {
     setSavingUsername(false);
   };
 
+  const signOut = async () => {
+    await supabaseClient.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
+
   const toggleFollow = async (targetId: string) => {
     if (!user) return;
     if (followingIds.includes(targetId)) {
@@ -234,6 +242,19 @@ export default function ProfilePage() {
           signedIn={Boolean(user)}
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
+          headerActions={
+            user ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void signOut();
+                }}
+                className="border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 hover:text-red-600 font-semibold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-colors"
+              >
+                Log Out
+              </button>
+            ) : null
+          }
         />
 
         <AvatarPickerModal

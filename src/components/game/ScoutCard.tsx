@@ -28,6 +28,7 @@ export function ScoutCard({
   profileReady,
   onEquip,
   avatarSlot,
+  headerActions,
 }: {
   handle: string;
   email?: string | null;
@@ -44,6 +45,7 @@ export function ScoutCard({
   profileReady: boolean;
   onEquip: (itemId: string) => void;
   avatarSlot?: ReactNode;
+  headerActions?: ReactNode;
 }) {
   const level = scoutLevel(careerScore);
   const average = solvedCount > 0 ? Math.round(careerScore / solvedCount) : 0;
@@ -87,12 +89,15 @@ export function ScoutCard({
               </div>
             </div>
           </div>
-          <Link
-            href="/shop"
-            className="self-start bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider"
-          >
-            Pro Shop
-          </Link>
+          <div className="flex items-center gap-2 self-start">
+            <Link
+              href="/shop"
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider"
+            >
+              Pro Shop
+            </Link>
+            {headerActions}
+          </div>
         </div>
 
         {!signedIn && profileReady && (
