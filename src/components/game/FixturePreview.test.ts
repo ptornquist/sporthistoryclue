@@ -68,6 +68,9 @@ describe("FixturePreview", () => {
     );
     expect(html).toContain("PLAY →");
     expect(html).toContain(
+      "border-2 border-zinc-200 hover:border-zinc-400 bg-zinc-50/40 hover:bg-white transition-all rounded-2xl p-4",
+    );
+    expect(html).toContain(
       "bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider",
     );
     expect(html).toContain("Classified Dossier · 6 Clues · 10 000 Max PTS");

@@ -15,6 +15,7 @@ import {
 } from '@/lib/case-files';
 import { arenaHref } from '@/lib/storylines';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
+import { cn } from '@/lib/utils';
 
 interface ChallengeItem {
   id: string;
@@ -38,6 +39,16 @@ const SPORTS: SportGroup[] = [
   { id: 'tennis', name: 'Tennis', icon: '🎾', description: 'Historic tiebreaks, Wimbledon grass epics & five-set marathons.' },
   { id: 'athletics', name: 'Athletics', icon: '🏃', description: 'Shattered world records and iconic Olympic track moments.' },
 ];
+
+const SPORT_TILE: Record<string, string> = {
+  ice_hockey: 'bg-sky-50/80 border-sky-200 text-sky-950 hover:border-sky-400',
+  football: 'bg-emerald-50/80 border-emerald-200 text-emerald-950 hover:border-emerald-400',
+  boxing: 'bg-rose-50/80 border-rose-200 text-rose-950 hover:border-rose-400',
+  tennis: 'bg-amber-50/80 border-amber-200 text-amber-950 hover:border-amber-400',
+  athletics: 'bg-indigo-50/80 border-indigo-200 text-indigo-950 hover:border-indigo-400',
+};
+
+const ACTIVE_TILE = 'ring-2 ring-zinc-900 border-2 border-zinc-900 shadow-md font-black scale-[1.02] hover:border-zinc-900';
 
 export default function DisciplinesPage() {
   const [selectedSport, setSelectedSport] = useState<string>('ice_hockey');
@@ -155,36 +166,44 @@ export default function DisciplinesPage() {
 
         {/* Sport Selection Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-8">
-          {SPORTS.map((sport) => (
-            <button
-              key={sport.id}
-              type="button"
-              onClick={() => setSelectedSport(sport.id)}
-              aria-pressed={selectedSport === sport.id}
-              className={`p-3.5 rounded-2xl border text-center transition-all ${
-                selectedSport === sport.id
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                  : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-300'
-              }`}
-            >
-              <span className="text-xl block mb-1" aria-hidden>
-                {sport.icon}
-              </span>
-              <span className="text-xs font-bold block">{sport.name}</span>
-            </button>
-          ))}
+          {SPORTS.map((sport) => {
+            const selected = selectedSport === sport.id;
+            return (
+              <button
+                key={sport.id}
+                type="button"
+                onClick={() => setSelectedSport(sport.id)}
+                aria-pressed={selected}
+                className={cn(
+                  'relative p-3.5 rounded-2xl border-2 text-center transition-all',
+                  SPORT_TILE[sport.id],
+                  selected && ACTIVE_TILE,
+                )}
+              >
+                {selected && (
+                  <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-black text-white">
+                    ✓
+                  </span>
+                )}
+                <span className="text-xl block mb-1" aria-hidden>
+                  {sport.icon}
+                </span>
+                <span className={`text-xs block ${selected ? 'font-black' : 'font-bold'}`}>{sport.name}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* List of Challenges for Selected Sport */}
-        <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-100">
+        <div className="border-2 border-zinc-300 bg-white rounded-3xl p-6 shadow-sm">
+          <div className="mb-6 flex items-center justify-between gap-4 border-b-2 border-zinc-200 pb-5">
             <div>
               <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">
                 {activeSport?.name} Fixtures
               </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">{activeSport?.description}</p>
+              <p className="mt-0.5 text-xs font-medium text-zinc-600">{activeSport?.description}</p>
             </div>
-            <span className="shrink-0 text-xs font-mono font-bold text-zinc-400 bg-zinc-100 px-3 py-1 rounded-full">
+            <span className="shrink-0 rounded-full border-2 border-zinc-900 bg-zinc-900 px-3 py-1 text-xs font-mono font-black text-white">
               {fixtures.length} matches
             </span>
           </div>

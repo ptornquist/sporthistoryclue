@@ -80,7 +80,7 @@ export function FixturePreview({
         href={href}
         className={
           density === "row"
-            ? "group flex touch-manipulation items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all hover:bg-zinc-100/80 active:scale-[0.98]"
+            ? "group flex touch-manipulation items-center justify-between gap-4 border-2 border-zinc-200 hover:border-zinc-400 bg-zinc-50/40 hover:bg-white transition-all rounded-2xl p-4 active:scale-[0.98]"
             : "group flex w-full touch-manipulation items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50 active:scale-[0.98]"
         }
       >
@@ -93,8 +93,8 @@ export function FixturePreview({
   return (
     <div
       className={
-        density === "row"
-          ? "flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4"
+          density === "row"
+          ? "flex items-center justify-between gap-3 border-2 border-zinc-200 hover:border-zinc-400 bg-zinc-50/40 hover:bg-white transition-all rounded-2xl p-4"
           : "flex items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3"
       }
     >
