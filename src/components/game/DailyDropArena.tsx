@@ -187,6 +187,7 @@ export function DailyDropArena({
   const [unlockedTiles, setUnlockedTiles] = useState<string[]>([FREE_TILE_ID]);
   const [activeTile, setActiveTile] = useState(FREE_TILE_ID);
   const [archiveImage, setArchiveImage] = useState<string | null>(null);
+  const [archivePhotoMissing, setArchivePhotoMissing] = useState(false);
   const [score, setScore] = useState(STARTING_SCORE);
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
@@ -348,6 +349,7 @@ export function DailyDropArena({
       setUnlockedTiles([FREE_TILE_ID]);
       setActiveTile(FREE_TILE_ID);
       setArchiveImage(null);
+      setArchivePhotoMissing(false);
       setScore(STARTING_SCORE);
       challengeIdRef.current = '';
       setSelectedWrong([]);
@@ -409,16 +411,19 @@ export function DailyDropArena({
     setUnlockedTiles((prev) => (prev.includes(tile.id) ? prev : [...prev, tile.id]));
     setActiveTile(tile.id);
     setScore((prev) => applyTileCost(prev, tile.cost));
-    if (!tile.image || archiveImage || challenge.imageUrl) return;
+    if (!tile.image || archiveImage || challenge.imageUrl || archivePhotoMissing) return;
     const requestedId = challenge.id;
     void fetch(`/api/daily/photo?id=${encodeURIComponent(requestedId)}`)
       .then(async (response) => (response.ok ? response.json() : null))
       .then((payload: { imageUrl?: string | null } | null) => {
+        if (challengeIdRef.current !== requestedId) return;
         const url = safeImageUrl(payload?.imageUrl);
-        if (!url || challengeIdRef.current !== requestedId) return;
-        setArchiveImage(url);
+        if (url) setArchiveImage(url);
+        else setArchivePhotoMissing(true);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (challengeIdRef.current === requestedId) setArchivePhotoMissing(true);
+      });
   };
 
   const logFinishedDuel = (playerScore: number) => {
@@ -690,9 +695,9 @@ export function DailyDropArena({
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto px-6 py-8" onPointerDown={openWithWhistle}>
+        <div className="max-w-3xl mx-auto px-4 py-4 sm:px-6 sm:py-8" onPointerDown={openWithWhistle}>
           {/* Header Info */}
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-6">
+          <div className="mb-3 flex items-center justify-between border-b border-zinc-200 pb-3 sm:mb-6 sm:pb-4">
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
                 {challenge.category}
@@ -708,14 +713,14 @@ export function DailyDropArena({
             </div>
             <div className="text-right">
               <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Potential Score</span>
-              <span className="text-2xl font-black text-blue-600 font-mono">
+              <span className="text-xl font-black text-blue-600 font-mono sm:text-2xl">
                 {formatPoints(score)} <span className="text-xs text-zinc-400 font-sans">PTS</span>
               </span>
             </div>
           </div>
 
           {!playingArchive && (
-            <div className="mb-6 flex items-center justify-center gap-4">
+            <div className="mb-3 flex items-center justify-center gap-4 sm:mb-6">
               {viewingArchiveDate ? (
                 <>
                   <Link href="/" className="text-blue-600 font-bold text-xs hover:underline">
@@ -766,17 +771,18 @@ export function DailyDropArena({
               unlocked={unlockedTiles}
               activeId={activeTile}
               imageUrl={safeImageUrl(archiveImage || challenge.imageUrl)}
+              imageMissing={archivePhotoMissing}
               locked={gameWon || gameOver}
               onSelect={selectTile}
             />
           </section>
 
           {!gameWon && !gameOver && (
-            <div className="sticky bottom-2 z-20 rounded-3xl border border-zinc-200 bg-white/95 p-3 shadow-md backdrop-blur sm:static sm:bottom-auto sm:z-auto sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
-              <p className="mb-3 text-xs font-mono font-bold uppercase text-zinc-400">
+            <div className="sticky bottom-1 z-20 rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-md backdrop-blur sm:static sm:bottom-auto sm:z-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
+              <p className="mb-2 text-[10px] font-mono font-bold uppercase text-zinc-400 sm:mb-3 sm:text-xs">
                 Identify the Historical Matchup
               </p>
-              <div className="grid grid-cols-1 gap-2 touch-manipulation sm:grid-cols-2 sm:gap-3">
+              <div className="grid grid-cols-2 gap-2.5 touch-manipulation sm:gap-3">
                 {choiceOptions.map((option, idx) => {
                   const isWrong = selectedWrong.includes(option);
                   return (
@@ -785,7 +791,7 @@ export function DailyDropArena({
                       disabled={isWrong || guessing}
                       onClick={() => handleGuess(option)}
                       className={cn(
-                        'min-h-[48px] touch-manipulation border-[2px] border-zinc-900 bg-white hover:bg-blue-50 hover:border-blue-600 hover:text-blue-900 text-zinc-900 font-bold p-4 rounded-2xl shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] hover:shadow-[3px_3px_0px_0px_rgba(37,99,235,1)] transition-all text-left',
+                        'min-h-[48px] touch-manipulation border-[2px] border-zinc-900 bg-white hover:bg-blue-50 hover:border-blue-600 hover:text-blue-900 text-zinc-900 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] hover:shadow-[3px_3px_0px_0px_rgba(37,99,235,1)] transition-all text-left',
                         isWrong &&
                           'cursor-not-allowed border-rose-300 bg-rose-50 text-rose-400 line-through shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-400 hover:shadow-none',
                       )}
