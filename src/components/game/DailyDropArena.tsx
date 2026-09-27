@@ -37,6 +37,7 @@ import {
   isPremierLeagueClub,
 } from '@/lib/premier-league';
 import { TacticalClueBoard } from '@/components/game/TacticalClueBoard';
+import { PostSolveModal, celebrateSolve } from '@/components/game/PostSolveModal';
 import {
   FREE_TILE_ID,
   STARTING_SCORE,
@@ -196,6 +197,8 @@ export function DailyDropArena({
   const [loading, setLoading] = useState(!initialFixture);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [challengeOpen, setChallengeOpen] = useState(false);
+  const [recapOpen, setRecapOpen] = useState(false);
+  const [solvedOption, setSolvedOption] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
   const [solvedDates, setSolvedDates] = useState<string[]>([]);
@@ -355,6 +358,8 @@ export function DailyDropArena({
       setSelectedWrong([]);
       setGameWon(false);
       setGameOver(false);
+      setRecapOpen(false);
+      setSolvedOption(null);
       setCoinsEarned(0);
       try {
         const query = new URLSearchParams();
@@ -483,6 +488,9 @@ export function DailyDropArena({
         if (result.subject && result.year) {
           setSolution({ subject: result.subject, year: result.year });
         }
+        setSolvedOption(option);
+        setRecapOpen(true);
+        void celebrateSolve();
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
         setGameWon(true);
@@ -1001,6 +1009,18 @@ export function DailyDropArena({
         category={challenge.category}
         username={playerName}
         campaignId={campaign?.id}
+      />
+      <PostSolveModal
+        open={recapOpen && gameWon}
+        onClose={() => setRecapOpen(false)}
+        score={userFinalScore}
+        unlockedTiles={unlockedTiles}
+        matchTitle={solvedOption || (solution ? `${solution.year} ${solution.subject}` : "Fixture solved")}
+        sport={sportLabel}
+        year={solution?.year ?? null}
+        puzzleNumber={dayIndexFromKey(challenge.date_key)}
+        challengeId={challenge.id}
+        club={pledgedClub ? { name: pledgedClub.name, badge: pledgedClub.badge } : null}
       />
     </main>
   );
