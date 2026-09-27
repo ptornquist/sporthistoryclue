@@ -24,9 +24,9 @@ describe("TacticalClueBoard", () => {
         onSelect: () => undefined,
       }),
     );
-    expect(html).toContain("grid-cols-2");
+    expect(html).toContain("snap-x snap-mandatory");
     expect(html).toContain("sm:grid-cols-5");
-    expect(html).toContain("col-span-2 sm:col-span-1");
+    expect(html).toContain("w-[46%] shrink-0 snap-start");
     expect(html).toContain("border-[2.5px] shadow-[3px_3px_0px_0px_rgba(24,24,27,0.85)] hover:shadow-[4px_4px_0px_0px_rgba(24,24,27,1)] active:translate-y-[2px] transition-all rounded-2xl p-2.5 sm:p-4");
     expect(html).toContain("bg-emerald-50/90 border-emerald-600 text-emerald-950");
     expect(html).toContain("px-2 py-0.5 text-[10px]");

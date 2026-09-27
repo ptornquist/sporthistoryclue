@@ -90,8 +90,8 @@ export function TacticalClueBoard({
 
   return (
     <div>
-      <p className="mb-2 text-[11px] font-medium leading-snug text-zinc-500 sm:mb-3 sm:text-xs sm:leading-relaxed">{PROMPT}</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-2.5">
+      <p className="mb-2 line-clamp-2 text-[11px] font-medium leading-snug text-zinc-500 sm:mb-3 sm:text-xs sm:leading-relaxed">{PROMPT}</p>
+      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:gap-2.5 sm:overflow-visible sm:pb-0">
         {tiles.map((tile, index) => {
           const revealed = unlocked.includes(tile.id);
           const selected = tile.id === active?.id;
@@ -109,8 +109,7 @@ export function TacticalClueBoard({
               disabled={locked && !revealed}
               onClick={() => onSelect(index)}
               className={cn(
-                "flex min-h-[4.25rem] cursor-pointer flex-col items-start justify-between text-left disabled:cursor-default sm:min-h-[6.5rem]",
-                tile.id === "decisive" && "col-span-2 sm:col-span-1",
+                "flex w-[46%] shrink-0 snap-start min-h-[4.25rem] cursor-pointer flex-col items-start justify-between text-left disabled:cursor-default sm:w-auto sm:min-h-[6.5rem] sm:shrink",
                 TACTILE,
                 theme.card,
                 selected && SELECTED,
