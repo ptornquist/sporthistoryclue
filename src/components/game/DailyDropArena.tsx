@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
   isSoundMuted,
-  playCluePenalty,
+  playUnlockClick,
   playVictoryFanfare,
   playWhistle,
   playWrongBuzzer,
@@ -37,6 +37,7 @@ import {
 } from '@/lib/premier-league';
 import { TacticalClueBoard } from '@/components/game/TacticalClueBoard';
 import {
+  FREE_TILE_ID,
   STARTING_SCORE,
   applyTileCost,
   buildTacticalBoard,
@@ -182,7 +183,8 @@ export function DailyDropArena({
   const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
   const activeArchiveDate = isDateKey(archiveDate) ? archiveDate : null;
   const [solution, setSolution] = useState<Solution | null>(null);
-  const [openedTiles, setOpenedTiles] = useState<number[]>([]);
+  const [unlockedTiles, setUnlockedTiles] = useState<string[]>([FREE_TILE_ID]);
+  const [activeTile, setActiveTile] = useState(FREE_TILE_ID);
   const [archiveImage, setArchiveImage] = useState<string | null>(null);
   const [score, setScore] = useState(STARTING_SCORE);
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
@@ -291,7 +293,7 @@ export function DailyDropArena({
 
   useEffect(() => {
     if ((!gameWon && !gameOver) || !challenge) return;
-    const marker = `${challenge.id}:${gameWon ? Math.max(openedTiles.length, 1) : 0}`;
+    const marker = `${challenge.id}:${gameWon ? Math.max(unlockedTiles.length, 1) : 0}`;
     if (statsSent.current === marker) return;
     statsSent.current = marker;
     const storageKey = `shc_stat_${challenge.id}`;
@@ -310,14 +312,14 @@ export function DailyDropArena({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         challengeId: challenge.id,
-        clueIndex: gameWon ? Math.min(6, Math.max(openedTiles.length, 1)) : 0,
+        clueIndex: gameWon ? Math.min(6, Math.max(unlockedTiles.length, 1)) : 0,
         won: gameWon,
         clientKey,
       }),
     })
       .then(() => setStatsRefresh((value) => value + 1))
       .catch(() => setStatsRefresh((value) => value + 1));
-  }, [gameWon, gameOver, challenge, openedTiles.length]);
+  }, [gameWon, gameOver, challenge, unlockedTiles.length]);
 
   useEffect(() => {
     if (!duelHandle || !isSupabaseConfigured) return;
@@ -342,7 +344,8 @@ export function DailyDropArena({
     const fetchChallenge = async () => {
       if (!specificMatch) setLoading(true);
       setSolution(null);
-      setOpenedTiles([]);
+      setUnlockedTiles([FREE_TILE_ID]);
+      setActiveTile(FREE_TILE_ID);
       setArchiveImage(null);
       setScore(STARTING_SCORE);
       challengeIdRef.current = '';
@@ -391,13 +394,19 @@ export function DailyDropArena({
     }
   };
 
-  const revealTile = (index: number) => {
-    if (!challenge || gameWon || gameOver || openedTiles.includes(index)) return;
+  const selectTile = (index: number) => {
+    if (!challenge) return;
     const tile = buildTacticalBoard(challenge.clues)[index];
     if (!tile) return;
-    playCluePenalty();
-    triggerHaptic(20);
-    setOpenedTiles((prev) => (prev.includes(index) ? prev : [...prev, index]));
+    if (unlockedTiles.includes(tile.id)) {
+      setActiveTile(tile.id);
+      return;
+    }
+    if (gameWon || gameOver) return;
+    playUnlockClick();
+    triggerHaptic(12);
+    setUnlockedTiles((prev) => (prev.includes(tile.id) ? prev : [...prev, tile.id]));
+    setActiveTile(tile.id);
     setScore((prev) => applyTileCost(prev, tile.cost));
     if (!tile.image || archiveImage || challenge.imageUrl) return;
     const requestedId = challenge.id;
@@ -623,7 +632,7 @@ export function DailyDropArena({
   const isDefeat = isDuelActive && userFinalScore < duelPts;
   const isTie = isDuelActive && userFinalScore === duelPts;
   const slotCount = 5;
-  const revealedCount = Math.min(openedTiles.length, slotCount);
+  const revealedCount = Math.min(unlockedTiles.length, slotCount);
   const gridCells: string[] = Array.from({ length: slotCount }, (_, index) => {
     if (index < revealedCount) return '🟩';
     return '⬜';
@@ -753,10 +762,11 @@ export function DailyDropArena({
             </div>
             <TacticalClueBoard
               tiles={buildTacticalBoard(challenge.clues)}
-              opened={openedTiles}
+              unlocked={unlockedTiles}
+              activeId={activeTile}
               imageUrl={safeImageUrl(archiveImage || challenge.imageUrl)}
               locked={gameWon || gameOver}
-              onReveal={revealTile}
+              onSelect={selectTile}
             />
           </section>
 
@@ -965,7 +975,7 @@ export function DailyDropArena({
             <div className="mt-4 space-y-4">
               <CommunityClueDistribution
                 challengeId={challenge.id}
-                userSolvedClue={gameWon ? Math.min(6, Math.max(openedTiles.length, 1)) : 0}
+                userSolvedClue={gameWon ? Math.min(6, Math.max(unlockedTiles.length, 1)) : 0}
                 refreshToken={statsRefresh}
               />
               <HistoricalMiniRecap challenge={challenge} />

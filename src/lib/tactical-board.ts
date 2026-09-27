@@ -17,6 +17,8 @@ const TACTICAL_TILES: readonly Omit<TacticalTile, "text">[] = [
   { id: "decisive", icon: "⚡", name: "Avgörandet", cost: 3500, image: false },
 ];
 
+export const FREE_TILE_ID = "arena";
+
 export function formatPoints(value: number): string {
   return Math.max(0, Math.round(value))
     .toString()
