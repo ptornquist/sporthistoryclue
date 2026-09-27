@@ -20,6 +20,7 @@ import { findCase } from '@/lib/case-files';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
+import { cn } from '@/lib/utils';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { CommunityClueDistribution } from '@/components/CommunityClueDistribution';
@@ -783,11 +784,11 @@ export function DailyDropArena({
                       key={idx}
                       disabled={isWrong || guessing}
                       onClick={() => handleGuess(option)}
-                      className={`min-h-[48px] touch-manipulation rounded-2xl border p-3 text-left text-xs font-bold transition-all active:scale-[0.98] sm:p-4 ${
-                        isWrong
-                          ? 'cursor-not-allowed border-rose-200 bg-rose-50 text-rose-400 line-through'
-                          : 'border-zinc-200 bg-white text-zinc-800 hover:border-blue-600 hover:shadow-md'
-                      }`}
+                      className={cn(
+                        'min-h-[48px] touch-manipulation border-[2px] border-zinc-900 bg-white hover:bg-blue-50 hover:border-blue-600 hover:text-blue-900 text-zinc-900 font-bold p-4 rounded-2xl shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] hover:shadow-[3px_3px_0px_0px_rgba(37,99,235,1)] transition-all text-left',
+                        isWrong &&
+                          'cursor-not-allowed border-rose-300 bg-rose-50 text-rose-400 line-through shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-400 hover:shadow-none',
+                      )}
                     >
                       {option}
                     </button>
