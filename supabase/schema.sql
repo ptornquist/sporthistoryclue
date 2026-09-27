@@ -172,3 +172,4 @@ create trigger on_auth_user_created
 -- Duel inbox: supabase/migrations/20260926190000_duels.sql
 -- Private scout clubs: supabase/migrations/20260926200000_private_scout_clubs.sql
 -- Club owner inserts: supabase/migrations/20260926210000_club_owner_insert.sql
+-- Supporters Derby allegiance: supabase/migrations/20260927070133_favorite_club.sql

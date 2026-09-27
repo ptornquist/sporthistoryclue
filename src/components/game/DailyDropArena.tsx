@@ -28,6 +28,12 @@ import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
 import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
 import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
+import {
+  FAVORITE_CLUB_KEY,
+  derbyContributionLine,
+  findPremierLeagueClub,
+  isPremierLeagueClub,
+} from '@/lib/premier-league';
 
 interface DailyFixture {
   id: string;
@@ -140,6 +146,7 @@ export function DailyDropArena({
   const [duelPts, setDuelPts] = useState(initialDuelPts);
   const [opponentTitle, setOpponentTitle] = useState('');
   const [coinsEarned, setCoinsEarned] = useState(0);
+  const [favoriteClubId, setFavoriteClubId] = useState<string | null>(null);
   const [statsRefresh, setStatsRefresh] = useState(0);
   const statsSent = useRef<string | null>(null);
   const duelLogged = useRef<string | null>(null);
@@ -193,6 +200,9 @@ export function DailyDropArena({
     };
 
     const initPlayer = async () => {
+      const storedClub = localStorage.getItem(FAVORITE_CLUB_KEY);
+      if (isPremierLeagueClub(storedClub)) setFavoriteClubId(storedClub);
+
       if (!isSupabaseConfigured) {
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
@@ -213,6 +223,17 @@ export function DailyDropArena({
 
           if (profile?.username) setPlayerName(profile.username);
           else if (user.email) setPlayerName(user.email.split('@')[0]);
+
+          const { data: allegiance } = await supabaseClient
+            .from('profiles')
+            .select('favorite_club')
+            .eq('id', user.id)
+            .maybeSingle();
+          const clubId = allegiance?.favorite_club;
+          if (typeof clubId === 'string' && isPremierLeagueClub(clubId)) {
+            setFavoriteClubId(clubId);
+            localStorage.setItem(FAVORITE_CLUB_KEY, clubId);
+          }
 
           applyStoredStreak(profile?.streak);
         } else {
@@ -556,6 +577,7 @@ export function DailyDropArena({
 
   const isDuelActive = Boolean(duelHandle);
   const userFinalScore = gameWon ? score : 0;
+  const pledgedClub = findPremierLeagueClub(favoriteClubId);
   const isVictory = isDuelActive && userFinalScore > duelPts;
   const isDefeat = isDuelActive && userFinalScore < duelPts;
   const isTie = isDuelActive && userFinalScore === duelPts;
@@ -824,6 +846,17 @@ export function DailyDropArena({
                 <span className="block text-[10px] font-mono font-bold uppercase text-blue-600">Final Score</span>
                 <span className="text-3xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()} PTS</span>
               </div>
+
+              {gameWon && pledgedClub && (
+                <div className="mb-6">
+                  <p className="text-sm font-bold text-zinc-800">
+                    {derbyContributionLine(userFinalScore, pledgedClub.name)}
+                  </p>
+                  <Link href="/derby" className="mt-2 inline-block text-xs font-bold text-blue-600 hover:text-blue-700">
+                    View Fan Table →
+                  </Link>
+                </div>
+              )}
 
               {gameWon && coinsEarned > 0 && (
                 <div className="mb-6 inline-block rounded-full border border-amber-300 bg-amber-50 px-5 py-2 text-sm font-black tracking-wide text-amber-800">

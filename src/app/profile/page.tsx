@@ -16,6 +16,7 @@ import { DuelHistory } from '@/components/game/DuelHistory';
 import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
+import { ClubAllegianceCard } from '@/components/derby/ClubAllegianceCard';
 
 interface SessionUser {
   id: string;
@@ -29,6 +30,7 @@ interface Profile {
   avatar_url?: string | null;
   streak?: number | null;
   total_score?: number | null;
+  favorite_club?: string | null;
 }
 
 interface MatchRecord {
@@ -222,6 +224,16 @@ export default function ProfilePage() {
           signedIn={Boolean(user)}
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
+        />
+
+        <ClubAllegianceCard
+          userId={user?.id ?? null}
+          initialClubId={profile?.favorite_club ?? null}
+          onSaved={(message, clubId) => {
+            setActionMessage(message);
+            window.setTimeout(() => setActionMessage(null), 3000);
+            if (clubId) setProfile((prev) => (prev ? { ...prev, favorite_club: clubId } : prev));
+          }}
         />
 
         <DuelHistory
