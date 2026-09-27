@@ -27,8 +27,10 @@ export async function GET(request: Request) {
       ...rest,
       challenge: {
         ...challenge,
-        options: selectChallengeOptions(optionSource),
-        clues: arrangeClueLadder(challenge.clues, { category: challenge.category }),
+        options: challenge.optionsLocked ? challenge.options : selectChallengeOptions(optionSource),
+        clues: challenge.optionsLocked
+          ? challenge.clues
+          : arrangeClueLadder(challenge.clues, { category: challenge.category }),
       },
     });
   }
@@ -46,7 +48,13 @@ export async function GET(request: Request) {
   const payload = toPublicDaily(fixture);
   return Response.json({
     ...payload,
-    options: fixture.optionSource ? selectChallengeOptions(fixture.optionSource) : payload.options,
-    clues: arrangeClueLadder(payload.clues, { category: payload.category }),
+    options: fixture.optionsLocked
+      ? payload.options
+      : fixture.optionSource
+        ? selectChallengeOptions(fixture.optionSource)
+        : payload.options,
+    clues: fixture.optionsLocked
+      ? payload.clues
+      : arrangeClueLadder(payload.clues, { category: payload.category }),
   });
 }

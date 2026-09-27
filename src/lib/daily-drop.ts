@@ -9,7 +9,7 @@ import {
 } from "@/lib/supabase/server";
 import { findCase, SPORT_NAME } from "@/lib/case-files";
 import { arrangeClueLadder } from "@/lib/clue-ladder";
-import { sanitizeClues } from "@/lib/clue-sanitation";
+import { isRejectedClue, sanitizeClues } from "@/lib/clue-sanitation";
 import {
   canonicalSport,
   isUnrelatedEra,
@@ -20,15 +20,17 @@ import {
   type DecoyPeer,
 } from "@/lib/decoy-options";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
-import { fetchDailyChallengeRow } from "@/lib/daily-challenge-query";
+import { fetchDailyChallengeRow, readStoredChallenge, resolveGuessOptions } from "@/lib/daily-challenge-query";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
   id: string;
   date_key: string;
   category: string;
+  title?: string;
   clues: string[];
   options: string[];
+  optionsLocked?: boolean;
   sportId?: string;
   sportName?: string;
 }
@@ -45,6 +47,7 @@ interface SecretDaily extends PublicDaily {
   year: number;
   decoys?: string[];
   optionSource?: DecoyChallenge;
+  correctOption?: string;
 }
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -59,20 +62,30 @@ export function parseDateKey(value: string | null, now = new Date()): string | n
 }
 
 export function toPublicDaily(fixture: SecretDaily): PublicDaily {
-  const file = findCase(fixture.id);
+  const locked = fixture.optionsLocked === true && fixture.options.length > 0;
+  const file = locked ? undefined : findCase(fixture.id);
+  const category = locked ? fixture.title || fixture.category : fixture.category;
   return {
     id: fixture.id,
     date_key: fixture.date_key,
-    category: fixture.category,
-    clues: arrangeClueLadder(
-      sanitizeClues(fixture.clues, {
-        title: file?.title || fixture.category,
-        year: file?.year || fixture.year,
-      }),
-      { category: file?.context || fixture.category },
-    ),
+    category,
+    title: fixture.title,
+    clues: locked
+      ? authoredClues(fixture.clues)
+      : arrangeClueLadder(
+          sanitizeClues(fixture.clues, {
+            title: file?.title || fixture.category,
+            year: file?.year || fixture.year,
+          }),
+          { category: file?.context || fixture.category },
+        ),
     options: fixture.options,
+    optionsLocked: locked,
   };
+}
+
+function authoredClues(clues: readonly string[]): string[] {
+  return clues.map((clue) => clue.trim()).filter((clue) => !isRejectedClue(clue)).slice(0, 6);
 }
 
 const MATCH_KEY = /^[a-z0-9-]{1,80}$/i;
@@ -150,11 +163,14 @@ export async function loadArchiveMatch(matchParam: string): Promise<SecretDaily 
     id: matchParam,
     category: file?.context || base.category,
   };
+  if (shaped.optionsLocked && shaped.options.length > 0) {
+    return { ...shaped, options: resolveGuessOptions(shaped.options, [], true) };
+  }
   const optionSource = await buildDecoySource(shaped);
   return {
     ...shaped,
     optionSource,
-    options: selectChallengeOptions(optionSource),
+    options: resolveGuessOptions(shaped.options, selectChallengeOptions(optionSource), false),
   };
 }
 
@@ -248,15 +264,20 @@ export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
   const fromChallenges = await loadFromTable("challenges", dateKey);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
+  if (fixture.optionsLocked && fixture.options.length > 0) {
+    return { ...fixture, options: resolveGuessOptions(fixture.options, [], true) };
+  }
   const optionSource = await buildDecoySource(fixture);
   return {
     ...fixture,
     optionSource,
-    options: selectChallengeOptions(optionSource),
+    options: resolveGuessOptions(fixture.options, selectChallengeOptions(optionSource), false),
   };
 }
 
 export function gradeOption(fixture: SecretDaily, option: string): boolean {
+  const guess = option.trim().toLowerCase();
+  if (fixture.correctOption && guess === fixture.correctOption.trim().toLowerCase()) return true;
   return optionMatchesChallenge(option, {
     subject: fixture.subject,
     year: fixture.year,
@@ -380,31 +401,52 @@ async function loadFromTable(
 }
 
 function normalizeRow(row: Record<string, unknown>, dateKey: string): SecretDaily | null {
-  const subject = stringField(row, "subject") || stringField(row, "title") || stringField(row, "target_subject");
+  const stored = readStoredChallenge(row);
+  const subject = stringField(row, "subject") || stored.title || stringField(row, "target_subject");
   const year = numberField(row, "year") || numberField(row, "target_year");
-  const clues = stringList(row.clues);
-  if (!subject || !year || clues.length === 0) return null;
+  const clues = stored.clues;
+  const optionsLocked = stored.options.length > 0;
+  if (!subject) return null;
+  if (clues.length === 0 && !optionsLocked) return null;
+  if (!year && !optionsLocked) return null;
 
   const category =
     stringField(row, "category") ||
     SPORT_LABEL[stringField(row, "sport") as Sport] ||
     "Sports History";
-  const provided = stringList(row.options);
-  const correct = provided.find((option) =>
-    gradeOption({ subject, year, id: "", date_key: dateKey, category, clues, options: [] }, option),
-  );
-  const options = provided.length > 0 ? provided : [`${subject} (${year})`];
+  const options = optionsLocked ? stored.options : [`${subject} (${year})`];
+  const marked = stringField(row, "correct_option") || stringField(row, "answer");
+  const correct =
+    (marked
+      ? options.find((option) => option.trim().toLowerCase() === marked.trim().toLowerCase())
+      : undefined) ||
+    (year
+      ? options.find((option) =>
+          optionMatchesChallenge(option, { subject, year, category, sport: stringField(row, "sport") }),
+        )
+      : options.find((option) => option.trim().toLowerCase() === subject.trim().toLowerCase()));
 
   return {
     id: stringField(row, "id") || stringField(row, "slug") || `${dateKey}`,
     date_key: dateKey,
     category,
+    title: displayTitle(stored.title, subject),
     clues: clues.slice(0, 6),
-    options: correct ? options : [`${subject} (${year})`, ...options],
-    decoys: stringList(row.decoys),
+    options,
+    optionsLocked,
+    decoys: optionsLocked ? [] : stringList(row.decoys),
     subject,
     year,
+    correctOption: correct,
   };
+}
+
+function displayTitle(title: string, subject: string): string {
+  const label = title.trim();
+  const answer = subject.trim().toLowerCase();
+  if (!label || label.toLowerCase() === answer) return "";
+  if (answer && label.toLowerCase().includes(answer)) return "";
+  return label;
 }
 
 function stringField(row: Record<string, unknown>, key: string): string {

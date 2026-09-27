@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { fetchDailyChallengeRow, type ChallengeRow, type DailyChallengeClient } from "./daily-challenge-query";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  fetchDailyChallengeRow,
+  readStoredChallenge,
+  resolveGuessOptions,
+  type ChallengeRow,
+  type DailyChallengeClient,
+} from "./daily-challenge-query";
 
 function clientFor(rows: ChallengeRow[]): DailyChallengeClient & { calls: number } {
   const api = {
@@ -41,6 +47,10 @@ function clientFor(rows: ChallengeRow[]): DailyChallengeClient & { calls: number
 describe("fetchDailyChallengeRow", () => {
   const today = "2026-09-27";
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("uses the newest challenge scheduled for today", async () => {
     const supabase = clientFor([
       { id: "older", fixture_date: today, created_at: "2026-09-27T01:00:00.000Z" },
@@ -76,6 +86,55 @@ describe("fetchDailyChallengeRow", () => {
     const row = await fetchDailyChallengeRow(supabase, "2024-01-01", { allowLatestFallback: false });
     expect(row).toBeNull();
   });
+
+  it("logs the fixture_date query and any Supabase error", async () => {
+    const logged: unknown[][] = [];
+    const errors: unknown[][] = [];
+    vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
+      logged.push(args);
+    });
+    vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+      errors.push(args);
+    });
+    const row = { id: "today", fixture_date: today, created_at: "2026-09-27T12:00:00.000Z", title: "Stored final" };
+    const supabase = clientFor([row]);
+    const loaded = await fetchDailyChallengeRow(supabase, today);
+    expect(loaded?.id).toBe("today");
+    expect(logged[0]).toEqual(["Fetching fixture for date:", today]);
+    expect(logged.some((line) => line[0] === "Active challenge loaded from Supabase:" && line[1] === row)).toBe(true);
+    expect(errors).toEqual([]);
+  });
+});
+
+describe("stored challenge fields", () => {
+  it("uses tactical clues and the row options without generated decoys", () => {
+    const stored = readStoredChallenge({
+      title: "World Cup Final",
+      tactical_clues: ["The crowd is already standing.", "A left foot changes the tie."],
+      options: [
+        "1986 World Cup: Argentina vs England",
+        "1970 World Cup: Brazil vs Italy",
+        "1966 World Cup: England vs West Germany",
+        "1974 World Cup: Netherlands vs West Germany",
+      ],
+      image_url: "https://cdn.example.com/final.jpg",
+    });
+    expect(stored.clues).toEqual(["The crowd is already standing.", "A left foot changes the tie."]);
+    expect(stored.title).toBe("World Cup Final");
+    expect(stored.imageUrl).toBe("https://cdn.example.com/final.jpg");
+    const generated = ["1986 World Cup: Argentina vs England", "1990 World Cup: Argentina vs Italy"];
+    expect(resolveGuessOptions(stored.options, generated, true)).toEqual(stored.options);
+    expect(resolveGuessOptions(stored.options, generated, true).join(" ")).not.toMatch(/1990 World Cup: Argentina vs Italy/);
+  });
+
+  it("ignores a non-https image and falls back to generated options when none are stored", () => {
+    const stored = readStoredChallenge({ image_url: "/local/secret.jpg", clues: ["A cold rink."] });
+    expect(stored.imageUrl).toBe("");
+    expect(stored.clues).toEqual(["A cold rink."]);
+    expect(resolveGuessOptions(stored.options, ["1972 Summit Series: Canada vs Soviet Union"], false)).toEqual([
+      "1972 Summit Series: Canada vs Soviet Union",
+    ]);
+  });
 });
 
 describe("home route cache", () => {
@@ -84,5 +143,20 @@ describe("home route cache", () => {
     expect(source).toContain("export const dynamic = 'force-dynamic';");
     expect(source).toContain("export const revalidate = 0;");
     expect(source).toContain("loadTodayPublicDrop");
+    expect(source).toContain("console.log('Fetching fixture for date:', today);");
+    expect(source).toContain("console.log('Active challenge loaded from Supabase:', todayDrop);");
+    const drop = readFileSync(new URL("../lib/daily-drop.ts", import.meta.url), "utf8");
+    expect(drop).toContain("resolveGuessOptions");
+    expect(drop).toContain("if (fixture.optionsLocked && fixture.options.length > 0)");
+    expect(drop).not.toContain("imageUrl: stored.imageUrl");
+  });
+});
+
+describe("challenge query logging", () => {
+  it("records the fixture query, the error, and the loaded row", () => {
+    const source = readFileSync(new URL("./daily-challenge-query.ts", import.meta.url), "utf8");
+    expect(source).toContain('console.log("Fetching fixture for date:", today);');
+    expect(source).toContain('console.error("Supabase query error:", dated.error);');
+    expect(source).toContain('console.log("Active challenge loaded from Supabase:", dated.data);');
   });
 });

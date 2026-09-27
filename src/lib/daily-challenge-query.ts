@@ -13,6 +13,70 @@ export type DailyChallengeClient = {
   };
 };
 
+function text(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function asArray(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    return [trimmed];
+  }
+  return [trimmed];
+}
+
+function textItem(item: unknown): string {
+  if (typeof item === "string") return item.trim();
+  if (!item || typeof item !== "object") return "";
+  const row = item as Record<string, unknown>;
+  return (
+    text(row.body) ||
+    text(row.text) ||
+    text(row.clue) ||
+    text(row.label) ||
+    text(row.option) ||
+    text(row.title) ||
+    text(row.quote)
+  );
+}
+
+export interface StoredChallengeFields {
+  title: string;
+  clues: string[];
+  options: string[];
+  imageUrl: string;
+}
+
+/** Fields taken straight from a challenges row. `imageUrl` stays server-side. */
+export function readStoredChallenge(row: ChallengeRow): StoredChallengeFields {
+  const tactical = asArray(row.tactical_clues).map(textItem).filter(Boolean);
+  const clues = asArray(row.clues).map(textItem).filter(Boolean);
+  const imageUrl = text(row.image_url);
+  return {
+    title: text(row.title),
+    clues: tactical.length > 0 ? tactical : clues,
+    options: asArray(row.options).map(textItem).filter(Boolean),
+    imageUrl: imageUrl.startsWith("https://") ? imageUrl : "",
+  };
+}
+
+/** Stored guess buttons win. Generated decoys are only used when the row has none. */
+export function resolveGuessOptions(
+  stored: readonly string[] | null | undefined,
+  generated: readonly string[],
+  locked: boolean,
+): string[] {
+  const options = (stored ?? []).map((item) => item.trim()).filter(Boolean);
+  if (locked && options.length > 0) return [...options];
+  return [...generated];
+}
+
 /**
  * Today's row wins. When that date has no challenge, the newest created row is used.
  * `date_key` is checked after `fixture_date` so older drops that only stored `date_key` still resolve.
@@ -22,6 +86,8 @@ export async function fetchDailyChallengeRow(
   today: string,
   options?: { allowLatestFallback?: boolean },
 ): Promise<ChallengeRow | null> {
+  console.log("Fetching fixture for date:", today);
+
   const dated = await supabase
     .from("challenges")
     .select("*")
@@ -29,6 +95,11 @@ export async function fetchDailyChallengeRow(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  if (dated.error) {
+    console.error("Supabase query error:", dated.error);
+  }
+  console.log("Active challenge loaded from Supabase:", dated.data);
 
   if (dated.data) return dated.data;
 
@@ -40,16 +111,25 @@ export async function fetchDailyChallengeRow(
     .limit(1)
     .maybeSingle();
 
+  if (byDateKey.error) {
+    console.error("Supabase query error:", byDateKey.error);
+  }
   if (byDateKey.data) return byDateKey.data;
 
   if (options?.allowLatestFallback === false) return null;
 
-  const { data: latest } = await supabase
+  const latest = await supabase
     .from("challenges")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  return latest;
+  if (latest.error) {
+    console.error("Supabase query error:", latest.error);
+  }
+  if (latest.data) {
+    console.log("Active challenge loaded from Supabase:", latest.data);
+  }
+  return latest.data;
 }

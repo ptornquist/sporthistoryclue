@@ -27,6 +27,7 @@ import { CommunityClueDistribution } from '@/components/CommunityClueDistributio
 import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
 import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
 import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
+import { clearStaleGameSession } from '@/lib/game-session';
 import { formatArchiveDate, isDateKey } from '@/lib/archive-calendar';
 import { rememberDailyCompletion } from '@/lib/daily-completions';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
@@ -50,14 +51,25 @@ interface DailyFixture {
   id: string;
   date_key: string;
   category: string;
+  title?: string;
   clues: string[];
   options: string[];
+  optionsLocked?: boolean;
   sportId?: string;
   sportName?: string;
   imageUrl?: string | null;
 }
 
 function cleanFixture(fixture: DailyFixture): DailyFixture {
+  if (fixture.optionsLocked) {
+    const category = fixture.title || fixture.category;
+    return {
+      ...fixture,
+      category,
+      clues: (fixture.clues ?? []).map((clue) => clue.trim()).filter(Boolean).slice(0, 6),
+      options: fixture.options,
+    };
+  }
   const file = findCase(fixture.id);
   const category = file?.context || fixture.category;
   return {
@@ -283,6 +295,14 @@ export function DailyDropArena({
       setSoundMuted(isSoundMuted());
     });
   }, []);
+
+  useEffect(() => {
+    if (specificMatch || activeArchiveDate) return;
+    clearStaleGameSession(window.localStorage, utcDateKey(new Date()), {
+      loadingLatest: true,
+      challengeId: challenge?.id,
+    });
+  }, [specificMatch, activeArchiveDate, challenge?.id]);
 
   useEffect(() => {
     Promise.resolve().then(() => {

@@ -5,7 +5,7 @@ import { FirstVisitBriefing } from '@/components/HowToPlayModal';
 import { findCase } from '@/lib/case-files';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
-import { loadPublicArchive, loadTodayPublicDrop, utcTodayKey } from '@/lib/daily-drop';
+import { loadPublicArchive, loadTodayPublicDrop, utcTodayKey, type PublicDaily } from '@/lib/daily-drop';
 import { selectChallengeOptions } from '@/lib/decoy-options';
 
 export const dynamic = 'force-dynamic';
@@ -71,19 +71,28 @@ export default async function Page({
   const archiveDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate <= utcTodayKey() ? requestedDate : '';
   const training = firstParam(params.training) === '1';
   const archive = specificMatch ? await loadPublicArchive(specificMatch) : null;
-  const todayDrop = !specificMatch && !archiveDate ? await loadTodayPublicDrop() : null;
+  let todayDrop: PublicDaily | null = null;
+  if (!specificMatch && !archiveDate) {
+    const today = new Date().toISOString().split('T')[0];
+    console.log('Fetching fixture for date:', today);
+    todayDrop = await loadTodayPublicDrop();
+    console.log('Active challenge loaded from Supabase:', todayDrop);
+  }
   const file = findCase(specificMatch);
+  const lockedOptions = archive?.challenge.optionsLocked === true;
   const initialFixture = archive?.challenge
     ? {
         ...archive.challenge,
-        clues: arrangeClueLadder(
-          sanitizeClues(archive.challenge.clues, {
-            title: file?.title || archive.challenge.category,
-            year: file?.year,
-          }),
-          { category: file?.context || archive.challenge.category },
-        ),
-        options: selectChallengeOptions(archive.optionSource),
+        clues: lockedOptions
+          ? archive.challenge.clues
+          : arrangeClueLadder(
+              sanitizeClues(archive.challenge.clues, {
+                title: file?.title || archive.challenge.category,
+                year: file?.year,
+              }),
+              { category: file?.context || archive.challenge.category },
+            ),
+        options: lockedOptions ? archive.challenge.options : selectChallengeOptions(archive.optionSource),
       }
     : todayDrop;
 
