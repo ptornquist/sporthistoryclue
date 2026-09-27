@@ -175,3 +175,4 @@ create trigger on_auth_user_created
 -- Supporters Derby allegiance: supabase/migrations/20260927070133_favorite_club.sql
 -- Daily archive completions: supabase/migrations/20260927105320_user_daily_completions.sql
 -- Public avatars bucket: supabase/migrations/20260927131442_avatars_bucket.sql
+-- Derby club table: supabase/migrations/20260927185517_derby_clubs.sql

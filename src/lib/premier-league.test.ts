@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   PREMIER_LEAGUE_CLUBS,
@@ -43,5 +44,28 @@ describe("Premier League derby", () => {
     expect(derbyContributionLine(8500, "Arsenal FC")).toBe(
       "⚽ +8,500 PTS bagged for Arsenal FC in the Supporters Derby!",
     );
+  });
+
+  it("seeds derby_clubs with ids the allegiance check already allows", () => {
+    const sql = readFileSync(
+      new URL("../../supabase/migrations/20260927185517_derby_clubs.sql", import.meta.url),
+      "utf8",
+    );
+    const ids = [...sql.matchAll(/\('([a-z-]+)',/g)].map((match) => match[1]);
+    expect(ids).toEqual([
+      "arsenal",
+      "liverpool",
+      "manchester-city",
+      "manchester-united",
+      "chelsea",
+      "tottenham",
+      "newcastle",
+      "aston-villa",
+    ]);
+    expect(ids.every((id) => PREMIER_LEAGUE_CLUBS.some((club) => club.id === id))).toBe(true);
+    expect(sql).toContain('enable row level security');
+    expect(sql).toContain('create policy "Public read and update derby_clubs"');
+    expect(sql).toContain("using (true)");
+    expect(sql).toContain("with check (true)");
   });
 });
