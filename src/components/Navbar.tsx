@@ -55,7 +55,11 @@ export function MobileNavDrawer({
   );
 }
 
-export default function Navbar() {
+export default function Navbar({
+  arcade,
+}: {
+  arcade?: { sport: string; score: string; streak: number };
+} = {}) {
   const pathname = usePathname();
   const { wallet } = useCosmeticWallet();
   const [user, setUser] = useState<{ id: string; email?: string | null } | null>(null);
@@ -133,7 +137,34 @@ export default function Navbar() {
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header className="bg-white border-b border-zinc-200 px-4 py-3.5 sticky top-0 z-30 md:px-6">
+    <header className={arcade ? "shrink-0" : "bg-white border-b border-zinc-200 px-4 py-3.5 sticky top-0 z-30 md:px-6"}>
+      {arcade ? (
+        <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto] items-center gap-1.5">
+          <Link href="/" className="truncate text-[10px] font-black leading-none tracking-tighter text-zinc-950 sm:text-xs">
+            SPORTSHISTORYCLUE
+          </Link>
+          <div className="flex min-w-0 flex-col items-center text-center">
+            <span className="max-w-full truncate rounded-full border-2 border-zinc-950 bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-zinc-950">
+              {arcade.sport}
+            </span>
+            <span className="mt-0.5 text-[11px] font-black text-zinc-950">{arcade.score}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="whitespace-nowrap text-xs font-black text-zinc-950" title="Streak">
+              🔥 {arcade.streak}
+            </span>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-zinc-900 bg-white text-lg font-black text-zinc-900 shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] active:translate-y-[1px]"
+              aria-label="Toggle Navigation Menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? '✕' : '☰'}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="max-w-5xl mx-auto flex justify-between items-center gap-3">
         {/* Brand */}
         <div className="flex min-w-0 items-center gap-2">
@@ -227,6 +258,7 @@ export default function Navbar() {
           </button>
         </div>
       </div>
+      )}
 
       <MobileNavDrawer
         open={mobileMenuOpen}

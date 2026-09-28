@@ -122,7 +122,7 @@ export default async function Page({
       <FirstVisitBriefing />
       <Suspense
         fallback={
-          <div className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
+          <div className="max-w-md mx-auto h-[100dvh] flex flex-col justify-between p-3 overflow-hidden select-none bg-[#fafafa] items-center justify-center font-mono text-xs uppercase text-zinc-400">
             Loading Drop...
           </div>
         }

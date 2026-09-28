@@ -1,46 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Camera } from "lucide-react";
 import type { TacticalTile } from "@/lib/tactical-board";
-import { FREE_TILE_ID, formatTileCost } from "@/lib/tactical-board";
 import { getClueContent as readClueContent } from "@/lib/tactical-clues";
 import { cn } from "@/lib/utils";
 
-const PROMPT =
-  "Review the opening briefing below. Unlock additional tactical intel tiles to deduce the fixture if needed.";
+const STEP_ICONS = ["🏟️", "⏱️", "📋", "📷", "⚡"] as const;
+const CLUE_TITLES = ["THE ARENA", "THE ERA", "THE LINEUP", "THE PHOTO", "THE CLIMAX"] as const;
 
-const TACTILE =
-  "border-[2.5px] shadow-[3px_3px_0px_0px_rgba(24,24,27,0.85)] hover:shadow-[4px_4px_0px_0px_rgba(24,24,27,1)] active:translate-y-[2px] transition-all rounded-2xl p-2.5 sm:p-4";
+export const UNLOCKED_STEP =
+  "border-2 border-zinc-950 bg-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]";
 
-const SELECTED =
-  "ring-4 ring-zinc-900/30 -translate-y-1 shadow-[5px_5px_0px_0px_rgba(24,24,27,1)] hover:shadow-[5px_5px_0px_0px_rgba(24,24,27,1)]";
+export const LOCKED_STEP = "border-2 border-zinc-300 bg-zinc-100 text-zinc-400 font-bold";
+
+export const CLUE_CARD =
+  "border-[3px] border-zinc-950 bg-amber-50/40 rounded-2xl p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col justify-center my-2 min-h-0";
+
+export const CLUE_TEXT = "text-base md:text-lg font-bold text-zinc-900 leading-snug";
 
 const ARCHIVE_BLUR = "blur-xl scale-105 filter grayscale contrast-125";
 const ARCHIVE_CLEAR = "blur-none scale-100 filter-none";
 
-const TILE_THEME: Record<TacticalTile["id"], { card: string; pill: string }> = {
-  arena: {
-    card: "bg-emerald-50/90 border-emerald-600 text-emerald-950",
-    pill: "bg-emerald-600 text-white font-black rounded-md tracking-wider uppercase",
-  },
-  epoch: {
-    card: "bg-amber-50/90 border-amber-600 text-amber-950",
-    pill: "bg-amber-500 text-zinc-950 font-black rounded-md tracking-wider uppercase",
-  },
-  profiles: {
-    card: "bg-sky-50/90 border-sky-600 text-sky-950",
-    pill: "bg-sky-600 text-white font-black rounded-md tracking-wider uppercase",
-  },
-  archive: {
-    card: "bg-purple-50/90 border-purple-600 text-purple-950",
-    pill: "bg-purple-600 text-white font-black rounded-md tracking-wider uppercase",
-  },
-  decisive: {
-    card: "bg-rose-50/90 border-rose-600 text-rose-950",
-    pill: "bg-rose-600 text-white font-black rounded-md tracking-wider uppercase",
-  },
-};
+export function unlockPrompt(cost: number): string {
+  const amount = Math.max(0, Math.round(cost)).toLocaleString("en-US");
+  return `Unlock (-${amount} pts)`;
+}
 
 function ArchiveEvidence({ src }: { src: string }) {
   const [clear, setClear] = useState(false);
@@ -51,19 +35,14 @@ function ArchiveEvidence({ src }: { src: string }) {
   }, [src]);
 
   return (
-    <div className="relative mb-3">
-      <span className="absolute left-3 top-3 z-10 bg-zinc-950/80 backdrop-blur-md text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider border border-white/10">
-        📷 ARCHIVE EVIDENCE
-      </span>
-      <img
-        src={src}
-        alt="Archive photograph"
-        className={cn(
-          "w-full max-h-56 sm:max-h-72 object-cover rounded-xl border-2 border-zinc-900 shadow-inner transition-all duration-700 ease-out",
-          clear ? ARCHIVE_CLEAR : ARCHIVE_BLUR,
-        )}
-      />
-    </div>
+    <img
+      src={src}
+      alt="Archive photograph"
+      className={cn(
+        "max-h-full min-h-0 w-full flex-1 object-contain transition-all duration-700 ease-out",
+        clear ? ARCHIVE_CLEAR : ARCHIVE_BLUR,
+      )}
+    />
   );
 }
 
@@ -76,6 +55,7 @@ export function TacticalClueBoard({
   locked,
   onSelect,
   tacticalClues,
+  initialCostPrompt = null,
 }: {
   tiles: readonly TacticalTile[];
   unlocked: readonly string[];
@@ -85,96 +65,76 @@ export function TacticalClueBoard({
   locked: boolean;
   onSelect: (index: number) => void;
   tacticalClues?: unknown;
+  initialCostPrompt?: number | null;
 }) {
+  const [costPrompt, setCostPrompt] = useState<number | null>(initialCostPrompt);
   const active = tiles.find((tile) => tile.id === activeId) ?? tiles[0];
   const activeTileIndex = Math.max(0, tiles.findIndex((tile) => tile.id === active?.id));
   const challenge = { tactical_clues: tacticalClues ?? tiles.map((tile) => tile.text) };
   const getClueContent = (tileIndex: number, tileId?: string) => readClueContent(challenge, tileIndex, tileId);
   const intel = getClueContent(activeTileIndex, active?.id);
-  const openTiles = tiles.filter((tile) => unlocked.includes(tile.id));
-  const showPhoto = Boolean(active?.image && imageUrl);
-  const showFallback = Boolean(active?.image && !imageUrl && imageMissing);
+  const showPhoto = Boolean(active?.image && imageUrl && !imageMissing);
+  const title = CLUE_TITLES[activeTileIndex] ?? "THE ARENA";
+
+  const choose = (index: number) => {
+    const tile = tiles[index];
+    if (!tile) return;
+    const revealed = unlocked.includes(tile.id);
+    if (revealed) {
+      setCostPrompt(null);
+      onSelect(index);
+      return;
+    }
+    if (locked) return;
+    if (costPrompt === index) {
+      setCostPrompt(null);
+      onSelect(index);
+      return;
+    }
+    setCostPrompt(index);
+  };
 
   return (
-    <div>
-      <p className="mb-2 line-clamp-2 text-[11px] font-medium leading-snug text-zinc-500 sm:mb-3 sm:text-xs sm:leading-relaxed">{PROMPT}</p>
-      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:gap-2.5 sm:overflow-visible sm:pb-0">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className={cn("grid grid-cols-5 gap-1", costPrompt !== null && "mb-6")}>
         {tiles.map((tile, index) => {
           const revealed = unlocked.includes(tile.id);
           const selected = tile.id === active?.id;
-          const theme = TILE_THEME[tile.id];
-          const pill =
-            tile.id === FREE_TILE_ID
-              ? "FREE / UNLOCKED"
-              : revealed
-                ? "UNLOCKED"
-                : `REVEAL ${formatTileCost(tile.cost)}`;
           return (
             <button
               key={tile.id}
               type="button"
-              disabled={locked && !revealed}
-              onClick={() => onSelect(index)}
+              onClick={() => choose(index)}
+              aria-current={selected ? "true" : undefined}
+              aria-label={`Clue ${index + 1}`}
               className={cn(
-                "flex w-[46%] shrink-0 snap-start min-h-[4.25rem] cursor-pointer flex-col items-start justify-between text-left disabled:cursor-default sm:w-auto sm:min-h-[6.5rem] sm:shrink",
-                TACTILE,
-                theme.card,
-                selected && SELECTED,
+                "relative flex items-center justify-center rounded-xl px-0.5 py-2 text-xs sm:text-sm",
+                revealed ? UNLOCKED_STEP : LOCKED_STEP,
               )}
             >
-              <span className="text-base sm:text-xl" aria-hidden>
-                {tile.icon}
-              </span>
-              <span className="mt-1 text-xs font-black uppercase leading-tight tracking-wide sm:mt-2">
-                {tile.name}
-              </span>
-              <span className={cn("mt-1 px-2 py-0.5 text-[10px] sm:mt-2", theme.pill)}>{pill}</span>
+              <span>{`${index + 1} ${STEP_ICONS[index]}`}</span>
+              {costPrompt === index && (
+                <span className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 whitespace-nowrap rounded-full border-2 border-zinc-950 bg-amber-200 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-zinc-950">
+                  {unlockPrompt(tile.cost)}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
       {active && (
-        <>
-          {openTiles.length > 1 && (
-            <div className="mt-3 flex flex-wrap gap-1 sm:mt-4">
-              {openTiles.map((tile) => {
-                const index = tiles.findIndex((item) => item.id === tile.id);
-                const selected = tile.id === active.id;
-                return (
-                  <button
-                    key={tile.id}
-                    type="button"
-                    onClick={() => onSelect(index)}
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                      selected ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-                    }`}
-                  >
-                    {tile.icon} {tile.name}
-                  </button>
-                );
-              })}
+        <div className={CLUE_CARD}>
+          <h2 className="mx-auto mb-3 inline-flex border-2 border-zinc-950 bg-white px-3 py-1 text-xs font-black uppercase tracking-wider text-zinc-950">
+            {`CLUE ${activeTileIndex + 1}: ${title}`}
+          </h2>
+          {showPhoto && imageUrl ? (
+            <div className="mb-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+              <ArchiveEvidence key={imageUrl} src={imageUrl} />
             </div>
-          )}
-          <div className="border-[3px] border-zinc-900 bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[5px_5px_0px_0px_rgba(24,24,27,1)] relative overflow-hidden mt-4 mb-4">
-            <h2 className="bg-zinc-900 text-white font-black px-3 py-1 rounded-lg text-xs uppercase tracking-wider inline-flex items-center gap-1.5 mb-3">
-              ACTIVE INTEL: {active.icon} {active.name}
-            </h2>
-            {showPhoto && imageUrl ? <ArchiveEvidence key={imageUrl} src={imageUrl} /> : null}
-            {showFallback ? (
-              <div className="mb-3 flex flex-col items-center rounded-xl border-2 border-zinc-900 bg-zinc-50 px-4 py-6 text-center shadow-inner">
-                <Camera className="h-8 w-8 text-zinc-900" aria-hidden />
-                <p className="mt-2 text-sm font-semibold leading-snug text-zinc-900">
-                  {intel}
-                </p>
-              </div>
-            ) : (
-              <p className="text-zinc-900 text-sm sm:text-base md:text-lg font-semibold leading-snug sm:leading-relaxed tracking-tight whitespace-pre-line">
-                {intel}
-              </p>
-            )}
-          </div>
-        </>
+          ) : null}
+          <p className={cn(CLUE_TEXT, "text-center whitespace-pre-line")}>{intel}</p>
+        </div>
       )}
     </div>
   );
