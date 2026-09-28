@@ -26,7 +26,7 @@ import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { CommunityClueDistribution } from '@/components/CommunityClueDistribution';
 import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
 import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
-import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
+import { activeStreak, loadSolvedHistory, recordSolvedChapter, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
 import { clearStaleGameSession } from '@/lib/game-session';
 import { formatArchiveDate, isDateKey } from '@/lib/archive-calendar';
 import { rememberDailyCompletion } from '@/lib/daily-completions';
@@ -510,6 +510,7 @@ export function DailyDropArena({
         triggerHaptic([50, 50, 100]);
         setGameWon(true);
         rememberSolvedCase(challenge.id, score);
+        recordSolvedChapter(archiveId || challenge.id);
         const today = utcDateKey(new Date());
         const solvedKey = isDateKey(challenge.date_key) ? challenge.date_key : today;
         if (!specificMatch) {
@@ -722,7 +723,7 @@ export function DailyDropArena({
           {/* Header Info */}
           <div className="mb-3 flex items-center justify-between border-b border-zinc-200 pb-3 sm:mb-6 sm:pb-4">
             <div>
-              {(isDateKey(archiveDate) || archiveId) && (
+              {isDateKey(archiveDate) && !archiveId && (
                 <div className="mb-2">
                   <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
                     📅 ARCHIVE FIXTURE
@@ -771,6 +772,14 @@ export function DailyDropArena({
                   BROWSE ARCHIVE →
                 </Link>
               )}
+            </div>
+          )}
+
+          {archiveId && (
+            <div className="mb-3">
+              <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
+                STORYLINE CHAPTER
+              </span>
             </div>
           )}
 
