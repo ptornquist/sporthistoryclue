@@ -7,6 +7,7 @@ import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
 import { loadDatedPublicDrop, loadPublicArchive, loadPublicChallengeById, loadTodayPublicDrop, utcTodayKey, type PublicDaily } from '@/lib/daily-drop';
 import { selectChallengeOptions } from '@/lib/decoy-options';
+import { resolveTacticalClueList } from '@/lib/tactical-clues';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,6 +25,11 @@ type HomeSearchParams = {
 function firstParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? '';
   return value ?? '';
+}
+
+function resolvedClues(clues: readonly string[] | undefined): string[] {
+  const resolved = resolveTacticalClueList(clues ?? []);
+  return resolved.length > 0 ? resolved : [...(clues ?? [])];
 }
 
 export async function generateMetadata({
@@ -79,7 +85,9 @@ export default async function Page({
   if (!specificMatch && archiveId) {
     datedDrop = await loadPublicChallengeById(archiveId);
   } else if (!specificMatch && archiveDate) {
+    console.log('Fetching fixture for date:', archiveDate);
     datedDrop = await loadDatedPublicDrop(archiveDate);
+    console.log('Active challenge loaded from Supabase:', datedDrop);
   } else if (!specificMatch) {
     const today = new Date().toISOString().split('T')[0];
     console.log('Fetching fixture for date:', today);
@@ -88,43 +96,54 @@ export default async function Page({
   }
   const file = findCase(specificMatch);
   const lockedOptions = archive?.challenge.optionsLocked === true;
+  const loadedDrop = datedDrop ?? todayDrop;
   const initialFixture = archive?.challenge
     ? {
         ...archive.challenge,
-        clues: lockedOptions
-          ? archive.challenge.clues
-          : arrangeClueLadder(
-              sanitizeClues(archive.challenge.clues, {
-                title: file?.title || archive.challenge.category,
-                year: file?.year,
-              }),
-              { category: file?.context || archive.challenge.category },
-            ),
+        clues: resolvedClues(
+          lockedOptions
+            ? archive.challenge.clues
+            : arrangeClueLadder(
+                sanitizeClues(archive.challenge.clues, {
+                  title: file?.title || archive.challenge.category,
+                  year: file?.year,
+                }),
+                { category: file?.context || archive.challenge.category },
+              ),
+        ),
         options: lockedOptions ? archive.challenge.options : selectChallengeOptions(archive.optionSource),
       }
-    : datedDrop ?? todayDrop;
+    : loadedDrop
+      ? { ...loadedDrop, clues: resolvedClues(loadedDrop.clues) }
+      : null;
 
   return (
     <>
       <FirstVisitBriefing />
       <Suspense
         fallback={
-          <div className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-            Loading Drop...
-          </div>
+          <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none">
+            <div className="w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2 items-center justify-center font-mono text-xs uppercase text-zinc-400">
+              Loading Drop...
+            </div>
+          </main>
         }
       >
-        <DailyDropArena
-          key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${archiveId}:${training ? 'training' : 'play'}`}
-          specificMatch={specificMatch}
-          campaignId={campaignId}
-          initialFixture={initialFixture}
-          initialDuel={duel}
-          initialDuelPts={duelPts}
-          archiveDate={archiveDate}
-          archiveId={archiveId}
-          training={training}
-        />
+        <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none">
+          <div className="w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2">
+            <DailyDropArena
+              key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${archiveId}:${training ? 'training' : 'play'}`}
+              specificMatch={specificMatch}
+              campaignId={campaignId}
+              initialFixture={initialFixture}
+              initialDuel={duel}
+              initialDuelPts={duelPts}
+              archiveDate={archiveDate}
+              archiveId={archiveId}
+              training={training}
+            />
+          </div>
+        </main>
       </Suspense>
     </>
   );

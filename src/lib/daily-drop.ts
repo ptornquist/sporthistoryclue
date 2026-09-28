@@ -20,7 +20,12 @@ import {
   type DecoyPeer,
 } from "@/lib/decoy-options";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
-import { fetchDailyChallengeRow, readStoredChallenge, resolveGuessOptions } from "@/lib/daily-challenge-query";
+import {
+  fetchDailyChallengeRow,
+  pickDeterministicChallenge,
+  readStoredChallenge,
+  resolveGuessOptions,
+} from "@/lib/daily-challenge-query";
 import { fetchArchiveFixtures, type ArchiveFixture } from "@/lib/archive-vault";
 import { hashString } from "@/lib/utils";
 
@@ -65,12 +70,10 @@ export function parseDateKey(value: string | null, now = new Date()): string | n
 export function toPublicDaily(fixture: SecretDaily): PublicDaily {
   const locked = fixture.optionsLocked === true && fixture.options.length > 0;
   const file = locked ? undefined : findCase(fixture.id);
-  const category = locked ? fixture.title || fixture.category : fixture.category;
   return {
     id: fixture.id,
     date_key: fixture.date_key,
-    category,
-    title: fixture.title,
+    category: fixture.category,
     clues: locked
       ? authoredClues(fixture.clues)
       : arrangeClueLadder(
@@ -123,6 +126,70 @@ const ARCHIVE_EXTRAS: Record<string, SecretDaily> = {
     options: ["Björn Borg vs John McEnroe (1980)"],
     subject: "Björn Borg vs John McEnroe (1980)",
     year: 1980,
+  },
+  "thrilla-in-manila-1975": {
+    id: "thrilla-in-manila-1975",
+    date_key: "1975-10-01",
+    category: "Heavyweight Title Fight",
+    clues: [
+      "A third fight, and the heat is the first opponent.",
+      "The champion and the former champion have already split two wars.",
+      "The ring is outdoors. The start waits until the evening cools.",
+      "Round after round, neither man gives the referee an easy night.",
+      "The fourteenth round ends it. One man stays on his stool.",
+      "1975. The rubber match of the heavyweight trilogy, fought in brutal humidity.",
+    ],
+    options: ["Muhammad Ali vs Joe Frazier (1975)"],
+    subject: "Muhammad Ali vs Joe Frazier (1975)",
+    year: 1975,
+  },
+  "world-cup-final-1994": {
+    id: "world-cup-final-1994",
+    date_key: "1994-07-17",
+    category: "World Cup Final",
+    clues: [
+      "A final that will not be settled in open play.",
+      "The bowl was built for another sport, on the edge of a film city.",
+      "Extra time changes nothing. The championship moves to twelve yards.",
+      "One side wears yellow. The other wears blue. Both have won this tournament before.",
+      "The last kick sails over the bar. A captain covers his face.",
+      "1994. A World Cup final decided entirely from the penalty spot.",
+    ],
+    options: ["Brazil vs Italy (1994)"],
+    subject: "Brazil vs Italy (1994)",
+    year: 1994,
+  },
+  "wimbledon-final-2008": {
+    id: "wimbledon-final-2008",
+    date_key: "2008-07-06",
+    category: "Wimbledon Gentlemen's Final",
+    clues: [
+      "The light is going. The final has already outlasted the afternoon.",
+      "Grass, two baseline grinders, and two rain delays.",
+      "One man is chasing a sixth title here. The other has never won this lawn.",
+      "The fifth set starts with the evening already on the court.",
+      "The match is measured in hours. The fifth set finishes 9–7.",
+      "Centre Court, 2008. The gentlemen's final that ended in the dusk.",
+    ],
+    options: ["Rafael Nadal vs Roger Federer (2008)"],
+    subject: "Rafael Nadal vs Roger Federer (2008)",
+    year: 2008,
+  },
+  "seoul-100m-1988": {
+    id: "seoul-100m-1988",
+    date_key: "1988-09-24",
+    category: "Olympic 100m Final",
+    clues: [
+      "The fastest final of the Games does not survive the night.",
+      "A still track, eight lanes, and a time that flashes as a world record.",
+      "The winner raises a finger. The sample is already on its way to the lab.",
+      "A banned substance. The gold is stripped before the season is over.",
+      "The man who finished second is declared the champion.",
+      "1988. The Olympic 100m final that became a scandal.",
+    ],
+    options: ["Ben Johnson (1988)"],
+    subject: "Ben Johnson (1988)",
+    year: 1988,
   },
 };
 
@@ -287,11 +354,14 @@ function withSport(fixture: SecretDaily): PublicDaily {
 
 export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily> {
   const today = now.toISOString().split("T")[0];
-  return withSport(await loadDailyFixture(today));
+  return withSport(await loadDailyFixture(today, { allowLatestFallback: true }));
 }
 
-export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
-  const fromChallenges = await loadFromTable("challenges", dateKey);
+export async function loadDailyFixture(
+  dateKey: string,
+  options?: { allowLatestFallback?: boolean },
+): Promise<SecretDaily> {
+  const fromChallenges = await loadFromTable("challenges", dateKey, options?.allowLatestFallback === true);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
   if (fixture.optionsLocked && fixture.options.length > 0) {
     return { ...fixture, options: resolveGuessOptions(fixture.options, [], true) };
@@ -393,9 +463,33 @@ async function sameSportPeers(fixture: SecretDaily, sport: string): Promise<Deco
   }
 }
 
+async function deterministicChallengeRow(
+  client: Parameters<typeof fetchDailyChallengeRow>[0],
+  dateKey: string,
+): Promise<Record<string, unknown> | null> {
+  const listClient = client as unknown as {
+    from: (table: "challenges") => {
+      select: (columns: "*") => {
+        order: (
+          column: "id",
+          options: { ascending: boolean },
+        ) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
+      };
+    };
+  };
+  const { data, error } = await listClient.from("challenges").select("*").order("id", { ascending: true });
+  if (error) {
+    console.error("Supabase query error:", error);
+    return null;
+  }
+  const challenges = [...(data ?? [])].sort((left, right) => String(left.id ?? "").localeCompare(String(right.id ?? "")));
+  return pickDeterministicChallenge(challenges, dateKey);
+}
+
 async function loadFromTable(
   table: "challenges" | "puzzles",
   dateKey: string,
+  allowLatestFallback = false,
 ): Promise<SecretDaily | null> {
   const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
   if (!client) return null;
@@ -403,10 +497,15 @@ async function loadFromTable(
   try {
     if (table === "challenges") {
       const today = new Date().toISOString().split("T")[0];
-      const row = await fetchDailyChallengeRow(client as unknown as Parameters<typeof fetchDailyChallengeRow>[0], dateKey, {
-        allowLatestFallback: dateKey === today,
+      const queryClient = client as unknown as Parameters<typeof fetchDailyChallengeRow>[0];
+      const row = await fetchDailyChallengeRow(queryClient, dateKey, {
+        allowLatestFallback,
       });
-      return row ? normalizeRow(row, dateKey) : null;
+      const scheduled = row ? normalizeRow(row, dateKey) : null;
+      if (scheduled) return scheduled;
+      if (dateKey > today) return null;
+      const fallback = await deterministicChallengeRow(queryClient, dateKey);
+      return fallback ? normalizeRow(fallback, dateKey) : null;
     }
 
     const matched = await client

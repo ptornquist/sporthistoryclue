@@ -24,10 +24,14 @@ function PlayContent() {
   const requestedDate = searchParams.get('date') || '';
   if (isDateKey(requestedDate)) {
     return (
-      <DailyDropArena
-        archiveDate={requestedDate}
-        training={searchParams.get('training') === '1'}
-      />
+      <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none">
+        <div className="w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2">
+          <DailyDropArena
+            archiveDate={requestedDate}
+            training={searchParams.get('training') === '1'}
+          />
+        </div>
+      </main>
     );
   }
   return <CategoryPlay category={searchParams.get('category') || 'ice_hockey'} />;

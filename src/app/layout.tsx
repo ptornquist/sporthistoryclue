@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#fafafa',
+  themeColor: '#fbf9f5',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -61,7 +61,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white">
+      <body className="antialiased bg-[#fbf9f5] text-zinc-900 selection:bg-blue-600 selection:text-white">
         {children}
         <InstallAppBanner />
       </body>

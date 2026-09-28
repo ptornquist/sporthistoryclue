@@ -8,12 +8,10 @@ import {
   playVictoryFanfare,
   playWhistle,
   playWrongBuzzer,
-  toggleSoundMute,
   triggerHaptic,
 } from '@/lib/audio';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
@@ -26,9 +24,10 @@ import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { CommunityClueDistribution } from '@/components/CommunityClueDistribution';
 import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
 import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
-import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
+import { recordScoutMatch } from '@/lib/scout-dossier';
+import { activeStreak, loadSolvedHistory, recordSolvedChapter, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
 import { clearStaleGameSession } from '@/lib/game-session';
-import { formatArchiveDate, isDateKey } from '@/lib/archive-calendar';
+import { isDateKey } from '@/lib/archive-calendar';
 import { rememberDailyCompletion } from '@/lib/daily-completions';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
 import {
@@ -61,22 +60,22 @@ interface DailyFixture {
 }
 
 function cleanFixture(fixture: DailyFixture): DailyFixture {
-  if (fixture.optionsLocked) {
-    const category = fixture.title || fixture.category;
+  const rest: DailyFixture = { ...fixture };
+  delete rest.title;
+  if (rest.optionsLocked) {
     return {
-      ...fixture,
-      category,
-      clues: (fixture.clues ?? []).map((clue) => clue.trim()).filter(Boolean).slice(0, 6),
-      options: fixture.options,
+      ...rest,
+      clues: (rest.clues ?? []).map((clue) => clue.trim()).filter(Boolean).slice(0, 6),
+      options: rest.options,
     };
   }
-  const file = findCase(fixture.id);
-  const category = file?.context || fixture.category;
+  const file = findCase(rest.id);
+  const category = file?.context || rest.category;
   return {
-    ...fixture,
+    ...rest,
     clues: arrangeClueLadder(
-      sanitizeClues(fixture.clues ?? [], {
-        title: file?.title || fixture.category,
+      sanitizeClues(rest.clues ?? [], {
+        title: file?.title || rest.category,
         year: file?.year,
       }),
       { category },
@@ -110,58 +109,31 @@ function setupOptions(options: string[]): string[] {
   return four;
 }
 
-function MatchModeBanner({
-  campaignTitle,
-  category,
-  specificMatch,
-  campaignId,
-  archiveDate = '',
-  training = false,
-}: {
-  campaignTitle?: string;
-  category: string;
-  specificMatch: string;
-  campaignId: string;
-  archiveDate?: string;
-  training?: boolean;
-}) {
-  if (campaignId && campaignTitle) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-6 py-3 text-amber-950">
-        <span className="text-xs font-black uppercase tracking-wide">🏆 Campaign Mode · {campaignTitle}</span>
-        <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-amber-800 hover:text-amber-950">
-          ← Back to Storylines
-        </Link>
-      </div>
-    );
+const PLAY_COLUMN = 'flex h-full w-full flex-1 flex-col justify-between gap-2';
+
+export function getSportLabel(sport?: string) {
+  const key = sport?.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  switch (key) {
+    case 'football':
+    case 'soccer':
+      return '⚽ FOOTBALL';
+    case 'ice hockey':
+    case 'hockey':
+      return '🏒 ICE HOCKEY';
+    case 'boxing':
+      return '🥊 BOXING';
+    case 'tennis':
+      return '🎾 TENNIS';
+    case 'athletics':
+    case 'track':
+      return '🏃 ATHLETICS';
+    default:
+      return '🏆 SPORTS CLUE';
   }
-  if (specificMatch) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
-        <span className="text-xs font-black uppercase tracking-wide">
-          📚 Sports Archive{category ? ` · ${category}` : ''}
-        </span>
-        <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-blue-800 hover:text-blue-950">
-          ← Back to Disciplines
-        </Link>
-      </div>
-    );
-  }
-  if (isDateKey(archiveDate)) {
-    const label = training ? 'SCOUT TRAINING' : 'ARCHIVE DOSSIER';
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
-        <span className="text-xs font-black tracking-wide">
-          {label} · {formatArchiveDate(archiveDate)}
-        </span>
-        <Link href="/archive" className="text-xs font-bold tracking-wider text-blue-800 hover:text-blue-950">
-          Back to Calendar
-        </Link>
-      </div>
-    );
-  }
-  return null;
 }
+
+const GUESS_BUTTON =
+  'border-[2.5px] border-zinc-950 bg-white hover:bg-zinc-100 active:translate-y-[2px] rounded-xl p-3.5 text-center font-black text-sm md:text-base leading-tight shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all';
 
 export function DailyDropArena({
   specificMatch = '',
@@ -204,6 +176,7 @@ export function DailyDropArena({
   const [archivePhotoMissing, setArchivePhotoMissing] = useState(false);
   const [score, setScore] = useState(STARTING_SCORE);
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
+  const [litGuess, setLitGuess] = useState<string | null>(null);
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [guessing, setGuessing] = useState(false);
@@ -216,7 +189,6 @@ export function DailyDropArena({
   const streakLock = useRef(false);
   const challengeIdRef = useRef('');
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
-  const [soundMuted, setSoundMuted] = useState(true);
   const whistled = useRef(false);
 
   const showToast = (msg: string) => {
@@ -290,12 +262,6 @@ export function DailyDropArena({
     };
 
     initPlayer();
-  }, []);
-
-  useEffect(() => {
-    Promise.resolve().then(() => {
-      setSoundMuted(isSoundMuted());
-    });
   }, []);
 
   useEffect(() => {
@@ -411,15 +377,6 @@ export function DailyDropArena({
     playWhistle();
   };
 
-  const handleToggleSound = () => {
-    const muted = toggleSoundMute();
-    setSoundMuted(muted);
-    if (!muted) {
-      whistled.current = true;
-      playWhistle();
-    }
-  };
-
   const selectTile = (index: number) => {
     if (!challenge) return;
     const tile = buildTacticalBoard(challenge.clues)[index];
@@ -510,6 +467,7 @@ export function DailyDropArena({
         triggerHaptic([50, 50, 100]);
         setGameWon(true);
         rememberSolvedCase(challenge.id, score);
+        recordSolvedChapter(archiveId || challenge.id);
         const today = utcDateKey(new Date());
         const solvedKey = isDateKey(challenge.date_key) ? challenge.date_key : today;
         if (!specificMatch) {
@@ -524,6 +482,14 @@ export function DailyDropArena({
         if (!specificMatch) setSolvedDates(history);
         setStreak(newStreak);
         localStorage.setItem('shc_streak', newStreak.toString());
+        recordScoutMatch({
+          id: challenge.id,
+          date: solvedKey,
+          sport: challenge.sportName || challenge.category,
+          score,
+          tilesUnlocked: Math.min(5, Math.max(1, unlockedTiles.length)),
+          won: true,
+        });
 
         if (currentUser?.id && isSupabaseConfigured) {
           supabaseClient
@@ -554,8 +520,16 @@ export function DailyDropArena({
       const closed = newScore <= 0 || nextWrong.length >= 3;
       if (closed) {
         setGameOver(true);
+        const today = utcDateKey(new Date());
+        recordScoutMatch({
+          id: challenge.id,
+          date: isDateKey(challenge.date_key) ? challenge.date_key : today,
+          sport: challenge.sportName || challenge.category,
+          score: newScore,
+          tilesUnlocked: Math.min(5, Math.max(1, unlockedTiles.length)),
+          won: false,
+        });
         if (!specificMatch) {
-          const today = utcDateKey(new Date());
           const dropDate = isDateKey(challenge.date_key) ? challenge.date_key : today;
           void rememberDailyCompletion(
             { dropDate, solved: false, score: newScore, challengeId: challenge.id },
@@ -638,19 +612,9 @@ export function DailyDropArena({
 
   if (loading || !challenge) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex flex-col font-mono text-xs uppercase text-zinc-400">
-        <MatchModeBanner
-          campaignTitle={campaign?.title}
-          category=""
-          specificMatch={specificMatch}
-          campaignId={campaignId}
-          archiveDate={activeArchiveDate ?? ''}
-          training={training}
-        />
-        <div className="flex flex-1 items-center justify-center">
-          {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
-        </div>
-      </main>
+      <div className={`${PLAY_COLUMN} items-center justify-center bg-[#fbf9f5] font-mono text-xs uppercase text-zinc-400`}>
+        {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
+      </div>
     );
   }
 
@@ -671,9 +635,9 @@ export function DailyDropArena({
   }
   const gridLine = gridCells.join(' ');
   const matchLabel = String(dayIndexFromKey(challenge.date_key));
-  const viewingArchiveDate = activeArchiveDate !== null;
   const nextMatch = nextStorylineMatch(campaignId, challenge.id);
-  const sportLabel = challenge.sportName || challenge.category;
+  const sportLabel = getSportLabel(challenge.sportName || challenge.sportId || challenge.category);
+  const playing = !gameWon && !gameOver;
   const sportHref = challenge.sportId ? `/disciplines?sport=${encodeURIComponent(challenge.sportId)}` : '/disciplines';
   const playerHandle = playerName.replace(/^@/, '') || 'Scout';
   const resultUrl = `https://sportshistoryclue.com/?duel=${encodeURIComponent(playerHandle)}&pts=${userFinalScore}`;
@@ -692,150 +656,84 @@ export function DailyDropArena({
   };
 
   return (
-    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
-      <div>
-        <Navbar />
-        <MatchModeBanner
-          campaignTitle={campaign?.title}
-          category={challenge.category}
-          specificMatch={specificMatch}
-          campaignId={campaignId}
-          archiveDate={activeArchiveDate ?? ''}
-          training={training}
-        />
+    <div className={`${PLAY_COLUMN} bg-[#fbf9f5] text-zinc-900`} onPointerDown={openWithWhistle}>
+      <Navbar
+        arcade={{
+          sport: sportLabel,
+          score: `${score.toLocaleString('en-US')} PTS`,
+          streak,
+        }}
+      />
 
-        {/* Duel Banner */}
-        {isDuelActive && !gameWon && !gameOver && (
-          <div className="bg-blue-600 text-white px-4 py-2.5 text-center text-xs font-bold tracking-wide">
-            ⚔️ Duel Active: VS @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''} — beat {duelPts.toLocaleString()} PTS!
-          </div>
-        )}
+      {isDuelActive && playing && (
+        <p className="mt-1 text-center text-[10px] font-black uppercase tracking-wide text-blue-700">
+          ⚔️ VS @{duelHandle} · {duelPts.toLocaleString()} PTS
+        </p>
+      )}
 
-        {/* Toast Alert */}
-        {toastMessage && (
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xl animate-fade-in">
-            {toastMessage}
-          </div>
-        )}
+      {toastMessage && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xl animate-fade-in">
+          {toastMessage}
+        </div>
+      )}
 
-        <div className="max-w-3xl mx-auto px-4 py-4 sm:px-6 sm:py-8" onPointerDown={openWithWhistle}>
-          {/* Header Info */}
-          <div className="mb-3 flex items-center justify-between border-b border-zinc-200 pb-3 sm:mb-6 sm:pb-4">
-            <div>
-              {(isDateKey(archiveDate) || archiveId) && (
-                <div className="mb-2">
-                  <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
-                    📅 ARCHIVE FIXTURE
-                  </span>
-                </div>
-              )}
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
-                {challenge.category}
-              </span>
-              <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
-                {playingArchive ? (campaign ? 'Campaign Match' : 'Archive Match') : 'Daily Drop'}
-              </h1>
-              {!playingArchive && (
-                <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                  DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Potential Score</span>
-              <span className="text-xl font-black text-blue-600 font-mono sm:text-2xl">
-                {formatPoints(score)} <span className="text-xs text-zinc-400 font-sans">PTS</span>
-              </span>
-            </div>
-          </div>
-
-          {!playingArchive && (
-            <div className="mb-3 flex items-center justify-center gap-4 sm:mb-6">
-              {viewingArchiveDate ? (
-                <>
-                  <Link href="/" className="text-blue-600 font-bold text-xs hover:underline">
-                    ← Back to Today
-                  </Link>
-                  <Link
-                    href="/archive"
-                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
-                  >
-                    <span>📅 Full Calendar</span>
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  href="/archive"
-                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
-                >
-                  BROWSE ARCHIVE →
-                </Link>
-              )}
-            </div>
+      {playing && (
+        <div className="flex min-h-0 flex-1 flex-col">
+          {isDateKey(archiveDate) && !archiveId && (
+            <span className="mb-1 inline-flex w-fit bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
+              📅 ARCHIVE FIXTURE
+            </span>
           )}
-
-          <section className="mb-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
-                Tactical Board
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={handleToggleSound}
-                  aria-pressed={soundMuted}
-                  aria-label={soundMuted ? 'Unmute match sounds' : 'Mute match sounds'}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-sm hover:border-blue-600"
-                >
-                  {soundMuted ? '🔇' : '🔊'}
-                </button>
-                <span className="text-xs font-mono font-bold text-amber-600">
-                  🔥 {streak} Streak
-                </span>
-              </div>
-            </div>
-            <TacticalClueBoard
-              tiles={buildTacticalBoard(challenge.clues)}
-              unlocked={unlockedTiles}
-              activeId={activeTile}
-              imageUrl={safeImageUrl(archiveImage || challenge.imageUrl)}
-              imageMissing={archivePhotoMissing}
-              locked={gameWon || gameOver}
-              onSelect={selectTile}
-            />
-          </section>
-
-          {!gameWon && !gameOver && (
-            <div className="sticky bottom-1 z-20 rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-md backdrop-blur sm:static sm:bottom-auto sm:z-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
-              <p className="mb-2 text-[10px] font-mono font-bold uppercase text-zinc-400 sm:mb-3 sm:text-xs">
-                Identify the Historical Matchup
-              </p>
-              <div className="grid grid-cols-2 gap-2.5 touch-manipulation sm:gap-3">
-                {choiceOptions.map((option, idx) => {
-                  const isWrong = selectedWrong.includes(option);
-                  return (
-                    <button
-                      key={idx}
-                      disabled={isWrong || guessing}
-                      onClick={() => handleGuess(option)}
-                      className={cn(
-                        'min-h-[48px] touch-manipulation border-[2px] border-zinc-900 bg-white hover:bg-blue-50 hover:border-blue-600 hover:text-blue-900 text-zinc-900 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] hover:shadow-[3px_3px_0px_0px_rgba(37,99,235,1)] transition-all text-left',
-                        isWrong &&
-                          'cursor-not-allowed border-rose-300 bg-rose-50 text-rose-400 line-through shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-400 hover:shadow-none',
-                      )}
-                    >
-                      {option}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          {archiveId && (
+            <span className="mb-1 inline-flex w-fit bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
+              STORYLINE CHAPTER
+            </span>
           )}
+          {training && (
+            <span className="sr-only">SCOUT TRAINING</span>
+          )}
+          <TacticalClueBoard
+            tiles={buildTacticalBoard(challenge.clues)}
+            unlocked={unlockedTiles}
+            activeId={activeTile}
+            imageUrl={safeImageUrl(archiveImage || challenge.imageUrl)}
+            imageMissing={archivePhotoMissing}
+            locked={gameWon || gameOver}
+            onSelect={selectTile}
+          />
+        </div>
+      )}
 
-          {/* Showdown / Victory Result */}
-          {(gameWon || gameOver) && (
-            <>
+      {playing && (
+        <div className="grid shrink-0 grid-cols-2 gap-2">
+          {choiceOptions.map((option, idx) => {
+            const isWrong = selectedWrong.includes(option);
+            const popped = litGuess === option && !isWrong;
+            return (
+              <button
+                key={idx}
+                type="button"
+                disabled={isWrong || guessing}
+                onClick={() => {
+                  setLitGuess(option);
+                  void handleGuess(option);
+                }}
+                className={cn(
+                  GUESS_BUTTON,
+                  popped && 'bg-blue-600 text-white',
+                  isWrong &&
+                    'cursor-not-allowed border-rose-600 bg-rose-100 text-rose-700 line-through shadow-none hover:bg-rose-100',
+                )}
+              >
+                {option}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {(gameWon || gameOver) && (
+        <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
               
               {/* Head-to-Head Duel Card */}
@@ -1016,11 +914,8 @@ export function DailyDropArena({
               />
               <HistoricalMiniRecap challenge={challenge} />
             </div>
-            </>
-          )}
         </div>
-      </div>
-      <Footer />
+      )}
       <ChallengeFriendModal
         isOpen={challengeOpen}
         onClose={() => setChallengeOpen(false)}
@@ -1031,7 +926,7 @@ export function DailyDropArena({
         username={playerName}
         campaignId={campaign?.id}
       />
-    </main>
+    </div>
   );
 }
 
