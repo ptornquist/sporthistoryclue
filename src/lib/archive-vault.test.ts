@@ -4,13 +4,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ArchiveVault } from "@/components/archive/ArchiveVault";
 import {
+  dropNumber,
   fetchArchiveFixtures,
-  formatVaultDate,
   parseSolvedHistory,
   publishVaultRows,
   solvedBadge,
   solvedScore,
-  sportMatchesFilter,
 } from "./archive-vault";
 
 const today = "2026-09-27";
@@ -45,10 +44,9 @@ describe("archive vault fixtures", () => {
     const rows = await fetchArchiveFixtures(supabase, today);
     expect(rows.map((row) => row.id)).toEqual(["newer", "older"]);
     expect(rows[0]).not.toHaveProperty("title");
-    expect(formatVaultDate(rows[0].fixtureDate)).toBe("Sep 26, 2026");
-    expect(sportMatchesFilter(rows[0].sport, "Football")).toBe(true);
-    expect(sportMatchesFilter(rows[1].sport, "Ice Hockey")).toBe(true);
+    expect(dropNumber("2026-09-20")).toBe(20716);
     expect(publishVaultRows([{ id: "", fixture_date: "2026-09-01" }], today)).toEqual([]);
+    expect(publishVaultRows([{ id: "future", fixture_date: "2026-10-01", sport: "football" }], today)).toEqual([]);
   });
 
   it("reads solved challenge ids and scores from shc_solved_history", () => {
@@ -79,23 +77,26 @@ describe("archive routes", () => {
     expect(home).toContain("archiveId");
   });
 
-  it("renders the vault header, sport filters, and a dossier link", () => {
+  it("renders a chronological daily drop feed without sport filters", () => {
     const html = renderToStaticMarkup(
       createElement(ArchiveVault, {
         fixtures: [
-          { id: "miracle", sport: "ice hockey", fixtureDate: "2026-09-28", year: 1980 },
+          { id: "newer", sport: "football", fixtureDate: "2026-09-26", year: 1986 },
+          { id: "older", sport: "ice hockey", fixtureDate: "2026-09-20", year: 1980 },
         ],
       }),
     );
-    expect(html).toContain("HISTORICAL VAULT");
-    expect(html).toContain("Missed a match? Revisit and deduce classified sporting moments from the vault.");
-    expect(html).toContain("All Sports");
-    expect(html).toContain("Ice Hockey");
-    expect(html).toContain("🏒");
-    expect(html).toContain("1980");
-    expect(html).toContain("Sep 28, 2026");
-    expect(html).toContain("PLAY DOSSIER →");
-    expect(html).toContain('href="/?date=2026-09-28"');
-    expect(html).toContain("border-[2.5px] border-zinc-900 rounded-2xl p-4 bg-white shadow-[4px_4px_0px_0px_rgba(24,24,27,1)] hover:translate-y-[-2px] transition-all");
+    expect(html).toContain("DAILY DROP ARCHIVE");
+    expect(html).toContain("Play previous daily matches and catch up on your streak.");
+    expect(html).not.toContain("All Sports");
+    expect(html).not.toContain("HISTORICAL VAULT");
+    expect(html).toContain("DROP #20722 · 2026-09-26");
+    expect(html).toContain("DROP #20716 · 2026-09-20");
+    expect(html.indexOf("2026-09-26")).toBeLessThan(html.indexOf("2026-09-20"));
+    expect(html).toContain("⚽ Football");
+    expect(html).toContain("🏒 Ice Hockey");
+    expect(html).toContain("PLAY DROP →");
+    expect(html).toContain('href="/?date=2026-09-26"');
+    expect(html).toContain("border-[2.5px] border-zinc-900 rounded-2xl p-4 bg-white shadow-[3px_3px_0px_0px_rgba(24,24,27,1)] mb-3");
   });
 });
