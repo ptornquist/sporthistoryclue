@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
 import type { TacticalTile } from "@/lib/tactical-board";
 import { FREE_TILE_ID, formatTileCost } from "@/lib/tactical-board";
+import { getClueContent as readClueContent } from "@/lib/tactical-clues";
 import { cn } from "@/lib/utils";
 
 const PROMPT =
@@ -74,6 +75,7 @@ export function TacticalClueBoard({
   imageMissing = false,
   locked,
   onSelect,
+  tacticalClues,
 }: {
   tiles: readonly TacticalTile[];
   unlocked: readonly string[];
@@ -82,8 +84,13 @@ export function TacticalClueBoard({
   imageMissing?: boolean;
   locked: boolean;
   onSelect: (index: number) => void;
+  tacticalClues?: unknown;
 }) {
   const active = tiles.find((tile) => tile.id === activeId) ?? tiles[0];
+  const activeTileIndex = Math.max(0, tiles.findIndex((tile) => tile.id === active?.id));
+  const challenge = { tactical_clues: tacticalClues ?? tiles.map((tile) => tile.text) };
+  const getClueContent = (tileIndex: number, tileId?: string) => readClueContent(challenge, tileIndex, tileId);
+  const intel = getClueContent(activeTileIndex, active?.id);
   const openTiles = tiles.filter((tile) => unlocked.includes(tile.id));
   const showPhoto = Boolean(active?.image && imageUrl);
   const showFallback = Boolean(active?.image && !imageUrl && imageMissing);
@@ -158,12 +165,12 @@ export function TacticalClueBoard({
               <div className="mb-3 flex flex-col items-center rounded-xl border-2 border-zinc-900 bg-zinc-50 px-4 py-6 text-center shadow-inner">
                 <Camera className="h-8 w-8 text-zinc-900" aria-hidden />
                 <p className="mt-2 text-sm font-semibold leading-snug text-zinc-900">
-                  {active.text || "Nothing further is filed on this tile."}
+                  {intel}
                 </p>
               </div>
             ) : (
               <p className="text-zinc-900 text-sm sm:text-base md:text-lg font-semibold leading-snug sm:leading-relaxed tracking-tight whitespace-pre-line">
-                {active.text || "Nothing further is filed on this tile."}
+                {intel}
               </p>
             )}
           </div>

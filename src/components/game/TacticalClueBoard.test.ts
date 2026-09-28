@@ -64,6 +64,28 @@ describe("TacticalClueBoard", () => {
     expect(html).not.toContain("The rink is loud.");
   });
 
+  it("resolves keyed tactical clues into the active intel box", () => {
+    const blank = buildTacticalBoard([]);
+    const html = renderToStaticMarkup(
+      createElement(TacticalClueBoard, {
+        tiles: blank,
+        unlocked: ["arena", "epoch"],
+        activeId: "epoch",
+        imageUrl: null,
+        locked: false,
+        onSelect: () => undefined,
+        tacticalClues: {
+          stadium: "The bowl is already full.",
+          context: "Late in a tense decade.",
+        },
+      }),
+    );
+    expect(html).toContain("ACTIVE INTEL: ⏱️ Era &amp; Context");
+    expect(html).toContain("Late in a tense decade.");
+    expect(html).not.toContain("The bowl is already full.");
+    expect(html).not.toContain("Nothing further is filed on this tile.");
+  });
+
   it("shows the archive description when the photo tile has no image", () => {
     const html = renderToStaticMarkup(
       createElement(TacticalClueBoard, {

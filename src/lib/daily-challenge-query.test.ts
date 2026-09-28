@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchDailyChallengeRow,
+  pickDeterministicChallenge,
   readStoredChallenge,
   resolveGuessOptions,
   type ChallengeRow,
@@ -106,6 +107,16 @@ describe("fetchDailyChallengeRow", () => {
   });
 });
 
+describe("deterministic challenge fallback", () => {
+  it("picks challenges[dayNumber % challenges.length] when the date has no row", () => {
+    const challenges = [{ id: "alpha" }, { id: "bravo" }, { id: "charlie" }];
+    expect(pickDeterministicChallenge(challenges, "2026-09-01")?.id).toBe("bravo");
+    expect(pickDeterministicChallenge(challenges, "2026-09-03")?.id).toBe("alpha");
+    expect(pickDeterministicChallenge(challenges, "2026-09-05")?.id).toBe("charlie");
+    expect(pickDeterministicChallenge([], "2026-09-01")).toBeNull();
+  });
+});
+
 describe("stored challenge fields", () => {
   it("uses tactical clues and the row options without generated decoys", () => {
     const stored = readStoredChallenge({
@@ -125,6 +136,32 @@ describe("stored challenge fields", () => {
     const generated = ["1986 World Cup: Argentina vs England", "1990 World Cup: Argentina vs Italy"];
     expect(resolveGuessOptions(stored.options, generated, true)).toEqual(stored.options);
     expect(resolveGuessOptions(stored.options, generated, true).join(" ")).not.toMatch(/1990 World Cup: Argentina vs Italy/);
+  });
+
+  it("reads keyed tactical_clues objects and JSON strings in tile order", () => {
+    const stored = readStoredChallenge({
+      tactical_clues: {
+        arena_stakes: "The bowl is already full.",
+        era: "Late in a tense decade.",
+        lineup: "A high line and a deep sweeper.",
+        image_clue: "A cropped stand behind the goal.",
+        climax: "The last kick sails wide.",
+      },
+    });
+    expect(stored.clues).toEqual([
+      "The bowl is already full.",
+      "Late in a tense decade.",
+      "A high line and a deep sweeper.",
+      "A cropped stand behind the goal.",
+      "The last kick sails wide.",
+    ]);
+    const parsed = readStoredChallenge({
+      tactical_clues: JSON.stringify([
+        { text: "First whistle." },
+        { body: "A winter final." },
+      ]),
+    });
+    expect(parsed.clues).toEqual(["First whistle.", "A winter final."]);
   });
 
   it("ignores a non-https image and falls back to generated options when none are stored", () => {
@@ -147,6 +184,8 @@ describe("home route cache", () => {
     expect(source).toContain("console.log('Active challenge loaded from Supabase:', todayDrop);");
     const drop = readFileSync(new URL("../lib/daily-drop.ts", import.meta.url), "utf8");
     expect(drop).toContain("resolveGuessOptions");
+    expect(drop).toContain("pickDeterministicChallenge");
+    expect(source).toContain("loadDatedPublicDrop(archiveDate)");
     expect(drop).toContain("if (fixture.optionsLocked && fixture.options.length > 0)");
     expect(drop).not.toContain("imageUrl: stored.imageUrl");
   });
