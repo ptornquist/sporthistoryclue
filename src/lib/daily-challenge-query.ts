@@ -1,3 +1,5 @@
+import { resolveTacticalClueList } from "@/lib/tactical-clues";
+
 export type ChallengeRow = Record<string, unknown>;
 
 type ChallengeFilter = {
@@ -55,8 +57,8 @@ export interface StoredChallengeFields {
 
 /** Fields taken straight from a challenges row. `imageUrl` stays server-side. */
 export function readStoredChallenge(row: ChallengeRow): StoredChallengeFields {
-  const tactical = asArray(row.tactical_clues).map(textItem).filter(Boolean);
-  const clues = asArray(row.clues).map(textItem).filter(Boolean);
+  const tactical = resolveTacticalClueList(row.tactical_clues);
+  const clues = resolveTacticalClueList(row.clues);
   const imageUrl = text(row.image_url);
   return {
     title: text(row.title),

@@ -138,6 +138,32 @@ describe("stored challenge fields", () => {
     expect(resolveGuessOptions(stored.options, generated, true).join(" ")).not.toMatch(/1990 World Cup: Argentina vs Italy/);
   });
 
+  it("reads keyed tactical_clues objects and JSON strings in tile order", () => {
+    const stored = readStoredChallenge({
+      tactical_clues: {
+        arena_stakes: "The bowl is already full.",
+        era: "Late in a tense decade.",
+        lineup: "A high line and a deep sweeper.",
+        image_clue: "A cropped stand behind the goal.",
+        climax: "The last kick sails wide.",
+      },
+    });
+    expect(stored.clues).toEqual([
+      "The bowl is already full.",
+      "Late in a tense decade.",
+      "A high line and a deep sweeper.",
+      "A cropped stand behind the goal.",
+      "The last kick sails wide.",
+    ]);
+    const parsed = readStoredChallenge({
+      tactical_clues: JSON.stringify([
+        { text: "First whistle." },
+        { body: "A winter final." },
+      ]),
+    });
+    expect(parsed.clues).toEqual(["First whistle.", "A winter final."]);
+  });
+
   it("ignores a non-https image and falls back to generated options when none are stored", () => {
     const stored = readStoredChallenge({ image_url: "/local/secret.jpg", clues: ["A cold rink."] });
     expect(stored.imageUrl).toBe("");
