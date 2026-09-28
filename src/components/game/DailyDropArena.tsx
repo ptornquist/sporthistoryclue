@@ -28,7 +28,6 @@ import { recordScoutMatch } from '@/lib/scout-dossier';
 import { activeStreak, loadSolvedHistory, recordSolvedChapter, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
 import { clearStaleGameSession } from '@/lib/game-session';
 import { isDateKey } from '@/lib/archive-calendar';
-import { sportPresentation } from '@/lib/archive-vault';
 import { rememberDailyCompletion } from '@/lib/daily-completions';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
 import {
@@ -61,22 +60,22 @@ interface DailyFixture {
 }
 
 function cleanFixture(fixture: DailyFixture): DailyFixture {
-  if (fixture.optionsLocked) {
-    const category = fixture.title || fixture.category;
+  const rest: DailyFixture = { ...fixture };
+  delete rest.title;
+  if (rest.optionsLocked) {
     return {
-      ...fixture,
-      category,
-      clues: (fixture.clues ?? []).map((clue) => clue.trim()).filter(Boolean).slice(0, 6),
-      options: fixture.options,
+      ...rest,
+      clues: (rest.clues ?? []).map((clue) => clue.trim()).filter(Boolean).slice(0, 6),
+      options: rest.options,
     };
   }
-  const file = findCase(fixture.id);
-  const category = file?.context || fixture.category;
+  const file = findCase(rest.id);
+  const category = file?.context || rest.category;
   return {
-    ...fixture,
+    ...rest,
     clues: arrangeClueLadder(
-      sanitizeClues(fixture.clues ?? [], {
-        title: file?.title || fixture.category,
+      sanitizeClues(rest.clues ?? [], {
+        title: file?.title || rest.category,
         year: file?.year,
       }),
       { category },
@@ -110,8 +109,28 @@ function setupOptions(options: string[]): string[] {
   return four;
 }
 
-const ARCADE_SHELL =
-  'max-w-md mx-auto h-[100dvh] flex flex-col justify-between p-3 overflow-hidden select-none';
+const PLAY_COLUMN = 'flex h-full w-full flex-1 flex-col justify-between gap-2';
+
+export function getSportLabel(sport?: string) {
+  const key = sport?.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  switch (key) {
+    case 'football':
+    case 'soccer':
+      return '⚽ FOOTBALL';
+    case 'ice hockey':
+    case 'hockey':
+      return '🏒 ICE HOCKEY';
+    case 'boxing':
+      return '🥊 BOXING';
+    case 'tennis':
+      return '🎾 TENNIS';
+    case 'athletics':
+    case 'track':
+      return '🏃 ATHLETICS';
+    default:
+      return '🏆 SPORTS CLUE';
+  }
+}
 
 const GUESS_BUTTON =
   'border-[2.5px] border-zinc-950 bg-white hover:bg-zinc-100 active:translate-y-[2px] rounded-xl p-3.5 text-center font-black text-sm md:text-base leading-tight shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all';
@@ -593,9 +612,9 @@ export function DailyDropArena({
 
   if (loading || !challenge) {
     return (
-      <main className={`${ARCADE_SHELL} items-center justify-center bg-[#fafafa] font-mono text-xs uppercase text-zinc-400`}>
+      <div className={`${PLAY_COLUMN} items-center justify-center bg-[#fbf9f5] font-mono text-xs uppercase text-zinc-400`}>
         {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
-      </main>
+      </div>
     );
   }
 
@@ -617,8 +636,7 @@ export function DailyDropArena({
   const gridLine = gridCells.join(' ');
   const matchLabel = String(dayIndexFromKey(challenge.date_key));
   const nextMatch = nextStorylineMatch(campaignId, challenge.id);
-  const sportLabel = challenge.sportName || challenge.category;
-  const sport = sportPresentation(sportLabel);
+  const sportLabel = getSportLabel(challenge.sportName || challenge.sportId || challenge.category);
   const playing = !gameWon && !gameOver;
   const sportHref = challenge.sportId ? `/disciplines?sport=${encodeURIComponent(challenge.sportId)}` : '/disciplines';
   const playerHandle = playerName.replace(/^@/, '') || 'Scout';
@@ -638,10 +656,10 @@ export function DailyDropArena({
   };
 
   return (
-    <main className={`${ARCADE_SHELL} bg-[#fafafa] text-zinc-900`} onPointerDown={openWithWhistle}>
+    <div className={`${PLAY_COLUMN} bg-[#fbf9f5] text-zinc-900`} onPointerDown={openWithWhistle}>
       <Navbar
         arcade={{
-          sport: `${sport.icon} ${sport.label}`,
+          sport: sportLabel,
           score: `${score.toLocaleString('en-US')} PTS`,
           streak,
         }}
@@ -908,7 +926,7 @@ export function DailyDropArena({
         username={playerName}
         campaignId={campaign?.id}
       />
-    </main>
+    </div>
   );
 }
 

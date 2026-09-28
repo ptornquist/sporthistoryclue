@@ -11,6 +11,9 @@ const CLUE_TITLES = ["THE ARENA", "THE ERA", "THE LINEUP", "THE PHOTO", "THE CLI
 export const UNLOCKED_STEP =
   "border-2 border-zinc-950 bg-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]";
 
+export const ACTIVE_STEP =
+  "border-2 border-amber-600 bg-amber-100 text-amber-950 font-black shadow-[2px_2px_0px_0px_rgba(217,119,6,1)]";
+
 export const LOCKED_STEP = "border-2 border-zinc-300 bg-zinc-100 text-zinc-400 font-bold";
 
 export const CLUE_CARD =
@@ -109,7 +112,7 @@ export function TacticalClueBoard({
               aria-label={`Clue ${index + 1}`}
               className={cn(
                 "relative flex items-center justify-center rounded-xl px-0.5 py-2 text-xs sm:text-sm",
-                revealed ? UNLOCKED_STEP : LOCKED_STEP,
+                selected ? ACTIVE_STEP : revealed ? UNLOCKED_STEP : LOCKED_STEP,
               )}
             >
               <span>{`${index + 1} ${STEP_ICONS[index]}`}</span>

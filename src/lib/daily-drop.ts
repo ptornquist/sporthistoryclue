@@ -70,12 +70,10 @@ export function parseDateKey(value: string | null, now = new Date()): string | n
 export function toPublicDaily(fixture: SecretDaily): PublicDaily {
   const locked = fixture.optionsLocked === true && fixture.options.length > 0;
   const file = locked ? undefined : findCase(fixture.id);
-  const category = locked ? fixture.title || fixture.category : fixture.category;
   return {
     id: fixture.id,
     date_key: fixture.date_key,
-    category,
-    title: fixture.title,
+    category: fixture.category,
     clues: locked
       ? authoredClues(fixture.clues)
       : arrangeClueLadder(

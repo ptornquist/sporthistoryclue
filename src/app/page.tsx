@@ -122,22 +122,28 @@ export default async function Page({
       <FirstVisitBriefing />
       <Suspense
         fallback={
-          <div className="max-w-md mx-auto h-[100dvh] flex flex-col justify-between p-3 overflow-hidden select-none bg-[#fafafa] items-center justify-center font-mono text-xs uppercase text-zinc-400">
-            Loading Drop...
-          </div>
+          <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none">
+            <div className="w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2 items-center justify-center font-mono text-xs uppercase text-zinc-400">
+              Loading Drop...
+            </div>
+          </main>
         }
       >
-        <DailyDropArena
-          key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${archiveId}:${training ? 'training' : 'play'}`}
-          specificMatch={specificMatch}
-          campaignId={campaignId}
-          initialFixture={initialFixture}
-          initialDuel={duel}
-          initialDuelPts={duelPts}
-          archiveDate={archiveDate}
-          archiveId={archiveId}
-          training={training}
-        />
+        <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none">
+          <div className="w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2">
+            <DailyDropArena
+              key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${archiveId}:${training ? 'training' : 'play'}`}
+              specificMatch={specificMatch}
+              campaignId={campaignId}
+              initialFixture={initialFixture}
+              initialDuel={duel}
+              initialDuelPts={duelPts}
+              archiveDate={archiveDate}
+              archiveId={archiveId}
+              training={training}
+            />
+          </div>
+        </main>
       </Suspense>
     </>
   );

@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { buildTacticalBoard } from "@/lib/tactical-board";
-import { CLUE_CARD, CLUE_TEXT, LOCKED_STEP, TacticalClueBoard, UNLOCKED_STEP, unlockPrompt } from "./TacticalClueBoard";
+import { ACTIVE_STEP, CLUE_CARD, CLUE_TEXT, LOCKED_STEP, TacticalClueBoard, UNLOCKED_STEP, unlockPrompt } from "./TacticalClueBoard";
 
 const tiles = buildTacticalBoard([
   "The rink is loud.",
@@ -24,8 +24,9 @@ describe("TacticalClueBoard", () => {
         onSelect: () => undefined,
       }),
     );
-    expect(html).toContain(UNLOCKED_STEP);
+    expect(html).toContain(ACTIVE_STEP);
     expect(html).toContain(LOCKED_STEP);
+    expect(html).not.toContain(UNLOCKED_STEP);
     expect(html).toContain("1 🏟️");
     expect(html).toContain("2 ⏱️");
     expect(html).toContain("3 📋");
@@ -71,6 +72,8 @@ describe("TacticalClueBoard", () => {
       }),
     );
     expect(html).toContain("CLUE 2: THE ERA");
+    expect(html).toContain(ACTIVE_STEP);
+    expect(html).toContain(UNLOCKED_STEP);
     expect(html).toContain("A winter of amateurs.");
     expect(html).not.toContain("The rink is loud.");
   });
