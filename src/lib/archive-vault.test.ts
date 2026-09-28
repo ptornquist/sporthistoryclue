@@ -4,6 +4,20 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ArchiveVault } from "@/components/archive/ArchiveVault";
 import {
+  ARCHIVE_WEEKDAYS,
+  MONTH_ARROW_CLASS,
+  STATS_CLASS,
+  TILE_CLASS,
+  TILE_FUTURE,
+  TILE_SOLVED,
+  TILE_TODAY,
+  TILE_UNPLAYED,
+  WEEKDAY_CLASS,
+  archiveStats,
+  buildArchiveMonth,
+  tileClass,
+} from "./archive-month";
+import {
   dropNumber,
   fetchArchiveFixtures,
   parseSolvedHistory,
@@ -70,6 +84,8 @@ describe("archive routes", () => {
     expect(archive).toContain("export const dynamic = 'force-dynamic';");
     expect(archive).toContain("export const revalidate = 0;");
     expect(archive).toContain("loadArchiveIndex");
+    expect(archive).toContain("utcTodayKey");
+    expect(archive).toContain("todayKey={utcTodayKey()}");
 
     const home = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
     expect(home).toContain("loadPublicChallengeById");
@@ -77,26 +93,61 @@ describe("archive routes", () => {
     expect(home).toContain("archiveId");
   });
 
-  it("renders a chronological daily drop feed without sport filters", () => {
+  it("renders a month calendar with playable past drops and locked future days", () => {
+    const fixtures = [
+      { id: "newer", sport: "football", fixtureDate: "2026-09-26", year: 1986 },
+      { id: "older", sport: "ice hockey", fixtureDate: "2026-09-20", year: 1980 },
+    ];
     const html = renderToStaticMarkup(
       createElement(ArchiveVault, {
-        fixtures: [
-          { id: "newer", sport: "football", fixtureDate: "2026-09-26", year: 1986 },
-          { id: "older", sport: "ice hockey", fixtureDate: "2026-09-20", year: 1980 },
-        ],
+        fixtures,
+        todayKey: "2026-09-27",
       }),
     );
     expect(html).toContain("DAILY DROP ARCHIVE");
-    expect(html).toContain("Play previous daily matches and catch up on your streak.");
+    expect(html).toContain("September 2026");
     expect(html).not.toContain("All Sports");
     expect(html).not.toContain("HISTORICAL VAULT");
-    expect(html).toContain("DROP #20722 · 2026-09-26");
-    expect(html).toContain("DROP #20716 · 2026-09-20");
-    expect(html.indexOf("2026-09-26")).toBeLessThan(html.indexOf("2026-09-20"));
-    expect(html).toContain("⚽ Football");
-    expect(html).toContain("🏒 Ice Hockey");
-    expect(html).toContain("PLAY DROP →");
+    expect(html).toContain(MONTH_ARROW_CLASS);
+    expect(html).toContain(WEEKDAY_CLASS);
+    for (const weekday of ARCHIVE_WEEKDAYS) expect(html).toContain(weekday);
+    expect(html).toContain(STATS_CLASS);
+    expect(html).toContain("📅 Total Drops Available");
+    expect(html).toContain("✅ Solved Count");
+    expect(html).toContain("🔥 Active Streak");
+    expect(html).toContain(TILE_UNPLAYED);
+    expect(html).toContain(TILE_TODAY);
+    expect(html).toContain(TILE_FUTURE);
+    expect(html).toContain("TODAY");
+    expect(html).toContain("🔒");
+    expect(html).toContain("⚽");
+    expect(html).toContain("🏒");
     expect(html).toContain('href="/?date=2026-09-26"');
-    expect(html).toContain("border-[2.5px] border-zinc-900 rounded-2xl p-4 bg-white shadow-[3px_3px_0px_0px_rgba(24,24,27,1)] mb-3");
+    expect(html).toContain('href="/?date=2026-09-20"');
+    expect(html).toContain('href="/"');
+    expect(html).toContain("disabled");
+
+    const solved = buildArchiveMonth(2026, 8, "2026-09-27", fixtures, {
+      dates: new Set(["2026-09-20"]),
+      ids: new Set(["newer"]),
+    });
+    const day = (dateKey: string) => solved.cells.find((cell) => cell.kind === "day" && cell.dateKey === dateKey);
+    expect(solved.label).toBe("September 2026");
+    expect(solved.cells[0]).toEqual({ kind: "pad" });
+    expect(day("2026-09-01")).toMatchObject({ state: "quiet", href: null });
+    expect(day("2026-09-20")).toMatchObject({ state: "solved", icon: "🏒", href: "/?date=2026-09-20" });
+    expect(day("2026-09-26")).toMatchObject({ state: "solved", icon: "⚽", href: "/?date=2026-09-26" });
+    expect(day("2026-09-27")).toMatchObject({ state: "today", href: "/" });
+    expect(day("2026-09-28")).toMatchObject({ state: "future", href: null });
+    expect(solved.cells.some((cell) => cell.kind === "day" && cell.dateKey === "2026-09-30")).toBe(true);
+    expect(archiveStats(fixtures, "2026-09-27", { dates: new Set(["2026-09-20"]), ids: new Set(["newer"]) })).toEqual({
+      total: 2,
+      solved: 2,
+      streak: 1,
+    });
+    expect(tileClass("solved")).toBe(`${TILE_CLASS} ${TILE_SOLVED}`);
+    expect(tileClass("unplayed")).toBe(`${TILE_CLASS} ${TILE_UNPLAYED}`);
+    expect(tileClass("today")).toBe(`${TILE_CLASS} ${TILE_TODAY}`);
+    expect(tileClass("future")).toBe(`${TILE_CLASS} ${TILE_FUTURE}`);
   });
 });
