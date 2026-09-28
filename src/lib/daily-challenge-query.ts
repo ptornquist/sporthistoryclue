@@ -1,3 +1,5 @@
+import { resolveTacticalClueList } from "@/lib/tactical-clues";
+
 export type ChallengeRow = Record<string, unknown>;
 
 type ChallengeFilter = {
@@ -55,8 +57,8 @@ export interface StoredChallengeFields {
 
 /** Fields taken straight from a challenges row. `imageUrl` stays server-side. */
 export function readStoredChallenge(row: ChallengeRow): StoredChallengeFields {
-  const tactical = asArray(row.tactical_clues).map(textItem).filter(Boolean);
-  const clues = asArray(row.clues).map(textItem).filter(Boolean);
+  const tactical = resolveTacticalClueList(row.tactical_clues);
+  const clues = resolveTacticalClueList(row.clues);
   const imageUrl = text(row.image_url);
   return {
     title: text(row.title),
@@ -64,6 +66,17 @@ export function readStoredChallenge(row: ChallengeRow): StoredChallengeFields {
     options: asArray(row.options).map(textItem).filter(Boolean),
     imageUrl: imageUrl.startsWith("https://") ? imageUrl : "",
   };
+}
+
+/**
+ * Stable stand-in when `fixture_date` has no row.
+ * `dayNumber` is the calendar day, so the same date always selects the same challenge.
+ */
+export function pickDeterministicChallenge<T>(challenges: readonly T[], dateKey: string): T | null {
+  if (challenges.length === 0) return null;
+  const dayNumber = Number(dateKey.slice(8, 10));
+  if (!Number.isInteger(dayNumber)) return challenges[0] ?? null;
+  return challenges[dayNumber % challenges.length] ?? null;
 }
 
 /** Stored guess buttons win. Generated decoys are only used when the row has none. */

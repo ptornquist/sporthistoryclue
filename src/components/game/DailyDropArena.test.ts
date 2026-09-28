@@ -18,29 +18,31 @@ const fixture = {
   options: ["1980 Olympics: USA vs Soviet Union", "1984 Olympics: USA vs Canada"],
 };
 
+const GUESS =
+  "border-[2.5px] border-zinc-950 bg-white hover:bg-zinc-100 active:translate-y-[2px] rounded-xl p-3.5 text-center font-black text-sm md:text-base leading-tight shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all";
+const SHELL = "max-w-md mx-auto h-[100dvh] flex flex-col justify-between p-3 overflow-hidden select-none";
+
 describe("DailyDropArena tactical board", () => {
-  it("opens on 10 000 points with locked tiles and the guess options underneath", () => {
+  it("opens as a zero-scroll arcade with the guess grid anchored underneath", () => {
     const html = renderToStaticMarkup(createElement(DailyDropArena, { initialFixture: fixture }));
-    expect(html).toContain("Tactical Board");
-    expect(html).toContain("10 000");
-    expect(html).toContain("FREE / UNLOCKED");
-    expect(html).toContain("ACTIVE INTEL:");
+    expect(html).toContain(SHELL);
+    expect(html).toContain("SPORTSHISTORYCLUE");
+    expect(html).toContain("10,000 PTS");
+    expect(html).toContain("🔥");
+    expect(html).toContain('aria-label="Toggle Navigation Menu"');
+    expect(html).toContain("CLUE 1: THE ARENA");
     expect(html).toContain("A cold-war winter.");
-    expect(html).toContain("Review the opening briefing below.");
-    expect(html).toContain("REVEAL -1,500 PTS");
-    expect(html).toContain("REVEAL -3,500 PTS");
-    expect(html).toContain("Identify the Historical Matchup");
-    expect(html).toContain("grid grid-cols-2 gap-2.5 touch-manipulation sm:gap-3");
-    expect(html).toContain("p-3 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold");
+    expect(html).toContain(GUESS);
+    expect(html).toContain("grid shrink-0 grid-cols-2 gap-2");
     expect(html).toContain("1980 Olympics: USA vs Soviet Union");
-    expect(html.indexOf("Tactical Board")).toBeLessThan(html.indexOf("A cold-war winter."));
-    expect(html.indexOf("A cold-war winter.")).toBeLessThan(html.indexOf("Identify the Historical Matchup"));
+    expect(html.indexOf("A cold-war winter.")).toBeLessThan(html.indexOf("1980 Olympics: USA vs Soviet Union"));
+    expect(html).not.toContain("Review the opening briefing below.");
+    expect(html).not.toContain("DROP #");
+    expect(html).not.toContain("BROWSE ARCHIVE");
+    expect(html).not.toContain("Contact Scout HQ");
     expect(html).not.toContain("The final is 4–3.");
-    expect(html).not.toContain("REVEAL -1,000 PTS");
     expect(html).not.toContain("Reveal Next Clue");
     expect(html).not.toContain("Yesterday");
-    expect(html).toContain("BROWSE ARCHIVE →");
-    expect(html).toContain('href="/archive"');
     expect(html).not.toContain("ARCHIVE FIXTURE");
   });
 
@@ -55,6 +57,9 @@ describe("DailyDropArena tactical board", () => {
       "bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider";
     expect(dated).toContain(badge);
     expect(dated).toContain("📅 ARCHIVE FIXTURE");
-    expect(identified).toContain("📅 ARCHIVE FIXTURE");
+    expect(dated).not.toContain("STORYLINE CHAPTER");
+    expect(identified).toContain("STORYLINE CHAPTER");
+    expect(identified.indexOf("STORYLINE CHAPTER")).toBeLessThan(identified.indexOf("CLUE 1: THE ARENA"));
+    expect(identified).not.toContain("ARCHIVE FIXTURE");
   });
 });

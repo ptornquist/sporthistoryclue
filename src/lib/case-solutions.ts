@@ -16,6 +16,10 @@ const MATCHUPS: Record<string, string> = {
   "rumble-in-the-jungle-1974": "Muhammad Ali vs George Foreman (1974)",
   "ali-1974": "Muhammad Ali vs George Foreman (1974)",
   "wimbledon-epic-1980": "Björn Borg vs John McEnroe (1980)",
+  "thrilla-in-manila-1975": "Muhammad Ali vs Joe Frazier (1975)",
+  "world-cup-final-1994": "Brazil vs Italy (1994)",
+  "wimbledon-final-2008": "Rafael Nadal vs Roger Federer (2008)",
+  "seoul-100m-1988": "Ben Johnson (1988)",
 };
 
 export function solvedMatchup(id: string): string | null {
