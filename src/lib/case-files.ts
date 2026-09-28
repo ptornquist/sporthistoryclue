@@ -96,6 +96,38 @@ export const CASE_FILES: CaseFile[] = [
     context: "Wimbledon Gentlemen's Final",
     sport: "tennis",
   },
+  {
+    slug: "thrilla-in-manila-1975",
+    ids: ["thrilla-in-manila-1975"],
+    title: "The Manila Night",
+    year: 1975,
+    context: "Heavyweight Title Fight",
+    sport: "boxing",
+  },
+  {
+    slug: "world-cup-final-1994",
+    ids: ["world-cup-final-1994"],
+    title: "The Pasadena Whistle",
+    year: 1994,
+    context: "World Cup Final",
+    sport: "football",
+  },
+  {
+    slug: "wimbledon-final-2008",
+    ids: ["wimbledon-final-2008"],
+    title: "The Fading Light Final",
+    year: 2008,
+    context: "Wimbledon Gentlemen's Final",
+    sport: "tennis",
+  },
+  {
+    slug: "seoul-100m-1988",
+    ids: ["seoul-100m-1988"],
+    title: "The Voided Clock",
+    year: 1988,
+    context: "Olympic 100m Final",
+    sport: "athletics",
+  },
 ];
 
 export const SPORT_NAME: Record<CaseFile["sport"], string> = {

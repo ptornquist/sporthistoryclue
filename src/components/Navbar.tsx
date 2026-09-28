@@ -8,6 +8,7 @@ import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 import { HowToPlayModal, rememberTutorialSeen, requestHowToPlay } from '@/components/HowToPlayModal';
+import { StatsModal } from '@/components/game/StatsModal';
 import { AVATAR_UPDATED_EVENT } from '@/lib/avatars';
 
 export const MOBILE_NAV_LINKS = [
@@ -26,10 +27,12 @@ const MOBILE_LINK_CLASS =
 export function MobileNavDrawer({
   open,
   onNavigate,
+  onOpenDossier,
   children,
 }: {
   open: boolean;
   onNavigate: () => void;
+  onOpenDossier?: () => void;
   children?: React.ReactNode;
 }) {
   if (!open) return null;
@@ -42,6 +45,11 @@ export function MobileNavDrawer({
           </span>
         </Link>
       ))}
+      {onOpenDossier && (
+        <button type="button" onClick={onOpenDossier} className={MOBILE_LINK_CLASS}>
+          <span>🏆 Scout Dossier / Stats</span>
+        </button>
+      )}
       {children}
     </div>
   );
@@ -55,6 +63,7 @@ export default function Navbar() {
   const [localHandle, setLocalHandle] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [dossierOpen, setDossierOpen] = useState(false);
 
   const openHelp = () => {
     setMobileMenuOpen(false);
@@ -113,7 +122,7 @@ export default function Navbar() {
 
   const NAV_LINKS = [
     { name: 'Daily Drop', href: '/' },
-    { name: 'Storylines', href: '/campaigns' },
+    { name: 'Storylines', href: '/storylines' },
     { name: 'Standings', href: '/standings' },
     { name: 'Clubs', href: '/clubs' },
     { name: 'Derby', href: '/derby' },
@@ -156,6 +165,15 @@ export default function Navbar() {
 
         {/* User Badge / Auth Buttons */}
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDossierOpen(true)}
+            className="w-8 h-8 rounded-full border border-zinc-200 flex items-center justify-center text-xs font-bold shrink-0 bg-white text-zinc-700 hover:bg-zinc-100"
+            title="Scout Dossier"
+            aria-label="Scout Dossier"
+          >
+            🏆
+          </button>
           <button
             type="button"
             onClick={openHelp}
@@ -210,7 +228,14 @@ export default function Navbar() {
         </div>
       </div>
 
-      <MobileNavDrawer open={mobileMenuOpen} onNavigate={closeMobileMenu}>
+      <MobileNavDrawer
+        open={mobileMenuOpen}
+        onNavigate={closeMobileMenu}
+        onOpenDossier={() => {
+          closeMobileMenu();
+          setDossierOpen(true);
+        }}
+      >
         {!user && (
           <div className="grid grid-cols-2 gap-2 pt-1">
             <Link
@@ -231,6 +256,7 @@ export default function Navbar() {
         )}
       </MobileNavDrawer>
       {pathname !== '/' && <HowToPlayModal open={helpOpen} onClose={closeHelp} />}
+      <StatsModal open={dossierOpen} onClose={() => setDossierOpen(false)} />
     </header>
   );
 }

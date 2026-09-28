@@ -20,6 +20,9 @@ describe("Navbar mobile menu", () => {
     expect(html).toContain(BURGER);
     expect(html).toContain('aria-label="Toggle Navigation Menu"');
     expect(html).toContain("☰");
+    expect(html).toContain('aria-label="Scout Dossier"');
+    expect(html).toContain("🏆");
+    expect(html).not.toContain("SCOUT DOSSIER");
     expect(html).not.toContain(DRAWER);
   });
 
@@ -36,5 +39,14 @@ describe("Navbar mobile menu", () => {
     expect(
       renderToStaticMarkup(createElement(MobileNavDrawer, { open: false, onNavigate: () => undefined })),
     ).toBe("");
+    expect(html).not.toContain("Scout Dossier / Stats");
+  });
+
+  it("adds the scout dossier control when the drawer can open it", () => {
+    const html = renderToStaticMarkup(
+      createElement(MobileNavDrawer, { open: true, onNavigate: () => undefined, onOpenDossier: () => undefined }),
+    );
+    expect(html).toContain("🏆 Scout Dossier / Stats");
+    expect(html).toContain('href="/disciplines"');
   });
 });

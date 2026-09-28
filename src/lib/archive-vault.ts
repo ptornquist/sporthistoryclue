@@ -1,9 +1,5 @@
 import { canonicalSport } from "@/lib/decoy-options";
 
-export const VAULT_FILTERS = ["All Sports", "Football", "Ice Hockey", "Boxing", "Tennis", "Athletics"] as const;
-
-export type VaultFilter = (typeof VAULT_FILTERS)[number];
-
 export interface ArchiveFixture {
   id: string;
   sport: string;
@@ -17,8 +13,6 @@ export interface SolvedIndex {
 }
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 type ArchiveListClient = {
   from: (table: "challenges") => {
@@ -40,10 +34,10 @@ function yearOf(value: unknown): number | null {
   return Number.isFinite(year) && year > 0 ? year : null;
 }
 
-export function formatVaultDate(dateKey: string): string {
-  if (!DATE_KEY.test(dateKey)) return dateKey;
+/** Same UTC day index the arena prints as DROP #. */
+export function dropNumber(dateKey: string): number {
   const [year, month, day] = dateKey.split("-").map(Number);
-  return `${MONTHS[month - 1]} ${day}, ${year}`;
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
 export function sportPresentation(sport: string): { icon: string; label: string } {
@@ -61,11 +55,6 @@ export function sportPresentation(sport: string): { icon: string; label: string 
     default:
       return { icon: "🏟️", label: sport.trim() || "Sports" };
   }
-}
-
-export function sportMatchesFilter(sport: string, filter: VaultFilter): boolean {
-  if (filter === "All Sports") return true;
-  return canonicalSport(sport) === canonicalSport(filter);
 }
 
 export function publishVaultRows(rows: readonly Record<string, unknown>[], today: string): ArchiveFixture[] {
