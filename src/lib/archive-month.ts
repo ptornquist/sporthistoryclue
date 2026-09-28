@@ -12,14 +12,12 @@ export const WEEKDAY_CLASS = "text-xs font-black text-zinc-400 text-center upper
 export const TILE_CLASS =
   "aspect-square p-2 rounded-2xl border-2 transition-all flex flex-col justify-between items-center relative";
 
-export const TILE_SOLVED =
-  "bg-emerald-50 border-emerald-600 text-emerald-950 font-black shadow-[2px_2px_0px_0px_rgba(5,150,105,1)]";
+export const TILE_SOLVED = "bg-emerald-50 border-emerald-600 text-emerald-800";
 
 export const TILE_UNPLAYED =
-  "bg-white border-zinc-900 text-zinc-900 hover:bg-zinc-50 shadow-[3px_3px_0px_0px_rgba(24,24,27,1)] active:translate-y-[1px]";
+  "bg-white border-2 border-zinc-900 shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] cursor-pointer hover:bg-zinc-50";
 
-export const TILE_TODAY =
-  "bg-blue-50 border-blue-600 text-blue-900 font-black shadow-[3px_3px_0px_0px_rgba(37,99,235,1)] ring-2 ring-blue-500";
+export const TILE_TODAY = "border-blue-600 bg-blue-50/50";
 
 export const TILE_FUTURE =
   "bg-zinc-100 border-dashed border-zinc-300 text-zinc-300 opacity-60 cursor-not-allowed";
@@ -47,7 +45,14 @@ export interface SolvedMarks {
   ids: ReadonlySet<string>;
 }
 
-export type ArchiveTileState = "future" | "today" | "solved" | "unplayed" | "quiet";
+const FALLBACK_SPORTS = ["football", "ice hockey", "boxing", "tennis", "athletics"] as const;
+
+export function fallbackSportForDay(day: number): string {
+  const index = (Math.max(1, day) - 1) % FALLBACK_SPORTS.length;
+  return FALLBACK_SPORTS[index];
+}
+
+export type ArchiveTileState = "future" | "today" | "solved" | "unplayed";
 
 export type ArchiveMonthCell =
   | { kind: "pad" }
@@ -68,17 +73,36 @@ export function fixtureIsSolved(fixture: Pick<ArchiveFixture, "id" | "fixtureDat
   return marks.ids.has(fixture.id) || marks.dates.has(fixture.fixtureDate);
 }
 
-export function archiveStats(fixtures: readonly ArchiveFixture[], todayKey: string, marks: SolvedMarks) {
-  const available = fixtures.filter((fixture) => fixture.fixtureDate <= todayKey);
-  const solvedDates = new Set<string>(marks.dates);
-  for (const fixture of available) {
-    if (fixtureIsSolved(fixture, marks)) solvedDates.add(fixture.fixtureDate);
+export function archiveStats(
+  year: number,
+  monthIndex: number,
+  todayKey: string,
+  fixtures: readonly ArchiveFixture[],
+  marks: SolvedMarks,
+) {
+  const solvedDates = solvedDateKeys(fixtures, marks);
+  const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+  let total = 0;
+  let solved = 0;
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dateKey = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    if (dateKey > todayKey) continue;
+    total += 1;
+    if (solvedDates.has(dateKey)) solved += 1;
   }
   return {
-    total: available.length,
-    solved: available.filter((fixture) => fixtureIsSolved(fixture, marks)).length,
+    total,
+    solved,
     streak: activeStreak([...solvedDates], todayKey),
   };
+}
+
+function solvedDateKeys(fixtures: readonly ArchiveFixture[], marks: SolvedMarks): Set<string> {
+  const solvedDates = new Set<string>(marks.dates);
+  for (const fixture of fixtures) {
+    if (fixtureIsSolved(fixture, marks)) solvedDates.add(fixture.fixtureDate);
+  }
+  return solvedDates;
 }
 
 export function buildArchiveMonth(
@@ -89,19 +113,21 @@ export function buildArchiveMonth(
   marks: SolvedMarks,
 ): { label: string; cells: ArchiveMonthCell[] } {
   const byDate = new Map(fixtures.map((fixture) => [fixture.fixtureDate, fixture]));
-  const completions: DailyCompletion[] = fixtures.flatMap((fixture) =>
-    fixtureIsSolved(fixture, marks)
-      ? [{ dropDate: fixture.fixtureDate, solved: true, score: 0, challengeId: fixture.id }]
-      : [],
-  );
-  const month = buildMonthArchive(year, monthIndex, todayKey, completions, new Set(byDate.keys()));
+  const solvedDates = solvedDateKeys(fixtures, marks);
+  const completions: DailyCompletion[] = [...solvedDates].map((dropDate) => ({
+    dropDate,
+    solved: true,
+    score: 0,
+    challengeId: byDate.get(dropDate)?.id ?? null,
+  }));
+  const month = buildMonthArchive(year, monthIndex, todayKey, completions, null);
 
   const cells: ArchiveMonthCell[] = month.cells.map((cell) => {
     if (cell.status === "pad" || !cell.dateKey) return { kind: "pad" };
-    const fixture = byDate.get(cell.dateKey);
-    const icon = fixture ? sportPresentation(fixture.sport).icon : null;
     const day = Number(cell.dateKey.slice(-2));
-    const state = visualState(cell.status, Boolean(fixture));
+    const fixture = byDate.get(cell.dateKey);
+    const icon = sportPresentation(fixture?.sport || fallbackSportForDay(day)).icon;
+    const state = visualState(cell.status);
     return {
       kind: "day",
       dateKey: cell.dateKey,
@@ -115,18 +141,16 @@ export function buildArchiveMonth(
   return { label: monthHeading(year, monthIndex), cells };
 }
 
-function visualState(status: string, hasFixture: boolean): ArchiveTileState {
+function visualState(status: string): ArchiveTileState {
   if (status === "future") return "future";
   if (status === "today") return "today";
   if (status === "solved") return "solved";
-  if (status === "unplayed" || (status === "failed" && hasFixture)) return "unplayed";
-  return "quiet";
+  return "unplayed";
 }
 
 function hrefFor(state: ArchiveTileState, dateKey: string): string | null {
-  if (state === "today") return "/";
-  if (state === "solved" || state === "unplayed") return `/?date=${dateKey}`;
-  return null;
+  if (state === "future") return null;
+  return `/?date=${dateKey}`;
 }
 
 export function tileClass(state: ArchiveTileState): string {
@@ -140,6 +164,6 @@ export function tileClass(state: ArchiveTileState): string {
     case "future":
       return `${TILE_CLASS} ${TILE_FUTURE}`;
     default:
-      return `${TILE_CLASS} border-transparent bg-transparent text-zinc-300`;
+      return `${TILE_CLASS} ${TILE_UNPLAYED}`;
   }
 }

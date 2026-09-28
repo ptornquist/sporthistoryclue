@@ -79,7 +79,9 @@ export default async function Page({
   if (!specificMatch && archiveId) {
     datedDrop = await loadPublicChallengeById(archiveId);
   } else if (!specificMatch && archiveDate) {
+    console.log('Fetching fixture for date:', archiveDate);
     datedDrop = await loadDatedPublicDrop(archiveDate);
+    console.log('Active challenge loaded from Supabase:', datedDrop);
   } else if (!specificMatch) {
     const today = new Date().toISOString().split('T')[0];
     console.log('Fetching fixture for date:', today);

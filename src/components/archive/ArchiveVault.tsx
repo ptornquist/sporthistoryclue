@@ -38,7 +38,7 @@ export function ArchiveVault({ fixtures, todayKey }: { fixtures: ArchiveFixture[
   }, []);
 
   const month = buildArchiveMonth(cursor.year, cursor.monthIndex, todayKey, fixtures, marks);
-  const stats = archiveStats(fixtures, todayKey, marks);
+  const stats = archiveStats(cursor.year, cursor.monthIndex, todayKey, fixtures, marks);
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans">
@@ -107,6 +107,7 @@ export function ArchiveVault({ fixtures, todayKey }: { fixtures: ArchiveFixture[
             if (cell.href) {
               return (
                 <Link key={cell.dateKey} href={cell.href} className={className}>
+                  <span className="sr-only">PLAY DROP →</span>
                   {body}
                 </Link>
               );

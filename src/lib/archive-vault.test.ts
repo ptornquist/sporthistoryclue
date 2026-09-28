@@ -122,9 +122,11 @@ describe("archive routes", () => {
     expect(html).toContain("🔒");
     expect(html).toContain("⚽");
     expect(html).toContain("🏒");
+    expect(html).toContain("PLAY DROP →");
+    expect(html).toContain('href="/?date=2026-09-01"');
     expect(html).toContain('href="/?date=2026-09-26"');
     expect(html).toContain('href="/?date=2026-09-20"');
-    expect(html).toContain('href="/"');
+    expect(html).toContain('href="/?date=2026-09-27"');
     expect(html).toContain("disabled");
 
     const solved = buildArchiveMonth(2026, 8, "2026-09-27", fixtures, {
@@ -134,14 +136,20 @@ describe("archive routes", () => {
     const day = (dateKey: string) => solved.cells.find((cell) => cell.kind === "day" && cell.dateKey === dateKey);
     expect(solved.label).toBe("September 2026");
     expect(solved.cells[0]).toEqual({ kind: "pad" });
-    expect(day("2026-09-01")).toMatchObject({ state: "quiet", href: null });
+    expect(day("2026-09-01")).toMatchObject({ state: "unplayed", icon: "⚽", href: "/?date=2026-09-01" });
+    expect(day("2026-09-02")).toMatchObject({ state: "unplayed", icon: "🏒", href: "/?date=2026-09-02" });
+    expect(day("2026-09-03")).toMatchObject({ state: "unplayed", icon: "🥊", href: "/?date=2026-09-03" });
+    expect(day("2026-09-04")).toMatchObject({ state: "unplayed", icon: "🎾", href: "/?date=2026-09-04" });
+    expect(day("2026-09-05")).toMatchObject({ state: "unplayed", icon: "🏃", href: "/?date=2026-09-05" });
     expect(day("2026-09-20")).toMatchObject({ state: "solved", icon: "🏒", href: "/?date=2026-09-20" });
     expect(day("2026-09-26")).toMatchObject({ state: "solved", icon: "⚽", href: "/?date=2026-09-26" });
-    expect(day("2026-09-27")).toMatchObject({ state: "today", href: "/" });
+    expect(day("2026-09-27")).toMatchObject({ state: "today", href: "/?date=2026-09-27" });
     expect(day("2026-09-28")).toMatchObject({ state: "future", href: null });
     expect(solved.cells.some((cell) => cell.kind === "day" && cell.dateKey === "2026-09-30")).toBe(true);
-    expect(archiveStats(fixtures, "2026-09-27", { dates: new Set(["2026-09-20"]), ids: new Set(["newer"]) })).toEqual({
-      total: 2,
+    expect(
+      archiveStats(2026, 8, "2026-09-27", fixtures, { dates: new Set(["2026-09-20"]), ids: new Set(["newer"]) }),
+    ).toEqual({
+      total: 27,
       solved: 2,
       streak: 1,
     });
