@@ -8,6 +8,7 @@ import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 import { HowToPlayModal, rememberTutorialSeen, requestHowToPlay } from '@/components/HowToPlayModal';
+import { StatsModal } from '@/components/game/StatsModal';
 import { AVATAR_UPDATED_EVENT } from '@/lib/avatars';
 
 export const MOBILE_NAV_LINKS = [
@@ -23,31 +24,84 @@ export const MOBILE_NAV_LINKS = [
 const MOBILE_LINK_CLASS =
   'border-2 border-zinc-200 hover:border-zinc-900 rounded-xl px-4 py-3 font-bold text-zinc-900 flex items-center justify-between transition-all';
 
+const DRAWER_BACKDROP = 'fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity';
+
+const DRAWER_PANEL =
+  'fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white border-l-[3px] border-zinc-950 p-6 z-50 shadow-[-8px_0px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between overflow-y-auto';
+
+const DRAWER_LINKS = [
+  { icon: '📅', name: 'Daily Drop Archive', href: '/archive' },
+  { icon: '🏆', name: 'Premier League Derby', href: '/derby' },
+  { icon: '📜', name: 'Storylines & Eras', href: '/storylines' },
+] as const;
+
 export function MobileNavDrawer({
   open,
   onNavigate,
+  onOpenDossier,
+  onOpenHelp,
   children,
 }: {
   open: boolean;
   onNavigate: () => void;
+  onOpenDossier?: () => void;
+  onOpenHelp?: () => void;
   children?: React.ReactNode;
 }) {
   if (!open) return null;
+  const covered = new Set<string>(DRAWER_LINKS.map((link) => link.href));
   return (
-    <div className="fixed inset-x-0 top-[60px] bg-white border-b-4 border-zinc-900 shadow-2xl z-50 p-5 flex flex-col gap-2 animate-in slide-in-from-top-2 duration-150 md:hidden">
-      {MOBILE_NAV_LINKS.map((link) => (
-        <Link key={link.href} href={link.href} onClick={onNavigate} className={MOBILE_LINK_CLASS}>
-          <span>
-            {link.icon} {link.name}
-          </span>
-        </Link>
-      ))}
-      {children}
-    </div>
+    <>
+      <button type="button" className={DRAWER_BACKDROP} aria-label="Close menu" onClick={onNavigate} />
+      <div className={DRAWER_PANEL}>
+        <div className="flex flex-col gap-2">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-black uppercase tracking-wider text-zinc-950">Menu</p>
+            <button
+              type="button"
+              onClick={onNavigate}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-zinc-950 bg-white text-lg font-black"
+              aria-label="Close menu"
+            >
+              X
+            </button>
+          </div>
+          {DRAWER_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} onClick={onNavigate} className={MOBILE_LINK_CLASS}>
+              <span>
+                {link.icon} {link.name}
+              </span>
+            </Link>
+          ))}
+          {MOBILE_NAV_LINKS.filter((link) => !covered.has(link.href)).map((link) => (
+            <Link key={link.href} href={link.href} onClick={onNavigate} className={MOBILE_LINK_CLASS}>
+              <span>
+                {link.icon} {link.name}
+              </span>
+            </Link>
+          ))}
+          {onOpenDossier && (
+            <button type="button" onClick={onOpenDossier} className={MOBILE_LINK_CLASS}>
+              <span>📊 Scout Dossier / Stats</span>
+            </button>
+          )}
+          {onOpenHelp && (
+            <button type="button" onClick={onOpenHelp} className={MOBILE_LINK_CLASS}>
+              <span>❓ How to Play / Rules</span>
+            </button>
+          )}
+        </div>
+        {children}
+      </div>
+    </>
   );
 }
 
-export default function Navbar() {
+export default function Navbar({
+  arcade,
+}: {
+  arcade?: { sport: string; score: string; streak: number };
+} = {}) {
   const pathname = usePathname();
   const { wallet } = useCosmeticWallet();
   const [user, setUser] = useState<{ id: string; email?: string | null } | null>(null);
@@ -55,6 +109,7 @@ export default function Navbar() {
   const [localHandle, setLocalHandle] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [dossierOpen, setDossierOpen] = useState(false);
 
   const openHelp = () => {
     setMobileMenuOpen(false);
@@ -113,7 +168,7 @@ export default function Navbar() {
 
   const NAV_LINKS = [
     { name: 'Daily Drop', href: '/' },
-    { name: 'Storylines', href: '/campaigns' },
+    { name: 'Storylines', href: '/storylines' },
     { name: 'Standings', href: '/standings' },
     { name: 'Clubs', href: '/clubs' },
     { name: 'Derby', href: '/derby' },
@@ -124,7 +179,34 @@ export default function Navbar() {
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header className="bg-white border-b border-zinc-200 px-4 py-3.5 sticky top-0 z-30 md:px-6">
+    <header className={arcade ? "shrink-0" : "bg-white border-b border-zinc-200 px-4 py-3.5 sticky top-0 z-30 md:px-6"}>
+      {arcade ? (
+        <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto] items-center gap-1.5">
+          <Link href="/" className="truncate text-[10px] font-black leading-none tracking-tighter text-zinc-950 sm:text-xs">
+            SPORTSHISTORYCLUE
+          </Link>
+          <div className="flex min-w-0 flex-col items-center text-center">
+            <span className="max-w-full truncate rounded-full border-2 border-zinc-950 bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-zinc-950">
+              {arcade.sport}
+            </span>
+            <span className="mt-0.5 text-[11px] font-black text-zinc-950">{arcade.score}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="whitespace-nowrap text-xs font-black text-zinc-950" title="Streak">
+              🔥 {arcade.streak}
+            </span>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-zinc-900 bg-white text-lg font-black text-zinc-900 shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] active:translate-y-[1px]"
+              aria-label="Toggle Navigation Menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? '✕' : '☰'}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="max-w-5xl mx-auto flex justify-between items-center gap-3">
         {/* Brand */}
         <div className="flex min-w-0 items-center gap-2">
@@ -156,6 +238,15 @@ export default function Navbar() {
 
         {/* User Badge / Auth Buttons */}
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDossierOpen(true)}
+            className="w-8 h-8 rounded-full border border-zinc-200 flex items-center justify-center text-xs font-bold shrink-0 bg-white text-zinc-700 hover:bg-zinc-100"
+            title="Scout Dossier"
+            aria-label="Scout Dossier"
+          >
+            🏆
+          </button>
           <button
             type="button"
             onClick={openHelp}
@@ -209,8 +300,20 @@ export default function Navbar() {
           </button>
         </div>
       </div>
+      )}
 
-      <MobileNavDrawer open={mobileMenuOpen} onNavigate={closeMobileMenu}>
+      <MobileNavDrawer
+        open={mobileMenuOpen}
+        onNavigate={closeMobileMenu}
+        onOpenDossier={() => {
+          closeMobileMenu();
+          setDossierOpen(true);
+        }}
+        onOpenHelp={() => {
+          closeMobileMenu();
+          openHelp();
+        }}
+      >
         {!user && (
           <div className="grid grid-cols-2 gap-2 pt-1">
             <Link
@@ -231,6 +334,7 @@ export default function Navbar() {
         )}
       </MobileNavDrawer>
       {pathname !== '/' && <HowToPlayModal open={helpOpen} onClose={closeHelp} />}
+      <StatsModal open={dossierOpen} onClose={() => setDossierOpen(false)} />
     </header>
   );
 }

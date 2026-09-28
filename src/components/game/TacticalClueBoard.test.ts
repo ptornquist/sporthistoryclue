@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { buildTacticalBoard } from "@/lib/tactical-board";
-import { TacticalClueBoard } from "./TacticalClueBoard";
+import { ACTIVE_STEP, CLUE_CARD, CLUE_TEXT, LOCKED_STEP, TacticalClueBoard, UNLOCKED_STEP, unlockPrompt } from "./TacticalClueBoard";
 
 const tiles = buildTacticalBoard([
   "The rink is loud.",
@@ -13,7 +13,7 @@ const tiles = buildTacticalBoard([
 ]);
 
 describe("TacticalClueBoard", () => {
-  it("opens the free arena clue and hides the paid texts", () => {
+  it("opens the free arena clue on a chunky step bar", () => {
     const html = renderToStaticMarkup(
       createElement(TacticalClueBoard, {
         tiles,
@@ -24,30 +24,43 @@ describe("TacticalClueBoard", () => {
         onSelect: () => undefined,
       }),
     );
-    expect(html).toContain("snap-x snap-mandatory");
-    expect(html).toContain("sm:grid-cols-5");
-    expect(html).toContain("w-[46%] shrink-0 snap-start");
-    expect(html).toContain("border-[2.5px] shadow-[3px_3px_0px_0px_rgba(24,24,27,0.85)] hover:shadow-[4px_4px_0px_0px_rgba(24,24,27,1)] active:translate-y-[2px] transition-all rounded-2xl p-2.5 sm:p-4");
-    expect(html).toContain("bg-emerald-50/90 border-emerald-600 text-emerald-950");
-    expect(html).toContain("px-2 py-0.5 text-[10px]");
-    expect(html).toContain("bg-amber-50/90 border-amber-600 text-amber-950");
-    expect(html).toContain("bg-rose-50/90 border-rose-600 text-rose-950");
-    expect(html).toContain("ring-4 ring-zinc-900/30 -translate-y-1 shadow-[5px_5px_0px_0px_rgba(24,24,27,1)]");
-    expect(html).toContain("FREE / UNLOCKED");
-    expect(html).toContain("ACTIVE INTEL: 🏟️ The Arena &amp; Stakes");
-    expect(html).toContain("border-[3px] border-zinc-900 bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[5px_5px_0px_0px_rgba(24,24,27,1)] relative overflow-hidden mt-4 mb-4");
-    expect(html).toContain("bg-zinc-900 text-white font-black px-3 py-1 rounded-lg text-xs uppercase tracking-wider inline-flex items-center gap-1.5 mb-3");
-    expect(html).toContain("text-zinc-900 text-sm sm:text-base md:text-lg font-semibold leading-snug sm:leading-relaxed");
-    expect(html).toContain("Review the opening briefing below.");
+    expect(html).toContain(ACTIVE_STEP);
+    expect(html).toContain(LOCKED_STEP);
+    expect(html).not.toContain(UNLOCKED_STEP);
+    expect(html).toContain("1 🏟️");
+    expect(html).toContain("2 ⏱️");
+    expect(html).toContain("3 📋");
+    expect(html).toContain("4 📷");
+    expect(html).toContain("5 ⚡");
+    expect(html).toContain(CLUE_CARD);
+    expect(html).toContain("CLUE 1: THE ARENA");
+    expect(html).toContain(CLUE_TEXT);
     expect(html).toContain("The rink is loud.");
-    expect(html).toContain("REVEAL -1,500 PTS");
-    expect(html).toContain("REVEAL -3,500 PTS");
-    expect(html).not.toContain("REVEAL -1,000 PTS");
+    expect(html).not.toContain("Review the opening briefing below.");
     expect(html).not.toContain("A winter of amateurs.");
     expect(html).not.toContain("flooded sheet");
+    expect(html).not.toContain("Unlock (-1,500 pts)");
   });
 
-  it("shows tabs and the selected paid clue without repeating its price", () => {
+  it("shows the unlock cost the moment a locked step is prompted", () => {
+    expect(unlockPrompt(1500)).toBe("Unlock (-1,500 pts)");
+    expect(unlockPrompt(3500)).toBe("Unlock (-3,500 pts)");
+    const html = renderToStaticMarkup(
+      createElement(TacticalClueBoard, {
+        tiles,
+        unlocked: ["arena"],
+        activeId: "arena",
+        imageUrl: null,
+        locked: false,
+        onSelect: () => undefined,
+        initialCostPrompt: 1,
+      }),
+    );
+    expect(html).toContain("Unlock (-1,500 pts)");
+    expect(html).not.toContain("A winter of amateurs.");
+  });
+
+  it("shows the selected paid clue", () => {
     const html = renderToStaticMarkup(
       createElement(TacticalClueBoard, {
         tiles,
@@ -58,10 +71,33 @@ describe("TacticalClueBoard", () => {
         onSelect: () => undefined,
       }),
     );
-    expect(html).toContain("ACTIVE INTEL: ⏱️ Era &amp; Context");
+    expect(html).toContain("CLUE 2: THE ERA");
+    expect(html).toContain(ACTIVE_STEP);
+    expect(html).toContain(UNLOCKED_STEP);
     expect(html).toContain("A winter of amateurs.");
-    expect(html).toContain("The Arena &amp; Stakes");
     expect(html).not.toContain("The rink is loud.");
+  });
+
+  it("resolves keyed tactical clues into the active clue card", () => {
+    const blank = buildTacticalBoard([]);
+    const html = renderToStaticMarkup(
+      createElement(TacticalClueBoard, {
+        tiles: blank,
+        unlocked: ["arena", "epoch"],
+        activeId: "epoch",
+        imageUrl: null,
+        locked: false,
+        onSelect: () => undefined,
+        tacticalClues: {
+          stadium: "The bowl is already full.",
+          context: "Late in a tense decade.",
+        },
+      }),
+    );
+    expect(html).toContain("CLUE 2: THE ERA");
+    expect(html).toContain("Late in a tense decade.");
+    expect(html).not.toContain("The bowl is already full.");
+    expect(html).not.toContain("Nothing further is filed on this tile.");
   });
 
   it("shows the archive description when the photo tile has no image", () => {
@@ -76,13 +112,12 @@ describe("TacticalClueBoard", () => {
         onSelect: () => undefined,
       }),
     );
+    expect(html).toContain("CLUE 4: THE PHOTO");
     expect(html).toContain("A flooded sheet under a low roof.");
-    expect(html).toContain("border-2 border-zinc-900 bg-zinc-50");
     expect(html).not.toContain("Archive photograph");
-    expect(html).not.toContain("ARCHIVE EVIDENCE");
   });
 
-  it("starts the archive photo blurred, then clears it", () => {
+  it("fits the archive photo inside the clue card and starts it blurred", () => {
     const html = renderToStaticMarkup(
       createElement(TacticalClueBoard, {
         tiles,
@@ -94,12 +129,13 @@ describe("TacticalClueBoard", () => {
       }),
     );
     expect(html).toContain("https://cdn.example.com/archive.jpg");
-    expect(html).toContain("w-full max-h-56 sm:max-h-72 object-cover rounded-xl border-2 border-zinc-900 shadow-inner");
+    expect(html).toContain("max-h-full min-h-0 w-full flex-1 object-contain");
+    expect(html).toContain("min-h-[220px] md:min-h-[260px]");
+    expect(html).toContain("max-h-[380px]");
     expect(html).toContain("blur-xl scale-105 filter grayscale contrast-125");
     expect(html).toContain("duration-700 ease-out");
-    expect(html).toContain("bg-zinc-950/80 backdrop-blur-md text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider border border-white/10");
-    expect(html).toContain("ARCHIVE EVIDENCE");
     expect(html).toContain("Archive photograph");
     expect(html).toContain("A flooded sheet under a low roof.");
+    expect(html).toContain(CLUE_CARD);
   });
 });

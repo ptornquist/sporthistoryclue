@@ -1,4 +1,8 @@
+import { caseIdsFor } from "@/lib/case-files";
+
 export const SOLVED_HISTORY_KEY = "shc_solved_history";
+
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 const WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"] as const;
 
@@ -46,26 +50,50 @@ export function weekDateKeys(todayKey: string): string[] {
   return Array.from({ length: 7 }, (_, index) => shiftUtcDateKey(monday, index));
 }
 
-export function loadSolvedHistory(): string[] {
+function readStoredHistory(): unknown[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(SOLVED_HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((value): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value));
+    const parsed = JSON.parse(window.localStorage.getItem(SOLVED_HISTORY_KEY) ?? "[]") as unknown;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
+export function loadSolvedHistory(): string[] {
+  return readStoredHistory().filter((value): value is string => typeof value === "string" && DATE_KEY.test(value));
+}
+
 export function recordSolvedDate(dateKey: string, history: string[] = loadSolvedHistory()): string[] {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return history;
+  if (!DATE_KEY.test(dateKey)) return history;
   const next = history.includes(dateKey) ? history : [...history, dateKey].sort();
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(SOLVED_HISTORY_KEY, JSON.stringify(next));
+    const extras = readStoredHistory().filter((item) => typeof item !== "string" || !DATE_KEY.test(item));
+    window.localStorage.setItem(SOLVED_HISTORY_KEY, JSON.stringify([...next, ...extras]));
   }
   return next;
+}
+
+/** Keeps a solved chapter id beside the daily date streak in shc_solved_history. */
+export function recordSolvedChapter(id: string): void {
+  if (typeof window === "undefined" || !id) return;
+  const ids = [...new Set([id, ...caseIdsFor(id)].filter(Boolean))];
+  const current = readStoredHistory();
+  const present = new Set(
+    current.flatMap((item) => {
+      if (typeof item === "string") return [item];
+      if (!item || typeof item !== "object") return [];
+      const row = item as { id?: unknown; challengeId?: unknown };
+      return [row.id, row.challengeId].filter((value): value is string => typeof value === "string");
+    }),
+  );
+  let changed = false;
+  for (const key of ids) {
+    if (present.has(key)) continue;
+    current.push(key);
+    changed = true;
+  }
+  if (changed) window.localStorage.setItem(SOLVED_HISTORY_KEY, JSON.stringify(current));
 }
 
 /**
