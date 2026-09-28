@@ -55,6 +55,9 @@ describe("DailyDropArena tactical board", () => {
       "bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider";
     expect(dated).toContain(badge);
     expect(dated).toContain("📅 ARCHIVE FIXTURE");
-    expect(identified).toContain("📅 ARCHIVE FIXTURE");
+    expect(dated).not.toContain("STORYLINE CHAPTER");
+    expect(identified).toContain("STORYLINE CHAPTER");
+    expect(identified.indexOf("STORYLINE CHAPTER")).toBeLessThan(identified.indexOf("Tactical Board"));
+    expect(identified).not.toContain("ARCHIVE FIXTURE");
   });
 });

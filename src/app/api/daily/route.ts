@@ -48,7 +48,8 @@ export async function GET(request: Request) {
     return Response.json(byId);
   }
 
-  const dateKey = parseDateKey(new URL(request.url).searchParams.get("date"));
+  const requestedDate = new URL(request.url).searchParams.get("date");
+  const dateKey = parseDateKey(requestedDate);
   if (!dateKey) {
     return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });
   }
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     return Response.json({ error: "That drop has not been released." }, { status: 400 });
   }
 
-  const fixture = await loadDailyFixture(dateKey);
+  const fixture = await loadDailyFixture(dateKey, { allowLatestFallback: !requestedDate });
   const payload = toPublicDaily(fixture);
   return Response.json({
     ...payload,

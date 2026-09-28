@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchDailyChallengeRow,
+  pickDeterministicChallenge,
   readStoredChallenge,
   resolveGuessOptions,
   type ChallengeRow,
@@ -106,6 +107,16 @@ describe("fetchDailyChallengeRow", () => {
   });
 });
 
+describe("deterministic challenge fallback", () => {
+  it("picks challenges[dayNumber % challenges.length] when the date has no row", () => {
+    const challenges = [{ id: "alpha" }, { id: "bravo" }, { id: "charlie" }];
+    expect(pickDeterministicChallenge(challenges, "2026-09-01")?.id).toBe("bravo");
+    expect(pickDeterministicChallenge(challenges, "2026-09-03")?.id).toBe("alpha");
+    expect(pickDeterministicChallenge(challenges, "2026-09-05")?.id).toBe("charlie");
+    expect(pickDeterministicChallenge([], "2026-09-01")).toBeNull();
+  });
+});
+
 describe("stored challenge fields", () => {
   it("uses tactical clues and the row options without generated decoys", () => {
     const stored = readStoredChallenge({
@@ -147,6 +158,8 @@ describe("home route cache", () => {
     expect(source).toContain("console.log('Active challenge loaded from Supabase:', todayDrop);");
     const drop = readFileSync(new URL("../lib/daily-drop.ts", import.meta.url), "utf8");
     expect(drop).toContain("resolveGuessOptions");
+    expect(drop).toContain("pickDeterministicChallenge");
+    expect(source).toContain("loadDatedPublicDrop(archiveDate)");
     expect(drop).toContain("if (fixture.optionsLocked && fixture.options.length > 0)");
     expect(drop).not.toContain("imageUrl: stored.imageUrl");
   });
