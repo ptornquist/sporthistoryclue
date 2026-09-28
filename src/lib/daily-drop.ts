@@ -20,7 +20,12 @@ import {
   type DecoyPeer,
 } from "@/lib/decoy-options";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
-import { fetchDailyChallengeRow, readStoredChallenge, resolveGuessOptions } from "@/lib/daily-challenge-query";
+import {
+  fetchDailyChallengeRow,
+  pickDeterministicChallenge,
+  readStoredChallenge,
+  resolveGuessOptions,
+} from "@/lib/daily-challenge-query";
 import { fetchArchiveFixtures, type ArchiveFixture } from "@/lib/archive-vault";
 import { hashString } from "@/lib/utils";
 
@@ -287,11 +292,14 @@ function withSport(fixture: SecretDaily): PublicDaily {
 
 export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily> {
   const today = now.toISOString().split("T")[0];
-  return withSport(await loadDailyFixture(today));
+  return withSport(await loadDailyFixture(today, { allowLatestFallback: true }));
 }
 
-export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
-  const fromChallenges = await loadFromTable("challenges", dateKey);
+export async function loadDailyFixture(
+  dateKey: string,
+  options?: { allowLatestFallback?: boolean },
+): Promise<SecretDaily> {
+  const fromChallenges = await loadFromTable("challenges", dateKey, options?.allowLatestFallback === true);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
   if (fixture.optionsLocked && fixture.options.length > 0) {
     return { ...fixture, options: resolveGuessOptions(fixture.options, [], true) };
@@ -393,9 +401,33 @@ async function sameSportPeers(fixture: SecretDaily, sport: string): Promise<Deco
   }
 }
 
+async function deterministicChallengeRow(
+  client: Parameters<typeof fetchDailyChallengeRow>[0],
+  dateKey: string,
+): Promise<Record<string, unknown> | null> {
+  const listClient = client as unknown as {
+    from: (table: "challenges") => {
+      select: (columns: "*") => {
+        order: (
+          column: "id",
+          options: { ascending: boolean },
+        ) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
+      };
+    };
+  };
+  const { data, error } = await listClient.from("challenges").select("*").order("id", { ascending: true });
+  if (error) {
+    console.error("Supabase query error:", error);
+    return null;
+  }
+  const challenges = [...(data ?? [])].sort((left, right) => String(left.id ?? "").localeCompare(String(right.id ?? "")));
+  return pickDeterministicChallenge(challenges, dateKey);
+}
+
 async function loadFromTable(
   table: "challenges" | "puzzles",
   dateKey: string,
+  allowLatestFallback = false,
 ): Promise<SecretDaily | null> {
   const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
   if (!client) return null;
@@ -403,10 +435,15 @@ async function loadFromTable(
   try {
     if (table === "challenges") {
       const today = new Date().toISOString().split("T")[0];
-      const row = await fetchDailyChallengeRow(client as unknown as Parameters<typeof fetchDailyChallengeRow>[0], dateKey, {
-        allowLatestFallback: dateKey === today,
+      const queryClient = client as unknown as Parameters<typeof fetchDailyChallengeRow>[0];
+      const row = await fetchDailyChallengeRow(queryClient, dateKey, {
+        allowLatestFallback,
       });
-      return row ? normalizeRow(row, dateKey) : null;
+      const scheduled = row ? normalizeRow(row, dateKey) : null;
+      if (scheduled) return scheduled;
+      if (dateKey > today) return null;
+      const fallback = await deterministicChallengeRow(queryClient, dateKey);
+      return fallback ? normalizeRow(fallback, dateKey) : null;
     }
 
     const matched = await client

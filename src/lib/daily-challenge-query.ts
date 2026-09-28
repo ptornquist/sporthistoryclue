@@ -66,6 +66,17 @@ export function readStoredChallenge(row: ChallengeRow): StoredChallengeFields {
   };
 }
 
+/**
+ * Stable stand-in when `fixture_date` has no row.
+ * `dayNumber` is the calendar day, so the same date always selects the same challenge.
+ */
+export function pickDeterministicChallenge<T>(challenges: readonly T[], dateKey: string): T | null {
+  if (challenges.length === 0) return null;
+  const dayNumber = Number(dateKey.slice(8, 10));
+  if (!Number.isInteger(dayNumber)) return challenges[0] ?? null;
+  return challenges[dayNumber % challenges.length] ?? null;
+}
+
 /** Stored guess buttons win. Generated decoys are only used when the row has none. */
 export function resolveGuessOptions(
   stored: readonly string[] | null | undefined,
