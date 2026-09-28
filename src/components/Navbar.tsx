@@ -24,34 +24,76 @@ export const MOBILE_NAV_LINKS = [
 const MOBILE_LINK_CLASS =
   'border-2 border-zinc-200 hover:border-zinc-900 rounded-xl px-4 py-3 font-bold text-zinc-900 flex items-center justify-between transition-all';
 
+const DRAWER_BACKDROP = 'fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity';
+
+const DRAWER_PANEL =
+  'fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white border-l-[3px] border-zinc-950 p-6 z-50 shadow-[-8px_0px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between overflow-y-auto';
+
+const DRAWER_LINKS = [
+  { icon: '📅', name: 'Daily Drop Archive', href: '/archive' },
+  { icon: '🏆', name: 'Premier League Derby', href: '/derby' },
+  { icon: '📜', name: 'Storylines & Eras', href: '/storylines' },
+] as const;
+
 export function MobileNavDrawer({
   open,
   onNavigate,
   onOpenDossier,
+  onOpenHelp,
   children,
 }: {
   open: boolean;
   onNavigate: () => void;
   onOpenDossier?: () => void;
+  onOpenHelp?: () => void;
   children?: React.ReactNode;
 }) {
   if (!open) return null;
+  const covered = new Set<string>(DRAWER_LINKS.map((link) => link.href));
   return (
-    <div className="fixed inset-x-0 top-[60px] bg-white border-b-4 border-zinc-900 shadow-2xl z-50 p-5 flex flex-col gap-2 animate-in slide-in-from-top-2 duration-150 md:hidden">
-      {MOBILE_NAV_LINKS.map((link) => (
-        <Link key={link.href} href={link.href} onClick={onNavigate} className={MOBILE_LINK_CLASS}>
-          <span>
-            {link.icon} {link.name}
-          </span>
-        </Link>
-      ))}
-      {onOpenDossier && (
-        <button type="button" onClick={onOpenDossier} className={MOBILE_LINK_CLASS}>
-          <span>🏆 Scout Dossier / Stats</span>
-        </button>
-      )}
-      {children}
-    </div>
+    <>
+      <button type="button" className={DRAWER_BACKDROP} aria-label="Close menu" onClick={onNavigate} />
+      <div className={DRAWER_PANEL}>
+        <div className="flex flex-col gap-2">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-black uppercase tracking-wider text-zinc-950">Menu</p>
+            <button
+              type="button"
+              onClick={onNavigate}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-zinc-950 bg-white text-lg font-black"
+              aria-label="Close menu"
+            >
+              X
+            </button>
+          </div>
+          {DRAWER_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} onClick={onNavigate} className={MOBILE_LINK_CLASS}>
+              <span>
+                {link.icon} {link.name}
+              </span>
+            </Link>
+          ))}
+          {MOBILE_NAV_LINKS.filter((link) => !covered.has(link.href)).map((link) => (
+            <Link key={link.href} href={link.href} onClick={onNavigate} className={MOBILE_LINK_CLASS}>
+              <span>
+                {link.icon} {link.name}
+              </span>
+            </Link>
+          ))}
+          {onOpenDossier && (
+            <button type="button" onClick={onOpenDossier} className={MOBILE_LINK_CLASS}>
+              <span>📊 Scout Dossier / Stats</span>
+            </button>
+          )}
+          {onOpenHelp && (
+            <button type="button" onClick={onOpenHelp} className={MOBILE_LINK_CLASS}>
+              <span>❓ How to Play / Rules</span>
+            </button>
+          )}
+        </div>
+        {children}
+      </div>
+    </>
   );
 }
 
@@ -266,6 +308,10 @@ export default function Navbar({
         onOpenDossier={() => {
           closeMobileMenu();
           setDossierOpen(true);
+        }}
+        onOpenHelp={() => {
+          closeMobileMenu();
+          openHelp();
         }}
       >
         {!user && (

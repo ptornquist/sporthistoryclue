@@ -130,6 +130,8 @@ describe("TacticalClueBoard", () => {
     );
     expect(html).toContain("https://cdn.example.com/archive.jpg");
     expect(html).toContain("max-h-full min-h-0 w-full flex-1 object-contain");
+    expect(html).toContain("min-h-[220px] md:min-h-[260px]");
+    expect(html).toContain("max-h-[380px]");
     expect(html).toContain("blur-xl scale-105 filter grayscale contrast-125");
     expect(html).toContain("duration-700 ease-out");
     expect(html).toContain("Archive photograph");

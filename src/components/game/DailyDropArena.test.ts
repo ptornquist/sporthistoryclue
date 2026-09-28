@@ -22,8 +22,8 @@ const fixture = {
 const GUESS =
   "border-[2.5px] border-zinc-950 bg-white hover:bg-zinc-100 active:translate-y-[2px] rounded-xl p-3.5 text-center font-black text-sm md:text-base leading-tight shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all";
 const PAPER =
-  "min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none";
-const COLUMN = "w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2";
+  "min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-start md:justify-center p-3 md:p-6 select-none";
+const COLUMN = "w-full max-w-xl flex flex-col gap-3 my-auto";
 
 describe("DailyDropArena tactical board", () => {
   it("opens as a centered paper board with the guess grid anchored underneath", () => {

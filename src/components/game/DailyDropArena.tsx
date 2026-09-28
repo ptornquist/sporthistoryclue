@@ -109,7 +109,7 @@ function setupOptions(options: string[]): string[] {
   return four;
 }
 
-const PLAY_COLUMN = 'flex h-full w-full flex-1 flex-col justify-between gap-2';
+const PLAY_COLUMN = 'flex w-full flex-col gap-3';
 
 export function getSportLabel(sport?: string) {
   const key = sport?.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -678,7 +678,7 @@ export function DailyDropArena({
       )}
 
       {playing && (
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex flex-col gap-2">
           {isDateKey(archiveDate) && !archiveId && (
             <span className="mb-1 inline-flex w-fit bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
               📅 ARCHIVE FIXTURE
@@ -733,7 +733,7 @@ export function DailyDropArena({
       )}
 
       {(gameWon || gameOver) && (
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="w-full">
             <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
               
               {/* Head-to-Head Duel Card */}

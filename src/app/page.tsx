@@ -122,15 +122,15 @@ export default async function Page({
       <FirstVisitBriefing />
       <Suspense
         fallback={
-          <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none">
-            <div className="w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2 items-center justify-center font-mono text-xs uppercase text-zinc-400">
+          <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-start md:justify-center p-3 md:p-6 select-none">
+            <div className="w-full max-w-xl flex flex-col gap-3 my-auto items-center justify-center font-mono text-xs uppercase text-zinc-400">
               Loading Drop...
             </div>
           </main>
         }
       >
-        <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-between p-3 md:py-6 select-none">
-          <div className="w-full max-w-lg flex flex-col justify-between flex-1 h-full gap-2">
+        <main className="min-h-[100dvh] w-full bg-[#fbf9f5] flex flex-col items-center justify-start md:justify-center p-3 md:p-6 select-none">
+          <div className="w-full max-w-xl flex flex-col gap-3 my-auto">
             <DailyDropArena
               key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${archiveId}:${training ? 'training' : 'play'}`}
               specificMatch={specificMatch}

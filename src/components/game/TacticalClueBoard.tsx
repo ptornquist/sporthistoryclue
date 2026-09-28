@@ -17,7 +17,7 @@ export const ACTIVE_STEP =
 export const LOCKED_STEP = "border-2 border-zinc-300 bg-zinc-100 text-zinc-400 font-bold";
 
 export const CLUE_CARD =
-  "border-[3px] border-zinc-950 bg-amber-50/40 rounded-2xl p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col justify-center my-2 min-h-0";
+  "min-h-[220px] md:min-h-[260px] max-h-[380px] overflow-y-auto flex flex-col justify-center items-center text-center p-6 bg-white border-[3px] border-zinc-950 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]";
 
 export const CLUE_TEXT = "text-base md:text-lg font-bold text-zinc-900 leading-snug";
 
@@ -98,7 +98,7 @@ export function TacticalClueBoard({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex flex-col gap-2">
       <div className={cn("grid grid-cols-5 gap-1", costPrompt !== null && "mb-6")}>
         {tiles.map((tile, index) => {
           const revealed = unlocked.includes(tile.id);
@@ -132,7 +132,7 @@ export function TacticalClueBoard({
             {`CLUE ${activeTileIndex + 1}: ${title}`}
           </h2>
           {showPhoto && imageUrl ? (
-            <div className="mb-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+            <div className="mb-3 flex max-h-48 w-full items-center justify-center overflow-hidden">
               <ArchiveEvidence key={imageUrl} src={imageUrl} />
             </div>
           ) : null}
