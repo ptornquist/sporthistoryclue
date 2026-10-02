@@ -28,8 +28,8 @@ export function FixturePreview({
   const body = (
     <div className="min-w-0 text-left">
       <span
-        className={`font-bold text-zinc-900 group-hover:text-blue-600 block ${
-          density === "row" ? "text-sm font-black truncate" : "text-xs"
+        className={`block max-w-full break-words font-bold text-zinc-900 group-hover:text-blue-600 ${
+          density === "row" ? "text-sm font-black" : "text-xs"
         }`}
       >
         {title}
@@ -49,7 +49,7 @@ export function FixturePreview({
   if (density === "row") {
     return (
       <div
-        className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all group hover:bg-zinc-100/80"
+        className="flex w-full max-w-full flex-col gap-2 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all group hover:bg-zinc-100/80 sm:flex-row sm:items-center sm:justify-between"
         onClick={solved ? onDeduce : undefined}
         onKeyDown={
           solved
@@ -82,7 +82,7 @@ export function FixturePreview({
     <button
       type="button"
       onClick={onDeduce}
-      className="group flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50"
+      className="group flex w-full max-w-full flex-col justify-between gap-2 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50 sm:flex-row sm:items-center"
     >
       {body}
       {solved ? null : (

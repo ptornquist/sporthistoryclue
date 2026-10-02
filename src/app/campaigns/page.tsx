@@ -99,7 +99,7 @@ export default function CampaignsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
+    <main className="min-h-screen overflow-x-hidden w-full max-w-full bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
       <AuthGateModal
         isOpen={showAuthGate}
         onClose={() => setShowAuthGate(false)}
@@ -107,18 +107,21 @@ export default function CampaignsPage() {
       />
 
       {/* Header */}
-      <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="text-lg font-black tracking-tighter uppercase">
+      <header className="sticky top-0 z-20 w-full max-w-full overflow-x-hidden border-b border-zinc-200 bg-white">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <Link href="/" className="shrink-0 text-lg font-black uppercase tracking-tighter md:text-xl">
               Sports<span className="text-blue-600">History</span>Clue
             </Link>
-            <span className="text-[10px] font-mono uppercase bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-bold">
+            <span className="hidden text-[10px] font-mono font-bold uppercase rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700 sm:inline-block">
               Storylines
             </span>
           </div>
 
-          <nav className="flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-4">
+            <Link href="/storylines" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+              Storylines
+            </Link>
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Daily Drop
             </Link>
@@ -130,10 +133,24 @@ export default function CampaignsPage() {
             </Link>
           </nav>
         </div>
+        <div className="flex md:hidden items-center gap-2 overflow-x-auto no-scrollbar py-2 px-4 border-b border-zinc-100">
+          <Link href="/storylines" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-800">
+            Storylines
+          </Link>
+          <Link href="/" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-700">
+            Daily Drop
+          </Link>
+          <Link href="/disciplines" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-700">
+            By Sport
+          </Link>
+          <Link href="/leaderboard" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-700">
+            Standings
+          </Link>
+        </div>
       </header>
 
       {/* Main Container */}
-      <div className="max-w-4xl mx-auto px-6 py-10">
+      <div className="w-full max-w-3xl mx-auto px-4 py-6 overflow-x-hidden">
         <div className="mb-8">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-1">
             Historical Storylines
@@ -151,7 +168,7 @@ export default function CampaignsPage() {
           {STORYLINES.map((campaign) => (
             <article
               key={campaign.id}
-              className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:border-blue-200 hover:shadow-md transition-all"
+              className="w-full max-w-full bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:border-blue-200 hover:shadow-md transition-all"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -162,7 +179,7 @@ export default function CampaignsPage() {
                     {campaign.era}
                   </span>
                 </div>
-                <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">
+                <h2 className="w-full max-w-full break-words text-xl font-black uppercase tracking-tight text-zinc-900">
                   {campaign.title}
                 </h2>
                 <p className="text-xs text-zinc-500 mt-2 leading-relaxed font-medium">
@@ -191,7 +208,7 @@ export default function CampaignsPage() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between">
+              <div className="mt-6 flex w-full max-w-full flex-col justify-between gap-2 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center">
                 <span className="text-[11px] font-mono font-bold text-zinc-400">
                   {campaign.matches.length} Historical{' '}
                   {campaign.matches.length === 1 ? 'Match' : 'Matches'}
@@ -199,7 +216,7 @@ export default function CampaignsPage() {
                 <button
                   type="button"
                   onClick={() => handleStartMatch(campaign.matches[0].key)}
-                  className="px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                  className="w-full max-w-full px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors sm:w-auto"
                 >
                   Start Campaign
                 </button>

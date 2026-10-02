@@ -67,7 +67,7 @@ export default function Navbar() {
       <div className="max-w-5xl mx-auto flex justify-between items-center">
         {/* Brand */}
         <div className="flex items-center gap-2">
-          <Link href="/" className="text-lg font-black tracking-tighter uppercase">
+          <Link href="/" className="shrink-0 text-lg md:text-xl font-black tracking-tighter uppercase">
             Sports<span className="text-blue-600">History</span>Clue
           </Link>
           <span className="hidden sm:inline-block text-[10px] font-mono uppercase bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded font-bold">
