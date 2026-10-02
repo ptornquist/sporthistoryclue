@@ -13,7 +13,7 @@ describe("storylines layout", () => {
     const html = renderToStaticMarkup(createElement(CampaignsPage));
 
     expect(html).toContain("overflow-x-hidden w-full max-w-full");
-    expect(html).toContain("font-black text-xl tracking-tight text-zinc-950 flex items-center gap-1");
+    expect(html).toContain("font-black text-sm min-[420px]:text-base md:text-xl tracking-tight text-zinc-950 flex items-center gap-1");
     expect(html).toContain(">SPORTS<");
     expect(html).toContain("text-blue-600\">HISTORY");
     expect(html).toContain(">CLUE<");
