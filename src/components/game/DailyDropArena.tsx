@@ -19,6 +19,7 @@ import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
 import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve } from '@/lib/fixture-solves';
+import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
@@ -289,6 +290,17 @@ export function DailyDropArena() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user?.id) {
               await persistFixtureScore({ id: challenge.id, date: dropDate }, currentScore);
+              const { data: prof } = await supabaseClient
+                .from('profiles')
+                .select('username')
+                .eq('id', user.id)
+                .maybeSingle();
+              const challengeId = /^\d{4}-\d{2}-\d{2}$/.test(dropDate)
+                ? dropDate
+                : new Date().toISOString().split('T')[0];
+              if (prof?.username) {
+                await completePendingDuel(prof.username, challengeId, currentScore);
+              }
               const { error: streakError } = await supabaseClient
                 .from('profiles')
                 .update({ streak: newStreak })

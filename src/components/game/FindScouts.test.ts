@@ -38,4 +38,23 @@ describe("Find Scouts", () => {
     expect(hit).toContain("7,500 PTS · 4 matches");
     expect(hit).toContain(">Follow<");
   });
+
+  it("offers a challenge when the row is another scout", () => {
+    const html = renderToStaticMarkup(
+      createElement(ScoutSearchResults, {
+        searching: false,
+        query: "ada",
+        results: [
+          { id: "s1", username: "ada", career_score: 100, fixtures_cleared: 1 },
+          { id: "s2", username: "beau", career_score: 50, fixtures_cleared: 0 },
+        ],
+        followingIds: [],
+        currentUsername: "beau",
+        onToggleFollow: vi.fn(),
+        onChallenge: vi.fn(),
+      }),
+    );
+    expect(html).toContain("⚔️ Challenge");
+    expect(html.match(/⚔️ Challenge/g)?.length).toBe(1);
+  });
 });

@@ -6,8 +6,17 @@ import { fetchCareerStandings, type CareerStanding } from '@/lib/career-standing
 import FindScouts from '@/components/game/FindScouts';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { getFollowingIds } from '@/lib/supabase/network';
+import { sendDuelChallenge } from '@/lib/duels';
 
-export function StandingsBoard({ rows }: { rows: CareerStanding[] }) {
+export function StandingsBoard({
+  rows,
+  currentUsername,
+  onChallenge,
+}: {
+  rows: CareerStanding[];
+  currentUsername?: string | null;
+  onChallenge?: (username: string) => void;
+}) {
   if (rows.length === 0) {
     return (
       <p className="mt-8 text-center text-sm text-zinc-500">No scouts on the board yet.</p>
@@ -51,7 +60,20 @@ export function StandingsBoard({ rows }: { rows: CareerStanding[] }) {
             {rows.map((row, index) => (
               <tr key={row.id}>
                 <td className="px-4 py-3 font-mono text-xs font-bold text-zinc-400">#{index + 1}</td>
-                <td className="px-4 py-3 text-sm font-black text-zinc-900">@{row.username || 'scout'}</td>
+                <td className="px-4 py-3 text-sm font-black text-zinc-900">
+                  <div className="flex items-center justify-between gap-2">
+                    <span>@{row.username || 'scout'}</span>
+                    {onChallenge && (row.username || '').replace(/^@/, '').toLowerCase() !== (currentUsername || '').replace(/^@/, '').toLowerCase() && (
+                      <button
+                        type="button"
+                        onClick={() => onChallenge(row.username || '')}
+                        className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-zinc-950 font-black text-xs uppercase rounded-xl border-2 border-zinc-950 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
+                      >
+                        ⚔️ Challenge
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-xs font-bold text-zinc-500">{row.fixtures_cleared || 0}</td>
                 <td className="px-4 py-3 text-right font-mono text-sm font-black text-blue-600">
                   {(row.career_score || 0).toLocaleString()}
@@ -69,6 +91,8 @@ export default function StandingsPage() {
   const [rows, setRows] = useState<CareerStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [myUsername, setMyUsername] = useState<string | null>(null);
+  const [myScore, setMyScore] = useState(0);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -84,6 +108,16 @@ export default function StandingsPage() {
       supabaseClient.auth.getUser().then(({ data: { user } }) => {
         if (!active || !user) return;
         setUserId(user.id);
+        supabaseClient
+          .from('profiles')
+          .select('username, career_score')
+          .eq('id', user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (!active || !data) return;
+            setMyUsername(data.username || null);
+            setMyScore(data.career_score || 0);
+          }, () => undefined);
         getFollowingIds(user.id).then((ids) => {
           if (active) setFollowingIds(ids);
         }).catch(() => {
@@ -95,6 +129,15 @@ export default function StandingsPage() {
       active = false;
     };
   }, []);
+
+  const handleChallenge = async (opponentUsername: string) => {
+    const { data, error } = await sendDuelChallenge(opponentUsername, myScore);
+    if (data?.success) {
+      alert(`Challenge sent to @${opponentUsername.replace(/^@/, '')}! ⚔️`);
+    } else {
+      alert(data?.error || error?.message || 'Could not send challenge');
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#fafafa] px-6 py-10 text-zinc-900">
@@ -112,13 +155,18 @@ export default function StandingsPage() {
           Ranked by career score across every cleared fixture.
         </p>
         <div className="mt-8">
-          <FindScouts currentUserId={userId} followingIds={followingIds} />
+          <FindScouts
+            currentUserId={userId}
+            currentUsername={myUsername}
+            followingIds={followingIds}
+            onChallenge={handleChallenge}
+          />
         </div>
         <div className="mt-8">
           {loading ? (
             <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Loading rankings...</p>
           ) : (
-            <StandingsBoard rows={rows} />
+            <StandingsBoard rows={rows} currentUsername={myUsername} onChallenge={handleChallenge} />
           )}
         </div>
       </div>

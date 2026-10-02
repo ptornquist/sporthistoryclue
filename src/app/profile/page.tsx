@@ -6,6 +6,8 @@ import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { fetchCareerStandings } from '@/lib/career-standings';
 import { resolveUnlockedBadges, type UnlockedAccolade } from '@/lib/scout-badges';
 import { BadgeHandleFlair, ScoutAccolades } from '@/components/game/ScoutAccolades';
+import { HeadToHeadDuels } from '@/components/game/HeadToHeadDuels';
+import { loadMyDuels, sendDuelChallenge, type DuelRow } from '@/lib/duels';
 import FindScouts from '@/components/game/FindScouts';
 import {
   followScout,
@@ -44,6 +46,7 @@ export default function ProfilePage() {
   const [careerScore, setCareerScore] = useState<number | null>(null);
   const [fixturesCleared, setFixturesCleared] = useState<number | null>(null);
   const [badges, setBadges] = useState<UnlockedAccolade[]>([]);
+  const [duels, setDuels] = useState<DuelRow[]>([]);
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -93,6 +96,9 @@ export default function ProfilePage() {
       .eq('user_id', user.id);
     setBadges(resolveUnlockedBadges(badgeData));
 
+    const handle = (prof?.username || '').replace(/^@/, '');
+    if (handle) setDuels(await loadMyDuels(handle));
+
     const ids = await getFollowingIds(user.id);
     setFollowingIds(ids);
     if (ids.length > 0) {
@@ -128,6 +134,17 @@ export default function ProfilePage() {
       setTimeout(() => setActionMessage(null), 3000);
     }
     setSavingUsername(false);
+  };
+
+  const handleChallenge = async (opponentUsername: string) => {
+    const { data, error } = await sendDuelChallenge(opponentUsername, careerScore || 0);
+    if (data?.success) {
+      alert(`Challenge sent to @${opponentUsername.replace(/^@/, '')}! ⚔️`);
+      const handle = (profile?.username || '').replace(/^@/, '');
+      if (handle) setDuels(await loadMyDuels(handle));
+    } else {
+      alert(data?.error || error?.message || 'Could not send challenge');
+    }
   };
 
   const toggleFollow = async (targetId: string) => {
@@ -239,10 +256,14 @@ export default function ProfilePage() {
 
         <ScoutAccolades badges={badges} />
 
+        <HeadToHeadDuels duels={duels} myUsername={profile?.username || ''} />
+
         <FindScouts
           currentUserId={user?.id ?? null}
+          currentUsername={profile?.username}
           followingIds={followingIds}
           onToggleFollow={toggleFollow}
+          onChallenge={handleChallenge}
         />
 
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">

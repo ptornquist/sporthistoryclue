@@ -416,11 +416,16 @@ create table if not exists public.duels (
   id uuid primary key default gen_random_uuid(),
   challenger_id uuid references public.profiles (id) on delete cascade,
   challenged_id uuid references public.profiles (id) on delete cascade,
+  challenger_username text,
+  opponent_username text,
+  challenge_id text,
   fixture_date date not null default current_date,
   challenger_score integer default 0,
   challenged_score integer default null,
+  opponent_score integer default null,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'declined', 'completed')),
   winner_id uuid references public.profiles (id) on delete set null,
+  winner_username text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -428,10 +433,15 @@ create table if not exists public.duels (
 alter table public.duels add column if not exists challenger_id uuid references public.profiles (id) on delete cascade;
 alter table public.duels add column if not exists challenged_id uuid references public.profiles (id) on delete cascade;
 alter table public.duels add column if not exists fixture_date date not null default current_date;
+alter table public.duels add column if not exists challenger_username text;
+alter table public.duels add column if not exists opponent_username text;
+alter table public.duels add column if not exists challenge_id text;
 alter table public.duels add column if not exists challenger_score integer default 0;
 alter table public.duels add column if not exists challenged_score integer default null;
+alter table public.duels add column if not exists opponent_score integer default null;
 alter table public.duels add column if not exists status text not null default 'pending';
 alter table public.duels add column if not exists winner_id uuid references public.profiles (id) on delete set null;
+alter table public.duels add column if not exists winner_username text;
 alter table public.duels add column if not exists created_at timestamptz default now();
 alter table public.duels add column if not exists updated_at timestamptz default now();
 
@@ -439,8 +449,9 @@ alter table public.duels drop constraint if exists duels_status_check;
 alter table public.duels add constraint duels_status_check
   check (status in ('pending', 'accepted', 'declined', 'completed'));
 
+drop index if exists public.duels_pending_once;
 create unique index if not exists duels_pending_once
-  on public.duels (challenger_id, challenged_id, fixture_date)
+  on public.duels (challenger_id, challenged_id, challenge_id)
   where status = 'pending';
 
 alter table public.duels enable row level security;
@@ -470,9 +481,13 @@ create policy "Participants can update duels"
 revoke all on public.duels from anon;
 grant select, insert, update on public.duels to authenticated;
 
+drop function if exists private.create_user_duel(uuid, date);
+drop function if exists public.create_user_duel(uuid, date);
+
 create or replace function private.create_user_duel(
-  p_challenged_id uuid,
-  p_fixture_date date default current_date
+  p_opponent_username text,
+  p_challenge_id text,
+  p_challenger_score integer default 0
 )
 returns jsonb
 language plpgsql
@@ -481,43 +496,64 @@ set search_path = public
 as $$
 declare
   v_user_id uuid;
-  v_my_score integer;
+  v_me_username text;
+  v_me_score integer;
+  v_opponent_id uuid;
+  v_opponent_username text;
+  v_handle text;
+  v_day text;
   v_duel_id uuid;
-  v_day date;
 begin
   v_user_id := auth.uid();
   if v_user_id is null then
     return jsonb_build_object('success', false, 'error', 'Not authenticated');
   end if;
 
-  if p_challenged_id is null or v_user_id = p_challenged_id then
-    return jsonb_build_object('success', false, 'error', 'Cannot challenge yourself');
-  end if;
-
-  if not exists (select 1 from public.profiles where id = p_challenged_id) then
+  v_handle := regexp_replace(coalesce(trim(p_opponent_username), ''), '^@', '');
+  if v_handle = '' then
     return jsonb_build_object('success', false, 'error', 'Scout not found');
   end if;
 
-  v_day := coalesce(p_fixture_date, current_date);
+  select username, career_score
+    into v_me_username, v_me_score
+  from public.profiles
+  where id = v_user_id;
 
-  -- Fixture solves store the day as text (YYYY-MM-DD).
-  select score_awarded into v_my_score
-  from public.user_fixture_solves
-  where user_id = v_user_id
-    and fixture_date = to_char(v_day, 'YYYY-MM-DD')
+  select id, username
+    into v_opponent_id, v_opponent_username
+  from public.profiles
+  where username ilike v_handle
   limit 1;
+
+  if v_opponent_id is null then
+    return jsonb_build_object('success', false, 'error', 'Scout not found');
+  end if;
+
+  if v_opponent_id = v_user_id or lower(coalesce(v_me_username, '')) = lower(v_handle) then
+    return jsonb_build_object('success', false, 'error', 'Cannot challenge yourself');
+  end if;
+
+  v_day := coalesce(nullif(trim(p_challenge_id), ''), to_char(current_date, 'YYYY-MM-DD'));
 
   insert into public.duels (
     challenger_id,
     challenged_id,
+    challenger_username,
+    opponent_username,
+    challenge_id,
     fixture_date,
     challenger_score,
+    opponent_score,
     status
   ) values (
     v_user_id,
-    p_challenged_id,
+    v_opponent_id,
+    regexp_replace(coalesce(v_me_username, ''), '^@', ''),
+    regexp_replace(coalesce(v_opponent_username, v_handle), '^@', ''),
     v_day,
-    coalesce(v_my_score, 0),
+    case when v_day ~ '^\d{4}-\d{2}-\d{2}$' then v_day::date else current_date end,
+    coalesce(v_me_score, greatest(coalesce(p_challenger_score, 0), 0), 0),
+    null,
     'pending'
   ) returning id into v_duel_id;
 
@@ -528,22 +564,23 @@ exception
 end;
 $$;
 
-revoke all on function private.create_user_duel(uuid, date) from public, anon;
-grant execute on function private.create_user_duel(uuid, date) to authenticated;
+revoke all on function private.create_user_duel(text, text, integer) from public, anon;
+grant execute on function private.create_user_duel(text, text, integer) to authenticated;
 
 create or replace function public.create_user_duel(
-  p_challenged_id uuid,
-  p_fixture_date date default current_date
+  p_opponent_username text,
+  p_challenge_id text,
+  p_challenger_score integer default 0
 )
 returns jsonb
 language sql
 security invoker
 set search_path = public
 as $$
-  select private.create_user_duel(p_challenged_id, p_fixture_date);
+  select private.create_user_duel(p_opponent_username, p_challenge_id, p_challenger_score);
 $$;
 
-revoke all on function public.create_user_duel(uuid, date) from public, anon;
-grant execute on function public.create_user_duel(uuid, date) to authenticated;
+revoke all on function public.create_user_duel(text, text, integer) from public, anon;
+grant execute on function public.create_user_duel(text, text, integer) to authenticated;
 
 -- After this file, run supabase/seed.sql to load catalog answer sheets.

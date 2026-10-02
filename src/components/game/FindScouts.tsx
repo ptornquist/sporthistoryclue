@@ -5,8 +5,10 @@ import { followScout, searchScouts, unfollowScout, type ScoutProfile } from '@/l
 
 interface FindScoutsProps {
   currentUserId?: string | null;
+  currentUsername?: string | null;
   followingIds?: string[];
   onToggleFollow?: (targetId: string) => Promise<void> | void;
+  onChallenge?: (username: string) => void;
   framed?: boolean;
 }
 
@@ -15,13 +17,17 @@ export function ScoutSearchResults({
   query,
   results,
   followingIds,
+  currentUsername,
   onToggleFollow,
+  onChallenge,
 }: {
   searching: boolean;
   query: string;
   results: ScoutProfile[] | null;
   followingIds: string[];
+  currentUsername?: string | null;
   onToggleFollow: (scoutId: string) => void;
+  onChallenge?: (username: string) => void;
 }) {
   return (
     <>
@@ -38,6 +44,7 @@ export function ScoutSearchResults({
             results.map((scout) => {
               const handle = scout.username?.replace(/^@/, '') || 'scout';
               const following = followingIds.includes(scout.id);
+              const mine = handle.toLowerCase() === (currentUsername || '').replace(/^@/, '').trim().toLowerCase();
               return (
                 <div
                   key={scout.id}
@@ -49,13 +56,24 @@ export function ScoutSearchResults({
                       {(scout.career_score || 0).toLocaleString()} PTS · {scout.fixtures_cleared || 0} matches
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onToggleFollow(scout.id)}
-                    className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-black uppercase"
-                  >
-                    {following ? 'Following' : 'Follow'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {!mine && onChallenge && (
+                      <button
+                        type="button"
+                        onClick={() => onChallenge(handle)}
+                        className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-zinc-950 font-black text-xs uppercase rounded-xl border-2 border-zinc-950 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
+                      >
+                        ⚔️ Challenge
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onToggleFollow(scout.id)}
+                      className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-black uppercase"
+                    >
+                      {following ? 'Following' : 'Follow'}
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -68,8 +86,10 @@ export function ScoutSearchResults({
 
 export default function FindScouts({
   currentUserId = null,
+  currentUsername = null,
   followingIds = [],
   onToggleFollow,
+  onChallenge,
   framed = true,
 }: FindScoutsProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,7 +169,9 @@ export default function FindScouts({
         query={submittedQuery}
         results={searchResults}
         followingIds={followed}
+        currentUsername={currentUsername}
         onToggleFollow={handleToggleFollow}
+        onChallenge={onChallenge}
       />
     </>
   );
