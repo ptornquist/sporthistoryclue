@@ -171,6 +171,9 @@ export default function ProfilePage() {
             <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
               Standings
             </Link>
+            <Link href="/shop" className="font-bold text-sm tracking-wide uppercase hover:text-blue-600 transition-colors">
+              🛍️ SHOP
+            </Link>
             <button
               onClick={async () => {
                 await supabaseClient.auth.signOut();
@@ -226,6 +229,14 @@ export default function ProfilePage() {
               <span className="text-3xl font-black font-mono text-blue-600">
                 {careerScore == null ? '—' : careerScore.toLocaleString()}
               </span>
+              <div className="mt-3">
+                <Link
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                  href="/shop"
+                >
+                  🛍️ Spend Points in Shop
+                </Link>
+              </div>
             </div>
             <div>
               <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Fixtures Cleared</span>

@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 
+export const NAV_LINKS = [
+  { name: 'Daily Drop', href: '/' },
+  { name: 'Campaigns', href: '/campaigns' },
+  { name: 'Disciplines', href: '/disciplines' },
+  { name: 'Leaderboard', href: '/leaderboard' },
+  { name: '🛍️ SHOP', href: '/shop' },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
@@ -45,13 +53,6 @@ export default function Navbar() {
 
   const displayName = profile?.username || user?.email?.split('@')[0] || 'Scout';
 
-  const NAV_LINKS = [
-    { name: 'Daily Drop', href: '/' },
-    { name: 'Campaigns', href: '/campaigns' },
-    { name: 'Disciplines', href: '/disciplines' },
-    { name: 'Leaderboard', href: '/leaderboard' },
-  ];
-
   return (
     <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-30">
       <div className="max-w-5xl mx-auto flex justify-between items-center">
@@ -73,9 +74,13 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-xs font-bold uppercase tracking-wider transition-colors ${
-                  isActive ? 'text-blue-600' : 'text-zinc-500 hover:text-black'
-                }`}
+                className={
+                  link.href === '/shop'
+                    ? 'font-bold text-sm tracking-wide uppercase hover:text-blue-600 transition-colors'
+                    : `text-xs font-bold uppercase tracking-wider transition-colors ${
+                        isActive ? 'text-blue-600' : 'text-zinc-500 hover:text-black'
+                      }`
+                }
               >
                 {link.name}
               </Link>
