@@ -3,6 +3,13 @@ import "server-only";
 import { findCase } from "@/lib/case-files";
 import { allMatchupLabels, solvedMatchup } from "@/lib/case-solutions";
 import { puzzles } from "@/lib/catalog";
+import {
+  fetchDailyChallengeRow,
+  readStoredChallenge,
+  resolveGuessOptions,
+  type ChallengeRow,
+  type DailyChallengeClient,
+} from "@/lib/daily-challenge-query";
 import { distinctOptionValues } from "@/lib/option-text";
 import { resolveTacticalClueList } from "@/lib/tactical-clues";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -345,4 +352,131 @@ function stringList(value: unknown): string[] {
       return "";
     })
     .filter((item) => item.length > 0);
+}
+
+const MATCH_KEY = /^[a-z0-9-]{1,80}$/i;
+
+export function isMatchKey(id: string): boolean {
+  return MATCH_KEY.test(id.trim());
+}
+
+function challengeClient(): DailyChallengeClient | null {
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  return client ? (client as unknown as DailyChallengeClient) : null;
+}
+
+function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily | null {
+  const stored = readStoredChallenge(row);
+  const subject = stringField(row, "subject") || stringField(row, "title") || stored.title;
+  const year = numberField(row, "year") || numberField(row, "target_year");
+  const category = stringField(row, "category") || stringField(row, "sport") || "Sports History";
+  const generated = subject && year ? [`${subject} (${year})`] : [];
+  const fixture = {
+    id: stringField(row, "id") || stringField(row, "slug") || dateKey,
+    date_key: stringField(row, "date_key") || stringField(row, "fixture_date") || dateKey,
+    category,
+    clues: stored.clues,
+    options: stored.options,
+    optionsLocked: row.options_locked === true || stored.options.length > 0,
+  };
+  if (!fixture.clues.some(Boolean) && fixture.options.length === 0 && !subject) return null;
+  let options = resolveGuessOptions(fixture.options, generated, false);
+  if (fixture.optionsLocked && fixture.options.length > 0) {
+    options = resolveGuessOptions(fixture.options, generated, true);
+  }
+  return {
+    id: fixture.id,
+    date_key: fixture.date_key,
+    category: fixture.category,
+    clues: fixture.clues.length > 0 ? fixture.clues : ["A detail from the archive."],
+    options: options.length > 0 ? options : generated,
+  };
+}
+
+export async function loadDatedPublicDrop(dateKey: string): Promise<PublicDaily | null> {
+  const client = challengeClient();
+  if (client) {
+    try {
+      const row = await fetchDailyChallengeRow(client, dateKey, {
+        allowLatestFallback: dateKey === utcTodayKey(),
+      });
+      if (row) {
+        const fixture = publicFromChallengeRow(row, dateKey);
+        if (fixture?.clues.some(Boolean)) return fixture;
+      }
+    } catch {
+      // Catalog fixtures still open the arena when the challenges table is unreachable.
+    }
+  }
+  try {
+    return toPublicDaily(await loadDailyFixture(dateKey));
+  } catch {
+    return null;
+  }
+}
+
+export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily | null> {
+  return loadDatedPublicDrop(utcTodayKey(now));
+}
+
+export async function loadPublicChallengeById(id: string): Promise<PublicDaily | null> {
+  const trimmed = id.trim();
+  if (!isMatchKey(trimmed)) return null;
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  if (client) {
+    try {
+      const { data, error } = await client.from("challenges").select("*").eq("id", trimmed).maybeSingle();
+      if (!error && data) {
+        const fixture = publicFromChallengeRow(data, utcTodayKey());
+        if (fixture) return fixture;
+      }
+    } catch {
+      // Fall through to the local case file.
+    }
+  }
+  const match = await loadMatchFixture(trimmed);
+  return match ? toPublicDaily(match) : null;
+}
+
+export async function loadPublicArchive(matchId: string): Promise<{
+  challenge: PublicDaily & { optionsLocked: boolean };
+  optionSource: {
+    id: string;
+    subject: string;
+    year: number;
+    category: string;
+    sport: string | null;
+  };
+} | null> {
+  const fixture = await loadMatchFixture(matchId);
+  if (!fixture) return null;
+  const file = findCase(matchId);
+  return {
+    challenge: {
+      ...toPublicDaily(fixture),
+      optionsLocked: false,
+    },
+    optionSource: {
+      id: fixture.id,
+      subject: fixture.subject,
+      year: fixture.year,
+      category: fixture.category,
+      sport: file?.sport ?? null,
+    },
+  };
+}
+
+export async function loadChallengeImage(id: string): Promise<string | null> {
+  const trimmed = id.trim();
+  if (!isMatchKey(trimmed)) return null;
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  if (!client) return null;
+  try {
+    const { data, error } = await client.from("challenges").select("*").eq("id", trimmed).maybeSingle();
+    if (error || !data) return null;
+    const image = readStoredChallenge(data).imageUrl;
+    return image || null;
+  } catch {
+    return null;
+  }
 }

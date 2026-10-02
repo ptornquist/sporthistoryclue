@@ -106,6 +106,15 @@ export function playCluePenalty(): void {
   });
 }
 
+export function playUnlockClick(): void {
+  void runningContext().then((ctx) => {
+    if (!ctx) return;
+    const start = ctx.currentTime;
+    tone(ctx, start, 880, 0.045, 'sine', 0.045);
+    tone(ctx, start + 0.05, 1320, 0.06, 'sine', 0.035);
+  });
+}
+
 export function playWrongBuzzer(): void {
   void runningContext().then((ctx) => {
     if (!ctx) return;

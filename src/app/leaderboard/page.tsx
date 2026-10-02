@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import FindScouts from '@/components/game/FindScouts';
+import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 import { followScout, getFollowingIds, unfollowScout } from '@/lib/supabase/network';
+import { cosmeticName, titleClassName } from '@/lib/cosmetics';
 
 interface LeaderboardEntry {
   id: string;
@@ -12,10 +15,38 @@ interface LeaderboardEntry {
   display_name: string;
   total_score: number;
   matches_cleared: number;
+  equipped_title?: string | null;
+  equipped_frame?: string | null;
+}
+
+async function loadCosmeticMap(ids: string[]) {
+  const map = new Map<string, { equipped_title?: string | null; equipped_frame?: string | null }>();
+  if (ids.length === 0) return map;
+  const { data, error } = await supabaseClient
+    .from('profiles')
+    .select('id, equipped_title, equipped_frame')
+    .in('id', ids);
+  if (error || !data) return map;
+  for (const row of data) {
+    map.set(row.id, { equipped_title: row.equipped_title, equipped_frame: row.equipped_frame });
+  }
+  return map;
+}
+
+function mergeCosmetics(
+  entries: LeaderboardEntry[],
+  cosmetics: Map<string, { equipped_title?: string | null; equipped_frame?: string | null }>,
+): LeaderboardEntry[] {
+  return entries.map((entry) => ({
+    ...entry,
+    equipped_title: cosmetics.get(entry.id)?.equipped_title ?? null,
+    equipped_frame: cosmetics.get(entry.id)?.equipped_frame ?? null,
+  }));
 }
 
 export default function LeaderboardPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'global' | 'network'>('global');
@@ -34,7 +65,10 @@ export default function LeaderboardPage() {
         .order('total_score', { ascending: false })
         .limit(50);
 
-      if (globalData) setLeaders(globalData);
+      if (globalData) {
+        const cosmetics = await loadCosmeticMap(globalData.map((entry) => entry.id));
+        setLeaders(mergeCosmetics(globalData, cosmetics));
+      }
 
       if (user) {
         const ids = await getFollowingIds(user.id);
@@ -45,7 +79,9 @@ export default function LeaderboardPage() {
             .select('*')
             .in('id', ids)
             .order('total_score', { ascending: false });
-          setNetworkLeaders(networkScores ?? []);
+          const networkRows = networkScores ?? [];
+          const cosmetics = await loadCosmeticMap(networkRows.map((entry) => entry.id));
+          setNetworkLeaders(mergeCosmetics(networkRows, cosmetics));
         } else {
           setNetworkLeaders([]);
         }
@@ -62,7 +98,7 @@ export default function LeaderboardPage() {
 
   const toggleFollow = async (targetId: string) => {
     if (!currentUser) {
-      window.location.href = '/login';
+      router.push('/login');
       return;
     }
     const already = networkIds.includes(targetId);
@@ -82,7 +118,9 @@ export default function LeaderboardPage() {
       .select('*')
       .in('id', ids)
       .order('total_score', { ascending: false });
-    setNetworkLeaders(networkScores ?? []);
+    const networkRows = networkScores ?? [];
+    const cosmetics = await loadCosmeticMap(networkRows.map((entry) => entry.id));
+    setNetworkLeaders(mergeCosmetics(networkRows, cosmetics));
   };
 
   return (
@@ -153,6 +191,11 @@ export default function LeaderboardPage() {
               <span className="font-black text-sm md:text-base text-zinc-900 truncate max-w-full">
                 @{displayedLeaders[1]?.username}
               </span>
+              {cosmeticName(displayedLeaders[1]?.equipped_title) && (
+                <span className={`text-[10px] font-black ${titleClassName(displayedLeaders[1]?.equipped_title)}`}>
+                  [&quot;{cosmeticName(displayedLeaders[1]?.equipped_title)}&quot;]
+                </span>
+              )}
               <span className="text-xs font-mono font-bold text-blue-600 mt-1">
                 {displayedLeaders[1]?.total_score.toLocaleString()} PTS
               </span>
@@ -164,6 +207,11 @@ export default function LeaderboardPage() {
               <span className="font-black text-base md:text-lg text-zinc-900 truncate max-w-full">
                 @{displayedLeaders[0]?.username}
               </span>
+              {cosmeticName(displayedLeaders[0]?.equipped_title) && (
+                <span className={`text-[10px] font-black ${titleClassName(displayedLeaders[0]?.equipped_title)}`}>
+                  [&quot;{cosmeticName(displayedLeaders[0]?.equipped_title)}&quot;]
+                </span>
+              )}
               <span className="text-sm font-mono font-black text-blue-600 mt-1">
                 {displayedLeaders[0]?.total_score.toLocaleString()} PTS
               </span>
@@ -175,6 +223,11 @@ export default function LeaderboardPage() {
               <span className="font-black text-sm md:text-base text-zinc-900 truncate max-w-full">
                 @{displayedLeaders[2]?.username}
               </span>
+              {cosmeticName(displayedLeaders[2]?.equipped_title) && (
+                <span className={`text-[10px] font-black ${titleClassName(displayedLeaders[2]?.equipped_title)}`}>
+                  [&quot;{cosmeticName(displayedLeaders[2]?.equipped_title)}&quot;]
+                </span>
+              )}
               <span className="text-xs font-mono font-bold text-blue-600 mt-1">
                 {displayedLeaders[2]?.total_score.toLocaleString()} PTS
               </span>
@@ -212,11 +265,17 @@ export default function LeaderboardPage() {
                       <span className="w-6 font-mono text-xs font-bold text-zinc-400">
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                       </span>
+                      <ScoutAvatar frameId={entry.equipped_frame} label={entry.username || 'scout'} size="sm" />
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-black text-sm text-zinc-900">
                             @{entry.username}
                           </span>
+                          {cosmeticName(entry.equipped_title) && (
+                            <span className={`text-[10px] font-black ${titleClassName(entry.equipped_title)}`}>
+                              [&quot;{cosmeticName(entry.equipped_title)}&quot;]
+                            </span>
+                          )}
                           {isMe && (
                             <span className="px-2 py-0.5 bg-blue-600 text-white text-[9px] font-black uppercase rounded">
                               YOU

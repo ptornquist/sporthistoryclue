@@ -1,5 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { completePendingDuel, groupDuels, sendDuelChallenge } from "./duels";
+import {
+  cleanHandle,
+  completePendingDuel,
+  decideWinner,
+  formatAgo,
+  groupDuels,
+  mergeDuels,
+  outcomeFor,
+  rematchLink,
+  sendDuelChallenge,
+  validChallengeId,
+  validHandle,
+  validScore,
+} from "./duels";
 
 describe("duels", () => {
   it("groups incoming, sent, and completed rows", () => {
@@ -50,5 +63,31 @@ describe("duels", () => {
       status: "completed",
     });
     expect(eq).toHaveBeenCalledWith("id", "d1");
+  });
+
+  it("normalizes handles and picks the challenger on a tie", () => {
+    expect(cleanHandle("@Ada")).toBe("ada");
+    expect(validHandle("ada")).toBe(true);
+    expect(validHandle("  ")).toBe(false);
+    expect(validChallengeId("2026-10-02")).toBe(true);
+    expect(validScore(0)).toBe(true);
+    expect(validScore(Number.NaN)).toBe(false);
+    expect(decideWinner("ada", 1000, "beau", 1000)).toBe("ada");
+    expect(decideWinner("ada", 1000, "beau", 2500)).toBe("beau");
+    expect(outcomeFor("beau", {
+      id: "d1",
+      challenge_id: "2026-10-02",
+      challenger_username: "ada",
+      challenger_score: 1000,
+      opponent_username: "beau",
+      opponent_score: 2500,
+      winner_username: "beau",
+    })).toBe("victory");
+    expect(mergeDuels(
+      [{ id: "1", challenge_id: "a", challenger_username: "ada", challenger_score: 1, opponent_username: "beau" }],
+      [{ id: "1", challenge_id: "a", challenger_username: "ada", challenger_score: 1, opponent_username: "beau" }],
+    )).toHaveLength(1);
+    expect(rematchLink("Ada", 2500, "miracle-on-ice-1980")).toBe("/?duel=ada&pts=2500&match=miracle-on-ice-1980");
+    expect(formatAgo(new Date(Date.now() - 5_000).toISOString(), new Date())).toBe("just now");
   });
 });

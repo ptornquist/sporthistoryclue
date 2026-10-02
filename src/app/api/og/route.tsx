@@ -1,14 +1,21 @@
 import { ImageResponse } from 'next/og';
+import { ogChallengeHeadline, publicFixtureName } from '@/lib/challenge-link';
 
 export const runtime = 'edge';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const duel = searchParams.get('duel')?.trim() ?? '';
+  const match = searchParams.get('match')?.trim() ?? '';
+  const fixtureName = publicFixtureName(match);
+  const headline = ogChallengeHeadline(duel, fixtureName);
   const ptsParam = searchParams.get('pts')?.trim() || '0';
   const parsedPts = Number.parseInt(ptsParam, 10);
   const ptsLabel = Number.isFinite(parsedPts) ? parsedPts.toLocaleString('en-US') : ptsParam;
   const category = searchParams.get('category')?.trim() || 'SPORTS DEDUCTION';
+  const beatLine = fixtureName
+    ? `Can you beat their ${ptsLabel} PTS on '${fixtureName}'?`
+    : `Can you beat their ${ptsLabel} PTS on today's mystery match?`;
 
   return new ImageResponse(
     (
@@ -47,12 +54,12 @@ export async function GET(request: Request) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div style={{ display: 'flex', fontSize: 72, fontWeight: 800, lineHeight: 1.05 }}>
-            {duel ? `CHALLENGE FROM @${duel}` : 'Test Your Sports History IQ'}
+          <div style={{ display: 'flex', fontSize: fixtureName ? 52 : 72, fontWeight: 800, lineHeight: 1.1, maxWidth: 1040 }}>
+            {headline}
           </div>
           {duel ? (
-            <div style={{ display: 'flex', fontSize: 36, color: '#bfdbfe' }}>
-              {`Can you beat their ${ptsLabel} PTS on today's mystery match?`}
+            <div style={{ display: 'flex', fontSize: 32, color: '#bfdbfe', maxWidth: 1040 }}>
+              {beatLine}
             </div>
           ) : null}
         </div>

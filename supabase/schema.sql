@@ -592,3 +592,13 @@ revoke all on function public.create_user_duel(text, text, integer) from public,
 grant execute on function public.create_user_duel(text, text, integer) to authenticated;
 
 -- After this file, run supabase/seed.sql to load catalog answer sheets.
+-- Pro Shop columns, coin grants, and RPCs: supabase/migrations/20260926120000_pro_shop.sql
+-- Community clue totals: supabase/migrations/20260926150000_challenge_stats.sql
+-- Weekly standings columns: supabase/migrations/20260926180000_weekly_standings.sql
+-- Duel inbox: supabase/migrations/20260926190000_duels.sql
+-- Private scout clubs: supabase/migrations/20260926200000_private_scout_clubs.sql
+-- Club owner inserts: supabase/migrations/20260926210000_club_owner_insert.sql
+-- Supporters Derby allegiance: supabase/migrations/20260927070133_favorite_club.sql
+-- Daily archive completions: supabase/migrations/20260927105320_user_daily_completions.sql
+-- Public avatars bucket: supabase/migrations/20260927131442_avatars_bucket.sql
+-- Derby club table: supabase/migrations/20260927185517_derby_clubs.sql

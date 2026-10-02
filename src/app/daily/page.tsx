@@ -325,7 +325,7 @@ export default function DailyDropPage() {
                   type="button"
                   onClick={handleUnlockClue}
                   disabled={revealedCount >= 6}
-                  className="px-4 py-3.5 bg-zinc-100 border border-zinc-200 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-colors whitespace-nowrap"
+                  className="min-h-[48px] touch-manipulation px-4 py-3.5 bg-zinc-100 border border-zinc-200 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-colors whitespace-nowrap active:scale-[0.98]"
                 >
                   Unlock Clue (-2K)
                 </button>

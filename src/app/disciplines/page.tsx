@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
-import AuthGateModal from '@/components/AuthGateModal';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
@@ -15,6 +13,9 @@ import {
   previewFromCase,
   type FixturePreviewModel,
 } from '@/lib/case-files';
+import { arenaHref } from '@/lib/storylines';
+import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
+import { cn } from '@/lib/utils';
 
 interface ChallengeItem {
   id: string;
@@ -39,14 +40,27 @@ const SPORTS: SportGroup[] = [
   { id: 'athletics', name: 'Athletics', icon: '🏃', description: 'Shattered world records and iconic Olympic track moments.' },
 ];
 
+const SPORT_TILE: Record<string, string> = {
+  ice_hockey: 'bg-sky-50/80 border-sky-200 text-sky-950 hover:border-sky-400',
+  football: 'bg-emerald-50/80 border-emerald-200 text-emerald-950 hover:border-emerald-400',
+  boxing: 'bg-rose-50/80 border-rose-200 text-rose-950 hover:border-rose-400',
+  tennis: 'bg-amber-50/80 border-amber-200 text-amber-950 hover:border-amber-400',
+  athletics: 'bg-indigo-50/80 border-indigo-200 text-indigo-950 hover:border-indigo-400',
+};
+
+const ACTIVE_TILE = 'ring-2 ring-zinc-900 border-2 border-zinc-900 shadow-md font-black scale-[1.02] hover:border-zinc-900';
+
 export default function DisciplinesPage() {
-  const router = useRouter();
   const [selectedSport, setSelectedSport] = useState<string>('ice_hockey');
   const [challenges, setChallenges] = useState<ChallengeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<unknown>(null);
-  const [showAuthGate, setShowAuthGate] = useState(false);
+  const [challengeTarget, setChallengeTarget] = useState<{
+    slug: string;
+    title: string;
+    score: number | null;
+    category: string;
+  } | null>(null);
 
   const localFixtures = CASE_FILES.filter((file) => file.sport === selectedSport).map(previewFromCase);
   const remoteFixtures = challenges
@@ -62,21 +76,11 @@ export default function DisciplinesPage() {
   );
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
-    supabaseClient.auth
-      .getUser()
-      .then(({ data }) => setCurrentUser(data.user ?? null))
-      .catch(() => setCurrentUser(null));
+    const sport = new URLSearchParams(window.location.search).get('sport');
+    if (!sport || !SPORTS.some((item) => item.id === sport)) return;
+    const apply = window.setTimeout(() => setSelectedSport(sport), 0);
+    return () => window.clearTimeout(apply);
   }, []);
-
-  // Deducing an archive fixture requires a free Scout account; the Daily Drop stays open to all.
-  const handleDeduce = (target: string) => {
-    if (!currentUser) {
-      setShowAuthGate(true);
-      return;
-    }
-    router.push(`/?match=${target}`);
-  };
 
   useEffect(() => {
     const fetchChallenges = async () => {
@@ -111,12 +115,6 @@ export default function DisciplinesPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <AuthGateModal
-        isOpen={showAuthGate}
-        onClose={() => setShowAuthGate(false)}
-        featureName="By Sport"
-      />
-
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -133,11 +131,20 @@ export default function DisciplinesPage() {
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Daily Drop
             </Link>
+            <Link href="/archive" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+              Archive
+            </Link>
             <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Storylines
             </Link>
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+            <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Standings
+            </Link>
+            <Link href="/derby" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+              Derby
+            </Link>
+            <Link href="/clubs" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
+              Clubs
             </Link>
           </nav>
         </div>
@@ -159,36 +166,44 @@ export default function DisciplinesPage() {
 
         {/* Sport Selection Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-8">
-          {SPORTS.map((sport) => (
-            <button
-              key={sport.id}
-              type="button"
-              onClick={() => setSelectedSport(sport.id)}
-              aria-pressed={selectedSport === sport.id}
-              className={`p-3.5 rounded-2xl border text-center transition-all ${
-                selectedSport === sport.id
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                  : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-300'
-              }`}
-            >
-              <span className="text-xl block mb-1" aria-hidden>
-                {sport.icon}
-              </span>
-              <span className="text-xs font-bold block">{sport.name}</span>
-            </button>
-          ))}
+          {SPORTS.map((sport) => {
+            const selected = selectedSport === sport.id;
+            return (
+              <button
+                key={sport.id}
+                type="button"
+                onClick={() => setSelectedSport(sport.id)}
+                aria-pressed={selected}
+                className={cn(
+                  'relative p-3.5 rounded-2xl border-2 text-center transition-all',
+                  SPORT_TILE[sport.id],
+                  selected && ACTIVE_TILE,
+                )}
+              >
+                {selected && (
+                  <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-black text-white">
+                    ✓
+                  </span>
+                )}
+                <span className="text-xl block mb-1" aria-hidden>
+                  {sport.icon}
+                </span>
+                <span className={`text-xs block ${selected ? 'font-black' : 'font-bold'}`}>{sport.name}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* List of Challenges for Selected Sport */}
-        <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-100">
+        <div className="border-2 border-zinc-300 bg-white rounded-3xl p-6 shadow-sm">
+          <div className="mb-6 flex items-center justify-between gap-4 border-b-2 border-zinc-200 pb-5">
             <div>
               <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">
                 {activeSport?.name} Fixtures
               </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">{activeSport?.description}</p>
+              <p className="mt-0.5 text-xs font-medium text-zinc-600">{activeSport?.description}</p>
             </div>
-            <span className="shrink-0 text-xs font-mono font-bold text-zinc-400 bg-zinc-100 px-3 py-1 rounded-full">
+            <span className="shrink-0 rounded-full border-2 border-zinc-900 bg-zinc-900 px-3 py-1 text-xs font-mono font-black text-white">
               {fixtures.length} matches
             </span>
           </div>
@@ -214,7 +229,15 @@ export default function DisciplinesPage() {
                     context={fixture.context}
                     solvedScore={record?.score ?? null}
                     matchup={record?.matchup ?? null}
-                    onDeduce={() => handleDeduce(fixture.lookupIds[0] || fixture.key)}
+                    href={arenaHref(fixture.lookupIds[0] || fixture.key)}
+                    onChallenge={() =>
+                      setChallengeTarget({
+                        slug: fixture.lookupIds[0] || fixture.key,
+                        title: fixture.title,
+                        score: record?.score ?? null,
+                        category: fixture.context,
+                      })
+                    }
                   />
                 );
               })}
@@ -224,6 +247,14 @@ export default function DisciplinesPage() {
       </div>
 
       <Footer />
+      <ChallengeFriendModal
+        isOpen={challengeTarget != null}
+        onClose={() => setChallengeTarget(null)}
+        matchSlug={challengeTarget?.slug ?? ""}
+        matchTitle={challengeTarget?.title ?? ""}
+        userScore={challengeTarget?.score}
+        category={challengeTarget?.category}
+      />
     </main>
   );
 }

@@ -8,12 +8,15 @@ interface AuthGateModalProps {
   onClose: () => void;
   /** Name of the archive feature the guest tried to reach, shown in the copy. */
   featureName?: string;
+  /** Relative path to resume after login, such as `/clubs?join=HOCKEY`. */
+  returnTo?: string;
 }
 
 export default function AuthGateModal({
   isOpen,
   onClose,
   featureName = 'the Match Archive',
+  returnTo,
 }: AuthGateModalProps) {
   // Close on Escape for keyboard users.
   useEffect(() => {
@@ -87,13 +90,13 @@ export default function AuthGateModal({
 
         <div className="space-y-2.5">
           <Link
-            href="/login?mode=signup"
+            href={returnTo ? `/login?mode=signup&next=${encodeURIComponent(returnTo)}` : '/login?mode=signup'}
             className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider block transition-all shadow-sm"
           >
             Create Free Account →
           </Link>
           <Link
-            href="/login"
+            href={returnTo ? `/login?next=${encodeURIComponent(returnTo)}` : '/login'}
             className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-xs font-bold uppercase tracking-wider block transition-all"
           >
             Log In
