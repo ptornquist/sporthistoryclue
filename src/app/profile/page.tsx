@@ -37,8 +37,6 @@ interface MatchRecord {
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [usernameInput, setUsernameInput] = useState('');
-  const [savingUsername, setSavingUsername] = useState(false);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [careerScore, setCareerScore] = useState<number | null>(null);
   const [fixturesCleared, setFixturesCleared] = useState<number | null>(null);
@@ -47,7 +45,6 @@ export default function ProfilePage() {
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     if (!isSupabaseConfigured) return;
@@ -60,15 +57,19 @@ export default function ProfilePage() {
 
     const standings = await fetchCareerStandings();
     const prof = standings.find((row) => row.id === user.id);
+    const { data: avatarRow } = await supabaseClient
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .maybeSingle();
     if (prof) {
       setProfile({
         id: prof.id,
         username: prof.username || '',
         display_name: prof.display_name || prof.username || '',
-        avatar_url: prof.avatar_url,
+        avatar_url: avatarRow?.avatar_url ?? prof.avatar_url ?? null,
         streak: prof.streak,
       });
-      setUsernameInput(prof.username || '');
       setCareerScore(prof.career_score || 0);
       setFixturesCleared(prof.fixtures_cleared || 0);
     } else {
@@ -137,24 +138,42 @@ export default function ProfilePage() {
     loadData();
   }, []);
 
-  const handleUpdateUsername = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!usernameInput.trim() || !user) return;
-    setSavingUsername(true);
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
 
-    const clean = usernameInput.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
-    const { error } = await supabaseClient
-      .from('profiles')
-      .upsert({ id: user.id, username: clean, display_name: clean });
-
-    if (error) {
-      alert(`Could not save username: ${error.message}`);
-    } else {
-      setProfile((prev: any) => ({ ...prev, username: clean, display_name: clean }));
-      setActionMessage('Username updated!');
-      setTimeout(() => setActionMessage(null), 3000);
+    const fileExt = file.name.split('.').pop();
+    if (!fileExt) {
+      alert('Error uploading avatar: choose an image file.');
+      return;
     }
-    setSavingUsername(false);
+    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
+    const supabase = supabaseClient;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      alert('Error uploading avatar: ' + uploadError.message);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+
+    if (!updateError) {
+      setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : null);
+    } else {
+      alert('Error uploading avatar: ' + updateError.message);
+    }
   };
 
   const handleChallenge = async (opponentUsername: string) => {
@@ -198,50 +217,45 @@ export default function ProfilePage() {
       <Header />
 
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
-        {actionMessage && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold text-center">
-            {actionMessage}
-          </div>
-        )}
-
         {/* Profile Card */}
         <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm flex flex-col md:flex-row justify-between gap-8 items-start md:items-center">
-          <div>
-            <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
-              Scout Handle
-            </span>
-            <h1 className="text-3xl font-black tracking-tight text-zinc-900 uppercase mt-1 flex flex-wrap items-center gap-2">
-              <span>@{profile?.username || 'scout'}</span>
-              <BadgeHandleFlair badges={badges} />
-            </h1>
-            <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
-            <button
-              type="button"
-              onClick={async () => {
-                await supabaseClient.auth.signOut();
-                window.location.href = '/login';
-              }}
-              className="mt-2 text-xs font-medium text-zinc-400 hover:text-zinc-600"
-            >
-              Sign Out
-            </button>
-
-            <form onSubmit={handleUpdateUsername} className="flex gap-2 mt-4">
-              <input
-                type="text"
-                value={usernameInput}
-                onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="Change handle"
-                className="bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-600"
-              />
+          <div className="flex items-center gap-4">
+            <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-zinc-200 bg-zinc-100 flex items-center justify-center shrink-0">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl">👤</span>
+              )}
+              <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-black uppercase cursor-pointer">
+                <span>Change</span>
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              </label>
+            </div>
+            <div>
+              <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
+                Scout Handle
+              </span>
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                <span className="text-2xl md:text-3xl font-black tracking-tight text-zinc-950">
+                  @{profile?.username?.replace(/^@/, '')}
+                </span>
+                <span className="text-xs bg-zinc-100 text-zinc-600 font-bold px-2.5 py-1 rounded-lg border border-zinc-200">
+                  LOCKED HANDLE
+                </span>
+                <BadgeHandleFlair badges={badges} />
+              </div>
+              <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
               <button
-                type="submit"
-                disabled={savingUsername}
-                className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black"
+                type="button"
+                onClick={async () => {
+                  await supabaseClient.auth.signOut();
+                  window.location.href = '/login';
+                }}
+                className="mt-2 text-xs font-medium text-zinc-400 hover:text-zinc-600"
               >
-                {savingUsername ? 'Saving...' : 'Save'}
+                Sign Out
               </button>
-            </form>
+            </div>
           </div>
 
           <div className="flex gap-6 border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8 w-full md:w-auto">
