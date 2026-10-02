@@ -1,73 +1,40 @@
-import { arrangeClueLadder } from "@/lib/clue-ladder";
+import { isGuestOpenDrop } from "@/lib/drop-dates";
 import {
-  isMatchKey,
+  fourDistinctOptions,
   loadDailyFixture,
-  loadPublicArchive,
-  loadPublicChallengeById,
+  loadMatchFixture,
   parseDateKey,
   toPublicDaily,
-  utcTodayKey,
+  viewerCanOpenArchive,
 } from "@/lib/daily-drop";
-import { selectChallengeOptions } from "@/lib/decoy-options";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export async function GET(request: Request) {
-  const matchParam = new URL(request.url).searchParams.get("match")?.trim() ?? "";
-  if (matchParam) {
-    if (!isMatchKey(matchParam)) {
-      return Response.json({ error: "Unknown match." }, { status: 400 });
+  const url = new URL(request.url);
+  const match = url.searchParams.get("match")?.trim();
+  if (match) {
+    const storyline = await loadMatchFixture(match);
+    if (!storyline) {
+      return Response.json({ error: "That storyline match could not be opened." }, { status: 404 });
     }
-    const archive = await loadPublicArchive(matchParam);
-    if (!archive) {
-      return Response.json({ error: "That archive match could not be found." }, { status: 404 });
-    }
-    const { optionSource, challenge, ...rest } = archive;
-    return Response.json({
-      ...rest,
-      challenge: {
-        ...challenge,
-        options: challenge.optionsLocked ? challenge.options : selectChallengeOptions(optionSource),
-        clues: challenge.optionsLocked
-          ? challenge.clues
-          : arrangeClueLadder(challenge.clues, { category: challenge.category }),
-      },
-    });
+    return Response.json(toPublicDaily(storyline));
   }
 
-  const idParam = new URL(request.url).searchParams.get("id")?.trim() ?? "";
-  if (idParam) {
-    if (!isMatchKey(idParam)) {
-      return Response.json({ error: "Unknown fixture." }, { status: 400 });
-    }
-    const byId = await loadPublicChallengeById(idParam);
-    if (!byId) {
-      return Response.json({ error: "That archive fixture could not be found." }, { status: 404 });
-    }
-    return Response.json(byId);
-  }
-
-  const dateKey = parseDateKey(new URL(request.url).searchParams.get("date"));
+  const dateKey = parseDateKey(url.searchParams.get("date"));
   if (!dateKey) {
     return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });
   }
 
-  if (dateKey > utcTodayKey()) {
-    return Response.json({ error: "That drop has not been released." }, { status: 400 });
+  if (!isGuestOpenDrop(dateKey) && !(await viewerCanOpenArchive())) {
+    return Response.json({ error: "Sign in to open past drops." }, { status: 401 });
   }
 
   const fixture = await loadDailyFixture(dateKey);
   const payload = toPublicDaily(fixture);
+  const rawOptions = Array.from(new Set(payload.options.filter(Boolean)));
   return Response.json({
     ...payload,
-    options: fixture.optionsLocked
-      ? payload.options
-      : fixture.optionSource
-        ? selectChallengeOptions(fixture.optionSource)
-        : payload.options,
-    clues: fixture.optionsLocked
-      ? payload.clues
-      : arrangeClueLadder(payload.clues, { category: payload.category }),
+    options: fourDistinctOptions(rawOptions, rawOptions[0] ?? "", rawOptions.slice(1)),
   });
 }

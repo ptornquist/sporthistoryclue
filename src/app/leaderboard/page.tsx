@@ -180,7 +180,7 @@ export default function LeaderboardPage() {
           <h2 className="text-sm font-black uppercase tracking-tight text-zinc-900 mb-3">
             Find Scouts
           </h2>
-          <FindScouts currentUserId={currentUser?.id ?? null} />
+          <FindScouts currentUserId={currentUser?.id ?? null} framed={false} />
         </section>
 
         {!loading && displayedLeaders.length >= 3 && tab === 'global' && (

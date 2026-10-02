@@ -4,89 +4,32 @@ import React, { useEffect, useRef, useState } from 'react';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
   isSoundMuted,
-  playUnlockClick,
+  playCluePenalty,
   playVictoryFanfare,
   playWhistle,
   playWrongBuzzer,
   toggleSoundMute,
   triggerHaptic,
 } from '@/lib/audio';
-import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import AuthGateModal from '@/components/AuthGateModal';
+import { ClueStack } from '@/components/game/ClueStack';
+import { DateSwitcher } from '@/components/game/DateSwitcher';
+import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
+import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
+import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve } from '@/lib/fixture-solves';
+import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
-import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
-import { findCase } from '@/lib/case-files';
-import { arrangeClueLadder } from '@/lib/clue-ladder';
-import { sanitizeClues } from '@/lib/clue-sanitation';
-import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
-import { cn } from '@/lib/utils';
-import { cosmeticName } from '@/lib/cosmetics';
-import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
-import { CommunityClueDistribution } from '@/components/CommunityClueDistribution';
-import { HistoricalMiniRecap } from '@/components/HistoricalMiniRecap';
-import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
-import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
-import { clearStaleGameSession } from '@/lib/game-session';
-import { formatArchiveDate, isDateKey } from '@/lib/archive-calendar';
-import { rememberDailyCompletion } from '@/lib/daily-completions';
-import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
-import {
-  FAVORITE_CLUB_KEY,
-  derbyContributionLine,
-  findPremierLeagueClub,
-  isPremierLeagueClub,
-} from '@/lib/premier-league';
-import { TacticalClueBoard } from '@/components/game/TacticalClueBoard';
-import {
-  FREE_TILE_ID,
-  STARTING_SCORE,
-  applyTileCost,
-  buildTacticalBoard,
-  formatPoints,
-  safeImageUrl,
-} from '@/lib/tactical-board';
+import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
+import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 
 interface DailyFixture {
   id: string;
   date_key: string;
   category: string;
-  title?: string;
   clues: string[];
   options: string[];
-  optionsLocked?: boolean;
-  sportId?: string;
-  sportName?: string;
-  imageUrl?: string | null;
-}
-
-function cleanFixture(fixture: DailyFixture): DailyFixture {
-  if (fixture.optionsLocked) {
-    const category = fixture.title || fixture.category;
-    return {
-      ...fixture,
-      category,
-      clues: (fixture.clues ?? []).map((clue) => clue.trim()).filter(Boolean).slice(0, 6),
-      options: fixture.options,
-    };
-  }
-  const file = findCase(fixture.id);
-  const category = file?.context || fixture.category;
-  return {
-    ...fixture,
-    clues: arrangeClueLadder(
-      sanitizeClues(fixture.clues ?? [], {
-        title: file?.title || fixture.category,
-        year: file?.year,
-      }),
-      { category },
-    ),
-  };
-}
-
-interface DailyResponse extends DailyFixture {
-  challenge?: DailyFixture;
-  mode?: string;
 }
 
 interface Solution {
@@ -99,8 +42,23 @@ function dayIndexFromKey(dateKey: string): number {
   return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
-function setupOptions(options: string[]): string[] {
-  const four = Array.from(new Set(options.filter(Boolean))).slice(0, 4);
+const OLYMPIC_DECOYS = [
+  '1896 Athens: First Modern Olympiad (1896)',
+  '1936 Berlin Olympics (1936)',
+  '1968 Mexico City: Black Power Salute (1968)',
+  '1988 Seoul Olympics (1988)',
+];
+
+const GENERAL_DECOYS = [
+  '1980 Lake Placid: USA vs Soviet Union',
+  '1992 Barcelona: USA Dream Team vs Croatia',
+  '1994 Lillehammer: Sweden vs Canada',
+  '1974 Munich: West Germany vs Netherlands',
+];
+
+function setupOptions(options: string[], category: string): string[] {
+  const pool = /olympic/i.test(category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
+  const four = distinctOptionValues([...options, ...pool, ...GENERAL_DECOYS], 4);
   for (let index = four.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(Math.random() * (index + 1));
     const current = four[index];
@@ -110,112 +68,30 @@ function setupOptions(options: string[]): string[] {
   return four;
 }
 
-function MatchModeBanner({
-  campaignTitle,
-  category,
-  specificMatch,
-  campaignId,
-  archiveDate = '',
-  training = false,
-}: {
-  campaignTitle?: string;
-  category: string;
-  specificMatch: string;
-  campaignId: string;
-  archiveDate?: string;
-  training?: boolean;
-}) {
-  if (campaignId && campaignTitle) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-6 py-3 text-amber-950">
-        <span className="text-xs font-black uppercase tracking-wide">🏆 Campaign Mode · {campaignTitle}</span>
-        <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-amber-800 hover:text-amber-950">
-          ← Back to Storylines
-        </Link>
-      </div>
-    );
-  }
-  if (specificMatch) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
-        <span className="text-xs font-black uppercase tracking-wide">
-          📚 Sports Archive{category ? ` · ${category}` : ''}
-        </span>
-        <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-blue-800 hover:text-blue-950">
-          ← Back to Disciplines
-        </Link>
-      </div>
-    );
-  }
-  if (isDateKey(archiveDate)) {
-    const label = training ? 'SCOUT TRAINING' : 'ARCHIVE DOSSIER';
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
-        <span className="text-xs font-black tracking-wide">
-          {label} · {formatArchiveDate(archiveDate)}
-        </span>
-        <Link href="/archive" className="text-xs font-bold tracking-wider text-blue-800 hover:text-blue-950">
-          Back to Calendar
-        </Link>
-      </div>
-    );
-  }
-  return null;
-}
+export function DailyDropArena() {
+  const [duelHandle, setDuelHandle] = useState<string | null>(null);
+  const [duelPts, setDuelPts] = useState(0);
 
-export function DailyDropArena({
-  specificMatch = '',
-  campaignId = '',
-  initialFixture = null,
-  initialDuel = '',
-  initialDuelPts = 0,
-  archiveDate = '',
-  archiveId = '',
-  training = false,
-}: {
-  specificMatch?: string;
-  campaignId?: string;
-  initialFixture?: DailyFixture | null;
-  initialDuel?: string;
-  initialDuelPts?: number;
-  archiveDate?: string;
-  archiveId?: string;
-  training?: boolean;
-}) {
-  const [duelHandle, setDuelHandle] = useState<string | null>(initialDuel || null);
-  const [duelPts, setDuelPts] = useState(initialDuelPts);
-  const [opponentTitle, setOpponentTitle] = useState('');
-  const [coinsEarned, setCoinsEarned] = useState(0);
-  const [favoriteClubId, setFavoriteClubId] = useState<string | null>(null);
-  const [statsRefresh, setStatsRefresh] = useState(0);
-  const statsSent = useRef<string | null>(null);
-  const duelLogged = useRef<string | null>(null);
-  const { wallet, awardSolve } = useCosmeticWallet();
-
-  const [challenge, setChallenge] = useState<DailyFixture | null>(
-    initialFixture ? cleanFixture(initialFixture) : null,
-  );
-  const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
-  const activeArchiveDate = isDateKey(archiveDate) ? archiveDate : null;
+  const [challenge, setChallenge] = useState<DailyFixture | null>(null);
+  const [activeMatch, setActiveMatch] = useState<string | null>(null);
+  const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
+  const [pinnedDrop, setPinnedDrop] = useState<string | null>(null);
   const [solution, setSolution] = useState<Solution | null>(null);
-  const [unlockedTiles, setUnlockedTiles] = useState<string[]>([FREE_TILE_ID]);
-  const [activeTile, setActiveTile] = useState(FREE_TILE_ID);
-  const [archiveImage, setArchiveImage] = useState<string | null>(null);
-  const [archivePhotoMissing, setArchivePhotoMissing] = useState(false);
-  const [score, setScore] = useState(STARTING_SCORE);
+  const [currentClueIdx, setCurrentClueIdx] = useState(0);
+  const [score, setScore] = useState(10000);
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
+  const [isSolved, setIsSolved] = useState(false);
+  const [earnedScore, setEarnedScore] = useState<number | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [guessing, setGuessing] = useState(false);
-  const [loading, setLoading] = useState(!initialFixture);
+  const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [challengeOpen, setChallengeOpen] = useState(false);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
-  const [solvedDates, setSolvedDates] = useState<string[]>([]);
-  const streakLock = useRef(false);
-  const challengeIdRef = useRef('');
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authGateOpen, setAuthGateOpen] = useState(false);
   const [soundMuted, setSoundMuted] = useState(true);
   const whistled = useRef(false);
 
@@ -225,30 +101,13 @@ export function DailyDropArena({
   };
 
   useEffect(() => {
-    const applyStoredStreak = (profileStreak?: number | null) => {
-      if (streakLock.current) return;
-      const history = loadSolvedHistory();
-      setSolvedDates(history);
-      if (history.length > 0) {
-        setStreak(activeStreak(history, utcDateKey(new Date())));
-        return;
-      }
-      if (profileStreak) {
-        setStreak(profileStreak);
-        return;
-      }
-      const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
-      setStreak(savedStreak);
-    };
-
     const initPlayer = async () => {
-      const storedClub = localStorage.getItem(FAVORITE_CLUB_KEY);
-      if (isPremierLeagueClub(storedClub)) setFavoriteClubId(storedClub);
-
       if (!isSupabaseConfigured) {
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
-        applyStoredStreak();
+        const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
+        setStreak(savedStreak);
+        setAuthReady(true);
         return;
       }
 
@@ -265,27 +124,18 @@ export function DailyDropArena({
           if (profile?.username) setPlayerName(profile.username);
           else if (user.email) setPlayerName(user.email.split('@')[0]);
 
-          const { data: allegiance } = await supabaseClient
-            .from('profiles')
-            .select('favorite_club')
-            .eq('id', user.id)
-            .maybeSingle();
-          const clubId = allegiance?.favorite_club;
-          if (typeof clubId === 'string' && isPremierLeagueClub(clubId)) {
-            setFavoriteClubId(clubId);
-            localStorage.setItem(FAVORITE_CLUB_KEY, clubId);
-          }
-
-          applyStoredStreak(profile?.streak);
+          if (profile?.streak) setStreak(profile.streak);
         } else {
           const saved = localStorage.getItem('shc_handle');
           if (saved) setPlayerName(saved);
-          applyStoredStreak();
+          const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
+          setStreak(savedStreak);
         }
       } catch {
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
-        applyStoredStreak();
+      } finally {
+        setAuthReady(true);
       }
     };
 
@@ -293,106 +143,63 @@ export function DailyDropArena({
   }, []);
 
   useEffect(() => {
-    Promise.resolve().then(() => {
-      setSoundMuted(isSoundMuted());
-    });
+    setSoundMuted(isSoundMuted());
   }, []);
 
   useEffect(() => {
-    if (specificMatch || activeArchiveDate || archiveId) return;
-    clearStaleGameSession(window.localStorage, utcDateKey(new Date()), {
-      loadingLatest: true,
-      challengeId: challenge?.id,
-    });
-  }, [specificMatch, activeArchiveDate, archiveId, challenge?.id]);
-
-  useEffect(() => {
-    Promise.resolve().then(() => {
-      const params = new URLSearchParams(window.location.search);
-      setDuelHandle(params.get('duel'));
-      const pts = params.get('pts');
-      setDuelPts(pts ? parseInt(pts, 10) || 0 : 0);
-    });
+    const params = new URLSearchParams(window.location.search);
+    setDuelHandle(params.get('duel'));
+    const pts = params.get('pts');
+    setDuelPts(pts ? parseInt(pts, 10) || 0 : 0);
   }, []);
-
-  useEffect(() => {
-    if ((!gameWon && !gameOver) || !challenge) return;
-    const marker = `${challenge.id}:${gameWon ? Math.max(unlockedTiles.length, 1) : 0}`;
-    if (statsSent.current === marker) return;
-    statsSent.current = marker;
-    const storageKey = `shc_stat_${challenge.id}`;
-    let clientKey = "";
-    try {
-      clientKey = window.localStorage.getItem(storageKey) || "";
-      if (!/^[a-z0-9]{8,80}$/i.test(clientKey)) {
-        clientKey = crypto.randomUUID().replace(/-/g, "").slice(0, 32);
-        window.localStorage.setItem(storageKey, clientKey);
-      }
-    } catch {
-      clientKey = "guestkey1";
-    }
-    void fetch("/api/stats", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        challengeId: challenge.id,
-        clueIndex: gameWon ? Math.min(6, Math.max(unlockedTiles.length, 1)) : 0,
-        won: gameWon,
-        clientKey,
-      }),
-    })
-      .then(() => setStatsRefresh((value) => value + 1))
-      .catch(() => setStatsRefresh((value) => value + 1));
-  }, [gameWon, gameOver, challenge, unlockedTiles.length]);
-
-  useEffect(() => {
-    if (!duelHandle || !isSupabaseConfigured) return;
-    let cancelled = false;
-    void Promise.resolve(
-      supabaseClient
-        .from('profiles')
-        .select('equipped_title')
-        .ilike('username', duelHandle)
-        .maybeSingle(),
-    ).then(({ data, error }) => {
-      if (!cancelled && !error) setOpponentTitle(cosmeticName(data?.equipped_title));
-    }).catch(() => {
-      if (!cancelled) setOpponentTitle('');
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [duelHandle]);
 
   useEffect(() => {
     const fetchChallenge = async () => {
-      if (!specificMatch) setLoading(true);
+      setLoading(true);
       setSolution(null);
-      setUnlockedTiles([FREE_TILE_ID]);
-      setActiveTile(FREE_TILE_ID);
-      setArchiveImage(null);
-      setArchivePhotoMissing(false);
-      setScore(STARTING_SCORE);
-      challengeIdRef.current = '';
+      setCurrentClueIdx(0);
+      setScore(10000);
       setSelectedWrong([]);
       setGameWon(false);
+      setIsSolved(false);
+      setEarnedScore(null);
       setGameOver(false);
-      setCoinsEarned(0);
       try {
-        const query = new URLSearchParams();
-        if (specificMatch) query.set('match', specificMatch);
-        else if (archiveId) query.set('id', archiveId);
-        else if (activeArchiveDate) query.set('date', activeArchiveDate);
-        const suffix = query.toString() ? `?${query.toString()}` : '';
-        const response = await fetch(`/api/daily${suffix}`, { cache: 'no-store' });
+        const params = new URLSearchParams(window.location.search);
+        const today = utcDateKey();
+        const urlDate = params.get('date');
+        const urlMatch = params.get('match')?.trim() || '';
+        const activeDate = pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
+        const match = pinnedDrop || activeDate ? '' : urlMatch;
+        const query = match
+          ? `?match=${encodeURIComponent(match)}`
+          : activeDate && activeDate !== today
+            ? `?date=${encodeURIComponent(activeDate)}`
+            : '';
+        const response = await fetch(`/api/daily${query}`);
+        if (response.status === 401) {
+          setAuthGateOpen(true);
+          throw new Error('Daily drop unavailable');
+        }
         if (!response.ok) {
           throw new Error('Daily drop unavailable');
         }
-        const payload = (await response.json()) as DailyResponse;
-        const fixture = cleanFixture(payload.challenge ?? payload);
+        const fixture = (await response.json()) as DailyFixture;
         whistled.current = false;
-        challengeIdRef.current = fixture.id;
-        setChoiceOptions(setupOptions(fixture.options ?? []));
+        setActiveMatch(match || null);
+        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
+        const dropDate = fixture.date_key || 'today';
+        const localKey = 'shc_solved_' + dropDate;
+        const isLocallySolved = localStorage.getItem(localKey);
+        const localScore = readLocalDropSolve(localStorage, dropDate);
+        const solvedRecord = isSupabaseConfigured ? await findFixtureSolve(fixture.id) : null;
+        if (isLocallySolved || solvedRecord) {
+          const awarded = localScore ?? solvedRecord?.score_awarded ?? 0;
+          setIsSolved(true);
+          setGameWon(true);
+          setEarnedScore(awarded);
+          setScore(awarded);
+        }
         setChallenge(fixture);
       } catch {
         showToast('Could not load this drop.');
@@ -403,7 +210,7 @@ export function DailyDropArena({
     };
 
     fetchChallenge();
-  }, [activeArchiveDate, archiveId, specificMatch]);
+  }, [pinnedDrop]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -420,74 +227,32 @@ export function DailyDropArena({
     }
   };
 
-  const selectTile = (index: number) => {
-    if (!challenge) return;
-    const tile = buildTacticalBoard(challenge.clues)[index];
-    if (!tile) return;
-    if (unlockedTiles.includes(tile.id)) {
-      setActiveTile(tile.id);
-      return;
+  const handleRevealClue = () => {
+    if (!challenge || isSolved || gameWon || gameOver) return;
+    if (currentClueIdx < challenge.clues.length - 1) {
+      playCluePenalty();
+      triggerHaptic(20);
+      setCurrentClueIdx(prev => prev + 1);
+      setScore(prev => Math.max(1000, prev - 1500));
     }
-    if (gameWon || gameOver) return;
-    playUnlockClick();
-    triggerHaptic(12);
-    setUnlockedTiles((prev) => (prev.includes(tile.id) ? prev : [...prev, tile.id]));
-    setActiveTile(tile.id);
-    setScore((prev) => applyTileCost(prev, tile.cost));
-    if (!tile.image || archiveImage || challenge.imageUrl || archivePhotoMissing) return;
-    const requestedId = challenge.id;
-    void fetch(`/api/daily/photo?id=${encodeURIComponent(requestedId)}`)
-      .then(async (response) => (response.ok ? response.json() : null))
-      .then((payload: { imageUrl?: string | null } | null) => {
-        if (challengeIdRef.current !== requestedId) return;
-        const url = safeImageUrl(payload?.imageUrl);
-        if (url) setArchiveImage(url);
-        else setArchivePhotoMissing(true);
-      })
-      .catch(() => {
-        if (challengeIdRef.current === requestedId) setArchivePhotoMissing(true);
-      });
   };
 
-  const logFinishedDuel = (playerScore: number) => {
-    if (!duelHandle || !challenge) return;
-    const marker = `${challenge.id}:${duelHandle}:${playerScore}`;
-    if (duelLogged.current === marker) return;
-    duelLogged.current = marker;
-    const own = duelHandleName(playerName);
-    const challengerUsername = duelHandle.replace(/^@/, '').trim();
-    const body = {
-      challengeId: challenge.id,
-      challengerUsername,
-      challengerScore: duelPts,
-      opponentUsername: own,
-      opponentScore: playerScore,
-    };
-    void fetch('/api/duels', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const payload = (await response.json()) as { duelId?: string };
-        if (!payload.duelId) return;
-        rememberDuel({
-          id: payload.duelId,
-          created_at: new Date().toISOString(),
-          challenge_id: challenge.id,
-          challenger_username: challengerUsername,
-          challenger_score: duelPts,
-          opponent_username: own,
-          opponent_score: playerScore,
-          winner_username: decideWinner(challengerUsername, duelPts, own, playerScore),
-        });
-      })
-      .catch(() => undefined);
+  const openDate = (dateKey: string) => {
+    if (!isGuestOpenDrop(dateKey) && (!authReady || !currentUser)) {
+      setAuthGateOpen(true);
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete('match');
+    if (dateKey === utcDateKey()) params.delete('date');
+    else params.set('date', dateKey);
+    const query = params.toString();
+    window.history.replaceState(null, '', query ? `/?${query}` : '/');
+    setPinnedDrop(dateKey);
   };
 
   const handleGuess = async (option: string) => {
-    if (!challenge || gameWon || gameOver || guessing) return;
+    if (!challenge || isSolved || gameWon || gameOver || guessing) return;
     setGuessing(true);
     try {
       const response = await fetch('/api/verify', {
@@ -497,6 +262,7 @@ export function DailyDropArena({
           id: challenge.id,
           date_key: challenge.date_key,
           option,
+          match: activeMatch,
         }),
       });
       if (!response.ok) throw new Error('Verify failed');
@@ -508,40 +274,43 @@ export function DailyDropArena({
         }
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
+        const dropDate = challenge.date_key || 'today';
+        const currentScore = score;
+        lockDropLocally(dropDate, currentScore, localStorage);
         setGameWon(true);
-        rememberSolvedCase(challenge.id, score);
-        const today = utcDateKey(new Date());
-        const solvedKey = isDateKey(challenge.date_key) ? challenge.date_key : today;
-        if (!specificMatch) {
-          void rememberDailyCompletion(
-            { dropDate: solvedKey, solved: true, score, challengeId: challenge.id },
-            currentUser?.id ?? null,
-          );
-        }
-        const history = specificMatch ? loadSolvedHistory() : recordSolvedDate(solvedKey);
-        const newStreak = specificMatch ? streak + 1 : activeStreak(history, today);
-        streakLock.current = true;
-        if (!specificMatch) setSolvedDates(history);
+        setIsSolved(true);
+        setEarnedScore(currentScore);
+        rememberSolvedCase(challenge.id, currentScore);
+        const newStreak = streak + 1;
         setStreak(newStreak);
         localStorage.setItem('shc_streak', newStreak.toString());
 
-        if (currentUser?.id && isSupabaseConfigured) {
-          supabaseClient
-            .from('profiles')
-            .update({ streak: newStreak })
-            .eq('id', currentUser.id)
-            .then();
+        if (isSupabaseConfigured) {
+          try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user?.id) {
+              await persistFixtureScore({ id: challenge.id, date: dropDate }, currentScore);
+              const { data: prof } = await supabaseClient
+                .from('profiles')
+                .select('username')
+                .eq('id', user.id)
+                .maybeSingle();
+              const challengeId = /^\d{4}-\d{2}-\d{2}$/.test(dropDate)
+                ? dropDate
+                : new Date().toISOString().split('T')[0];
+              if (prof?.username) {
+                await completePendingDuel(prof.username, challengeId, currentScore);
+              }
+              const { error: streakError } = await supabaseClient
+                .from('profiles')
+                .update({ streak: newStreak })
+                .eq('id', user.id);
+              if (streakError) console.error('Score save error:', streakError);
+            }
+          } catch (error) {
+            console.error('Score save error:', error);
+          }
         }
-        const reward = await awardSolve({
-          matchId: challenge.id,
-          pointScore: score,
-          isDaily: !specificMatch,
-          streakContinued: newStreak >= 2,
-          duelWon: Boolean(duelHandle) && score > duelPts,
-          newStreak,
-        });
-        setCoinsEarned(reward.earned);
-        logFinishedDuel(score);
         return;
       }
 
@@ -554,14 +323,6 @@ export function DailyDropArena({
       const closed = newScore <= 0 || nextWrong.length >= 3;
       if (closed) {
         setGameOver(true);
-        if (!specificMatch) {
-          const today = utcDateKey(new Date());
-          const dropDate = isDateKey(challenge.date_key) ? challenge.date_key : today;
-          void rememberDailyCompletion(
-            { dropDate, solved: false, score: newScore, challengeId: challenge.id },
-            currentUser?.id ?? null,
-          );
-        }
         const reveal = await fetch('/api/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -569,6 +330,7 @@ export function DailyDropArena({
             id: challenge.id,
             date_key: challenge.date_key,
             option,
+            match: activeMatch,
             reveal: true,
           }),
         });
@@ -578,7 +340,6 @@ export function DailyDropArena({
             setSolution({ subject: closedCase.subject, year: closedCase.year });
           }
         }
-        logFinishedDuel(0);
       }
     } catch {
       showToast('Could not check that guess.');
@@ -599,15 +360,6 @@ export function DailyDropArena({
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       await navigator.clipboard.writeText(text.includes(url) ? text : `${text}\n${url}`);
       showToast('📋 Result copied to clipboard!');
-    }
-  };
-
-  const handleChallengeScout = async () => {
-    const handle = playerName.replace(/^@/, '') || 'Scout';
-    const link = `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${score}`;
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(link);
-      showToast('⚔️ Duel link copied to clipboard!');
     }
   };
 
@@ -633,35 +385,22 @@ export function DailyDropArena({
     await sharePayload('SportsHistoryClue Duel', text, url);
   };
 
-  const campaign = storylineById(campaignId);
-  const playingArchive = Boolean(specificMatch);
-
   if (loading || !challenge) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex flex-col font-mono text-xs uppercase text-zinc-400">
-        <MatchModeBanner
-          campaignTitle={campaign?.title}
-          category=""
-          specificMatch={specificMatch}
-          campaignId={campaignId}
-          archiveDate={activeArchiveDate ?? ''}
-          training={training}
-        />
-        <div className="flex flex-1 items-center justify-center">
-          {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
-        </div>
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
+        {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
       </main>
     );
   }
 
   const isDuelActive = Boolean(duelHandle);
   const userFinalScore = gameWon ? score : 0;
-  const pledgedClub = findPremierLeagueClub(favoriteClubId);
   const isVictory = isDuelActive && userFinalScore > duelPts;
   const isDefeat = isDuelActive && userFinalScore < duelPts;
   const isTie = isDuelActive && userFinalScore === duelPts;
+  const pointDiff = Math.abs(userFinalScore - duelPts);
   const slotCount = 5;
-  const revealedCount = Math.min(unlockedTiles.length, slotCount);
+  const revealedCount = Math.min(currentClueIdx + 1, slotCount);
   const gridCells: string[] = Array.from({ length: slotCount }, (_, index) => {
     if (index < revealedCount) return '🟩';
     return '⬜';
@@ -670,17 +409,14 @@ export function DailyDropArena({
     gridCells[Math.min(revealedCount, slotCount - 1)] = '🟥';
   }
   const gridLine = gridCells.join(' ');
-  const matchLabel = String(dayIndexFromKey(challenge.date_key));
-  const viewingArchiveDate = activeArchiveDate !== null;
-  const nextMatch = nextStorylineMatch(campaignId, challenge.id);
-  const sportLabel = challenge.sportName || challenge.category;
-  const sportHref = challenge.sportId ? `/disciplines?sport=${encodeURIComponent(challenge.sportId)}` : '/disciplines';
+  const todayKey = utcDateKey();
+  const yesterdayKey = shiftUtcDateKey(todayKey, -1);
   const playerHandle = playerName.replace(/^@/, '') || 'Scout';
   const resultUrl = `https://sportshistoryclue.com/?duel=${encodeURIComponent(playerHandle)}&pts=${userFinalScore}`;
   const resultText = [
     'SportsHistoryClue 🏆',
     gridLine,
-    `🎯 Solved with ${revealedCount} of 5 tactical clues (${formatPoints(userFinalScore)} PTS)`,
+    `🎯 Solved on Clue ${revealedCount} of 5 (${userFinalScore.toLocaleString()} PTS)`,
     `🔥 ${streak}-Day Streak`,
     '',
     "Can you crack today's case?",
@@ -695,19 +431,11 @@ export function DailyDropArena({
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
       <div>
         <Navbar />
-        <MatchModeBanner
-          campaignTitle={campaign?.title}
-          category={challenge.category}
-          specificMatch={specificMatch}
-          campaignId={campaignId}
-          archiveDate={activeArchiveDate ?? ''}
-          training={training}
-        />
 
         {/* Duel Banner */}
         {isDuelActive && !gameWon && !gameOver && (
           <div className="bg-blue-600 text-white px-4 py-2.5 text-center text-xs font-bold tracking-wide">
-            ⚔️ Duel Active: VS @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''} — beat {duelPts.toLocaleString()} PTS!
+            ⚔️ Duel Active: Beat @{duelHandle}&apos;s score of {duelPts.toLocaleString()} PTS!
           </div>
         )}
 
@@ -718,114 +446,81 @@ export function DailyDropArena({
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto px-4 py-4 sm:px-6 sm:py-8" onPointerDown={openWithWhistle}>
+        <div className="max-w-3xl mx-auto px-6 py-8" onPointerDown={openWithWhistle}>
           {/* Header Info */}
-          <div className="mb-3 flex items-center justify-between border-b border-zinc-200 pb-3 sm:mb-6 sm:pb-4">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-6">
             <div>
-              {(isDateKey(archiveDate) || archiveId) && (
-                <div className="mb-2">
-                  <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black uppercase px-2.5 py-1 rounded-md tracking-wider">
-                    📅 ARCHIVE FIXTURE
-                  </span>
-                </div>
-              )}
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
                 {challenge.category}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
-                {playingArchive ? (campaign ? 'Campaign Match' : 'Archive Match') : 'Daily Drop'}
+                Daily Drop
               </h1>
-              {!playingArchive && (
-                <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                  DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
-                </p>
-              )}
+              <div className="mt-3">
+                <DateSwitcher
+                  todayKey={todayKey}
+                  activeKey={challenge.date_key}
+                  onYesterday={() => openDate(yesterdayKey)}
+                  onToday={() => openDate(todayKey)}
+                  onForward={() => openDate(todayKey)}
+                />
+              </div>
+              <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+                DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
+              </p>
             </div>
             <div className="text-right">
               <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Potential Score</span>
-              <span className="text-xl font-black text-blue-600 font-mono sm:text-2xl">
-                {formatPoints(score)} <span className="text-xs text-zinc-400 font-sans">PTS</span>
+              <span className="text-2xl font-black text-blue-600 font-mono">
+                {score.toLocaleString()} <span className="text-xs text-zinc-400 font-sans">PTS</span>
               </span>
             </div>
           </div>
 
-          {!playingArchive && (
-            <div className="mb-3 flex items-center justify-center gap-4 sm:mb-6">
-              {viewingArchiveDate ? (
-                <>
-                  <Link href="/" className="text-blue-600 font-bold text-xs hover:underline">
-                    ← Back to Today
-                  </Link>
-                  <Link
-                    href="/archive"
-                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
-                  >
-                    <span>📅 Full Calendar</span>
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  href="/archive"
-                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
-                >
-                  BROWSE ARCHIVE →
-                </Link>
-              )}
-            </div>
-          )}
-
-          <section className="mb-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
-                Tactical Board
+          <div className="mb-6">
+            <div className="mb-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={handleToggleSound}
+                aria-pressed={soundMuted}
+                aria-label={soundMuted ? 'Unmute match sounds' : 'Mute match sounds'}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-sm hover:border-blue-600"
+              >
+                {soundMuted ? '🔇' : '🔊'}
+              </button>
+              <span className="text-xs font-mono font-bold text-amber-600">
+                🔥 {streak} Streak
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={handleToggleSound}
-                  aria-pressed={soundMuted}
-                  aria-label={soundMuted ? 'Unmute match sounds' : 'Mute match sounds'}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-sm hover:border-blue-600"
-                >
-                  {soundMuted ? '🔇' : '🔊'}
-                </button>
-                <span className="text-xs font-mono font-bold text-amber-600">
-                  🔥 {streak} Streak
-                </span>
-              </div>
             </div>
-            <TacticalClueBoard
-              tiles={buildTacticalBoard(challenge.clues)}
-              unlocked={unlockedTiles}
-              activeId={activeTile}
-              imageUrl={safeImageUrl(archiveImage || challenge.imageUrl)}
-              imageMissing={archivePhotoMissing}
-              locked={gameWon || gameOver}
-              onSelect={selectTile}
+            <ClueStack
+              clues={challenge.clues}
+              revealedIndex={currentClueIdx}
+              locked={isSolved || gameWon || gameOver}
+              onReveal={handleRevealClue}
             />
-          </section>
+          </div>
 
-          {!gameWon && !gameOver && (
-            <div className="sticky bottom-1 z-20 rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-md backdrop-blur sm:static sm:bottom-auto sm:z-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
-              <p className="mb-2 text-[10px] font-mono font-bold uppercase text-zinc-400 sm:mb-3 sm:text-xs">
-                Identify the Historical Matchup
-              </p>
-              <div className="grid grid-cols-2 gap-2.5 touch-manipulation sm:gap-3">
-                {choiceOptions.map((option, idx) => {
+          {/* Options / Deduction Grid */}
+          {!isSolved && !gameWon && !gameOver && (
+            <div>
+              <GuessQuestionHeader />
+              <div className="grid grid-cols-2 gap-3">
+                {choiceOptions.map((option) => {
                   const isWrong = selectedWrong.includes(option);
+                  const label = formatOptionText(option) || option;
                   return (
                     <button
-                      key={idx}
+                      key={option}
                       disabled={isWrong || guessing}
                       onClick={() => handleGuess(option)}
-                      className={cn(
-                        'min-h-[48px] touch-manipulation border-[2px] border-zinc-900 bg-white hover:bg-blue-50 hover:border-blue-600 hover:text-blue-900 text-zinc-900 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-[2px_2px_0px_0px_rgba(24,24,27,1)] hover:shadow-[3px_3px_0px_0px_rgba(37,99,235,1)] transition-all text-left',
-                        isWrong &&
-                          'cursor-not-allowed border-rose-300 bg-rose-50 text-rose-400 line-through shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-400 hover:shadow-none',
-                      )}
+                      className={`p-4 rounded-2xl text-left text-xs font-bold transition-all border ${
+                        isWrong
+                          ? 'bg-rose-50 border-rose-200 text-rose-400 line-through cursor-not-allowed'
+                          : 'bg-white border-zinc-200 hover:border-blue-600 hover:shadow-md text-zinc-800'
+                      }`}
                     >
-                      {option}
+                      {label}
                     </button>
                   );
                 })}
@@ -833,203 +528,64 @@ export function DailyDropArena({
             </div>
           )}
 
-          {/* Showdown / Victory Result */}
-          {(gameWon || gameOver) && (
-            <>
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
-              
-              {/* Head-to-Head Duel Card */}
+          {(isSolved || gameWon || gameOver) && (
+            <div className="space-y-4">
               {isDuelActive && (
-                <div className="mb-8 p-6 bg-zinc-50 border border-zinc-200 rounded-2xl text-center">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
+                  <span className="mb-2 block text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
                     Head-to-Head Showdown
                   </span>
-                  <p className="mb-4 text-sm font-black text-zinc-900">
-                    VS @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''}
-                  </p>
-                  
                   {isVictory && (
-                    <div className="inline-block bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-xs font-black mb-4">
-                      {duelPrompt(duelHandle ?? "", userFinalScore, duelPts)}
+                    <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-black uppercase text-emerald-800">
+                      🏆 Victory — Outperformed @{duelHandle} by {pointDiff.toLocaleString()} PTS!
                     </div>
                   )}
                   {isDefeat && (
-                    <div className="inline-block bg-rose-100 text-rose-800 px-4 py-1.5 rounded-full text-xs font-black mb-4">
-                      {duelPrompt(duelHandle ?? "", userFinalScore, duelPts)}
+                    <div className="mb-4 inline-block rounded-full bg-rose-100 px-4 py-1.5 text-xs font-black uppercase text-rose-800">
+                      💀 Defeat — @{duelHandle} edged you out by {pointDiff.toLocaleString()} PTS!
                     </div>
                   )}
                   {isTie && (
-                    <div className="inline-block bg-zinc-100 text-zinc-700 px-4 py-1.5 rounded-full text-xs font-black mb-4">
-                      {duelPrompt(duelHandle ?? "", userFinalScore, duelPts)}
+                    <div className="mb-4 inline-block rounded-full bg-amber-100 px-4 py-1.5 text-xs font-black uppercase text-amber-800">
+                      🤝 Stalemate — Perfect score tie!
                     </div>
                   )}
-
-                  <div className="grid grid-cols-3 items-center max-w-sm mx-auto">
-                    <div>
-                      <p className="text-xs font-bold text-zinc-700 truncate">@{duelHandle}</p>
-                      <p className="text-xl font-black font-mono text-zinc-900">{duelPts.toLocaleString()}</p>
-                    </div>
-                    <div className="text-zinc-300 font-black text-sm">VS</div>
-                    <div>
-                      <p className="text-xs font-bold text-blue-600 truncate">
-                        You (@{playerName}){cosmeticName(wallet.equippedTitle) ? ` ["${cosmeticName(wallet.equippedTitle)}"]` : ''}
-                      </p>
-                      <p className="text-xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()}</p>
-                    </div>
-                  </div>
-
                   <button
                     onClick={handleShareShowdown}
-                    className="mt-5 w-full py-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                    className="w-full rounded-xl bg-zinc-900 py-3 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
                   >
                     Share Showdown Result
                   </button>
                 </div>
               )}
 
-              {/* Standard Outcome */}
-              <h2 className="text-2xl font-black uppercase tracking-tight mb-1 text-zinc-900">
-                {gameWon ? 'Fixture Solved!' : 'Game Over'}
-              </h2>
-              <p className="text-xs text-zinc-500 mb-4">
-                {solution ? `${solution.subject} (${solution.year})` : 'Answer sealed until the case closes.'}
-              </p>
-
-              <div className="mx-auto mb-6 max-w-xs rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-center">
-                <p className="text-[11px] font-black uppercase tracking-wide text-zinc-900">
-                  SportsHistoryClue #{matchLabel}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed">
-                  {gridCells.map((cell, index) => (
-                    <span key={index} className="mx-0.5 inline-block">{cell}</span>
-                  ))}
-                  <span className="ml-1 font-mono text-xs font-bold text-zinc-700">
-                    · {userFinalScore.toLocaleString()} PTS
-                  </span>
-                </p>
-                <p className="mt-1 text-xs font-bold text-amber-600">🔥 {streak}-Day Streak</p>
-              </div>
-
-              <div className="inline-block bg-blue-50 border border-blue-200 px-6 py-3 rounded-2xl mb-6">
-                <span className="block text-[10px] font-mono font-bold uppercase text-blue-600">Final Score</span>
-                <span className="text-3xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()} PTS</span>
-              </div>
-
-              {gameWon && pledgedClub && (
-                <div className="mb-6">
-                  <p className="text-sm font-bold text-zinc-800">
-                    {derbyContributionLine(userFinalScore, pledgedClub.name)}
+              {isSolved || gameWon ? (
+                <SolvedFixtureCard
+                  sport={challenge.category}
+                  year={solution?.year ?? null}
+                  score={earnedScore ?? score}
+                  cells={gridCells}
+                  streak={streak}
+                  onShare={handleShareResult}
+                />
+              ) : (
+                <div className="rounded-2xl border-2 border-zinc-950 bg-white p-6 text-center">
+                  <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900">Game Over</h2>
+                  <p className="mt-2 text-sm font-bold text-zinc-700">
+                    {solution ? `${challenge.category} (${solution.year})` : challenge.category}
                   </p>
-                  <Link href="/derby" className="mt-2 inline-block text-xs font-bold text-blue-600 hover:text-blue-700">
-                    View Fan Table →
-                  </Link>
+                  <p className="mt-3 text-lg tracking-widest" aria-label="Score grid">{gridLine}</p>
                 </div>
               )}
-
-              {gameWon && coinsEarned > 0 && (
-                <div className="mb-6 inline-block rounded-full border border-amber-300 bg-amber-50 px-5 py-2 text-sm font-black tracking-wide text-amber-800">
-                  +{coinsEarned} COINS EARNED 🪙
-                </div>
-              )}
-
-              {gameWon && campaign && nextMatch && (
-                <Link
-                  href={arenaHref(nextMatch.key, campaign.id)}
-                  className="mb-4 inline-flex px-6 py-3 bg-zinc-900 hover:bg-black text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
-                >
-                  Next Campaign Match →
-                </Link>
-              )}
-              {gameWon && playingArchive && !campaign && (
-                <Link
-                  href={sportHref}
-                  className="mb-4 inline-flex px-6 py-3 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
-                >
-                  ← Back to {sportLabel} Archive
-                </Link>
-              )}
-
-              <div className="flex flex-col sm:flex-row justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setChallengeOpen(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-2xl text-sm"
-                >
-                  ⚔️ Challenge a Friend
-                </button>
-                <button
-                  onClick={handleShareResult}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
-                >
-                  Share Result
-                </button>
-                <button
-                  onClick={() => {
-                    if (navigator.clipboard) {
-                      void navigator.clipboard.writeText(resultText).then(() => {
-                        showToast('📋 Result copied to clipboard!');
-                      });
-                    }
-                  }}
-                  className="px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
-                >
-                  Copy Score
-                </button>
-                {(playingArchive || !gameWon) && (
-                  <button
-                    onClick={handleChallengeScout}
-                    className="px-6 py-3 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
-                  >
-                    Challenge a Scout
-                  </button>
-                )}
-              </div>
             </div>
-
-            {gameWon && !playingArchive && (
-              <DailyDropWaitHub
-                streak={streak}
-                solvedDates={solvedDates}
-                duelLink={resultUrl}
-                onCopyLink={() => {
-                  if (navigator.clipboard) {
-                    void navigator.clipboard.writeText(resultUrl).then(() => {
-                      showToast('⚔️ Duel link copied to clipboard!');
-                    });
-                  }
-                }}
-                onShareLink={() => {
-                  void sharePayload(
-                    'SportsHistoryClue Duel',
-                    `⚔️ Duel me on SportsHistoryClue. Beat ${userFinalScore.toLocaleString()} PTS.\n${resultUrl}`,
-                    resultUrl,
-                  );
-                }}
-              />
-            )}
-
-            <div className="mt-4 space-y-4">
-              <CommunityClueDistribution
-                challengeId={challenge.id}
-                userSolvedClue={gameWon ? Math.min(6, Math.max(unlockedTiles.length, 1)) : 0}
-                refreshToken={statsRefresh}
-              />
-              <HistoricalMiniRecap challenge={challenge} />
-            </div>
-            </>
           )}
         </div>
       </div>
       <Footer />
-      <ChallengeFriendModal
-        isOpen={challengeOpen}
-        onClose={() => setChallengeOpen(false)}
-        matchSlug={findCase(challenge.id)?.slug ?? challenge.id}
-        matchTitle={findCase(challenge.id)?.title ?? (playingArchive ? sportLabel : "Today's Daily Drop")}
-        userScore={userFinalScore > 0 ? userFinalScore : null}
-        category={challenge.category}
-        username={playerName}
-        campaignId={campaign?.id}
+      <AuthGateModal
+        isOpen={authGateOpen}
+        onClose={() => setAuthGateOpen(false)}
+        featureName="Past Drops"
       />
     </main>
   );

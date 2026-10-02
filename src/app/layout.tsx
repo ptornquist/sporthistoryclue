@@ -60,8 +60,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white">
+    <html lang="en" className="overflow-x-hidden w-full max-w-full">
+      <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white overflow-x-hidden w-full max-w-full">
         {children}
         <InstallAppBanner />
       </body>

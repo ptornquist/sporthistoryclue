@@ -1,5 +1,1 @@
-import { redirect } from 'next/navigation';
-
-export default function StorylinesPage() {
-  redirect('/campaigns');
-}
+export { default } from "../campaigns/page";

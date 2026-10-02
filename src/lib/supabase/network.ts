@@ -3,9 +3,11 @@ import { supabaseClient } from '@/lib/supabase/client';
 export interface ScoutProfile {
   id: string;
   username: string | null;
-  avatar_url: string | null;
-  streak: number | null;
-  total_score: number | null;
+  avatar_url?: string | null;
+  streak?: number | null;
+  total_score?: number | null;
+  career_score?: number | null;
+  fixtures_cleared?: number | null;
 }
 
 export async function followScout(currentUserId: string, targetUserId: string) {
@@ -34,21 +36,47 @@ export async function getFollowingIds(currentUserId: string): Promise<string[]> 
   return (data ?? []).map((row) => row.connected_user_id as string);
 }
 
-export async function searchScouts(query: string, currentUserId?: string): Promise<ScoutProfile[]> {
-  const needle = query.trim().replace(/^@/, '');
-  if (!needle) return [];
+interface ScoutSearchClient {
+  from: (table: "profiles") => {
+    select: (columns: "id, username, career_score, fixtures_cleared") => {
+      ilike: (
+        column: "username",
+        pattern: string,
+      ) => {
+        neq: (column: "id", value: string) => ScoutSearchLimit;
+        limit: (count: number) => PromiseLike<{ data: ScoutProfile[] | null; error: { message?: string } | null }>;
+      };
+    };
+  };
+}
 
-  let request = supabaseClient
-    .from('profiles')
-    .select('id, username, avatar_url, streak, total_score')
-    .ilike('username', `%${needle}%`)
-    .limit(10);
+interface ScoutSearchLimit {
+  limit: (count: number) => PromiseLike<{ data: ScoutProfile[] | null; error: { message?: string } | null }>;
+}
 
-  if (currentUserId) {
-    request = request.neq('id', currentUserId);
-  }
+function searchClient(): ScoutSearchClient {
+  return supabaseClient as unknown as ScoutSearchClient;
+}
 
-  const { data, error } = await request;
+export function cleanScoutQuery(query: string): string {
+  return query.trim().replace(/^@/, "");
+}
+
+export async function searchScouts(
+  query: string,
+  currentUserId?: string,
+  supabase: ScoutSearchClient = searchClient(),
+): Promise<ScoutProfile[]> {
+  const cleanTerm = cleanScoutQuery(query);
+  if (!cleanTerm) return [];
+
+  const matched = supabase
+    .from("profiles")
+    .select("id, username, career_score, fixtures_cleared")
+    .ilike("username", `%${cleanTerm}%`);
+
+  const limited = currentUserId ? matched.neq("id", currentUserId) : matched;
+  const { data, error } = await limited.limit(10);
   if (error) throw error;
-  return (data ?? []) as ScoutProfile[];
+  return data ?? [];
 }

@@ -1,54 +1,30 @@
 import "server-only";
 
+import { findCase } from "@/lib/case-files";
+import { allMatchupLabels, solvedMatchup } from "@/lib/case-solutions";
 import { puzzles } from "@/lib/catalog";
+import { distinctOptionValues } from "@/lib/option-text";
+import { resolveTacticalClueList } from "@/lib/tactical-clues";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   createPublicSupabaseClient,
   createServerSupabaseClient,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
-import { findCase, SPORT_NAME } from "@/lib/case-files";
-import { arrangeClueLadder } from "@/lib/clue-ladder";
-import { isRejectedClue, sanitizeClues } from "@/lib/clue-sanitation";
-import {
-  canonicalSport,
-  isUnrelatedEra,
-  optionMatchesChallenge,
-  selectChallengeOptions,
-  sportSearchTokens,
-  type DecoyChallenge,
-  type DecoyPeer,
-} from "@/lib/decoy-options";
-import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
-import { fetchDailyChallengeRow, readStoredChallenge, resolveGuessOptions } from "@/lib/daily-challenge-query";
-import { fetchArchiveFixtures, type ArchiveFixture } from "@/lib/archive-vault";
+import { SPORT_LABEL, type Clue, type Sport } from "@/lib/types";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
   id: string;
   date_key: string;
   category: string;
-  title?: string;
   clues: string[];
   options: string[];
-  optionsLocked?: boolean;
-  sportId?: string;
-  sportName?: string;
-}
-
-export interface ArchivePayload {
-  challenge: PublicDaily;
-  isArchive: true;
-  mode: "archive";
-  optionSource: DecoyChallenge;
 }
 
 interface SecretDaily extends PublicDaily {
   subject: string;
   year: number;
-  decoys?: string[];
-  optionSource?: DecoyChallenge;
-  correctOption?: string;
 }
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -63,180 +39,12 @@ export function parseDateKey(value: string | null, now = new Date()): string | n
 }
 
 export function toPublicDaily(fixture: SecretDaily): PublicDaily {
-  const locked = fixture.optionsLocked === true && fixture.options.length > 0;
-  const file = locked ? undefined : findCase(fixture.id);
-  const category = locked ? fixture.title || fixture.category : fixture.category;
   return {
     id: fixture.id,
     date_key: fixture.date_key,
-    category,
-    title: fixture.title,
-    clues: locked
-      ? authoredClues(fixture.clues)
-      : arrangeClueLadder(
-          sanitizeClues(fixture.clues, {
-            title: file?.title || fixture.category,
-            year: file?.year || fixture.year,
-          }),
-          { category: file?.context || fixture.category },
-        ),
+    category: fixture.category,
+    clues: fixture.clues,
     options: fixture.options,
-    optionsLocked: locked,
-  };
-}
-
-function authoredClues(clues: readonly string[]): string[] {
-  return clues.map((clue) => clue.trim()).filter((clue) => !isRejectedClue(clue)).slice(0, 6);
-}
-
-const MATCH_KEY = /^[a-z0-9-]{1,80}$/i;
-
-const ARCHIVE_EXTRAS: Record<string, SecretDaily> = {
-  "summit-series-1972": {
-    id: "summit-series-1972",
-    date_key: "1972-09-28",
-    category: "Summit Series Decider",
-    clues: [
-      "A series billed as an exhibition has come down to a single night.",
-      "The rink is in a capital city. Eight games were scheduled. This is the last one.",
-      "One side crossed an ocean. The other wears red and has not lost this building.",
-      "The clock is inside the final minute. A goal now wins the series, not just the night.",
-      "The scorer is a left winger who had already rescued an earlier game in this city.",
-      "September 1972. The series that opened a door between two hockey worlds. Game 8.",
-    ],
-    options: ["Canada vs Soviet Union (1972)"],
-    subject: "Canada vs Soviet Union (1972)",
-    year: 1972,
-  },
-  "wimbledon-epic-1980": {
-    id: "wimbledon-epic-1980",
-    date_key: "1980-07-05",
-    category: "Wimbledon Gentlemen's Final",
-    clues: [
-      "Grass, late afternoon, and a tiebreak that refuses to end.",
-      "One player is ice. The other is fire. The crowd is standing for a single set.",
-      "The third-set board keeps climbing past what a tiebreak is supposed to be.",
-      "Eighteen points to sixteen. The championship hangs on one service game after another.",
-      "The champion is chasing a fifth straight title on this lawn.",
-      "Centre Court, 1980. The gentlemen's final that rewrote the tiebreak.",
-    ],
-    options: ["Björn Borg vs John McEnroe (1980)"],
-    subject: "Björn Borg vs John McEnroe (1980)",
-    year: 1980,
-  },
-};
-
-export function isMatchKey(value: string): boolean {
-  return MATCH_KEY.test(value);
-}
-
-export async function loadChallengeImage(id: string): Promise<string | null> {
-  if (!isMatchKey(id)) return null;
-  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
-  if (!client) return null;
-  for (const table of ["challenges", "puzzles"] as const) {
-    try {
-      const { data, error } = await client
-        .from(table)
-        .select("image_url")
-        .or(`slug.eq.${id},id.eq.${id}`)
-        .limit(1)
-        .maybeSingle();
-      if (error || !data) continue;
-      const url = stringField(data, "image_url");
-      if (url.startsWith("https://")) return url;
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
-
-export async function loadArchiveMatch(matchParam: string): Promise<SecretDaily | null> {
-  if (!isMatchKey(matchParam)) return null;
-  const fromDb = await loadMatchRow(matchParam);
-  const base = fromDb ?? fromCatalogMatch(matchParam) ?? ARCHIVE_EXTRAS[matchParam] ?? null;
-  if (!base) return null;
-
-  const file = findCase(matchParam);
-  const shaped: SecretDaily = {
-    ...base,
-    id: matchParam,
-    category: file?.context || base.category,
-  };
-  if (shaped.optionsLocked && shaped.options.length > 0) {
-    return { ...shaped, options: resolveGuessOptions(shaped.options, [], true) };
-  }
-  const optionSource = await buildDecoySource(shaped);
-  return {
-    ...shaped,
-    optionSource,
-    options: resolveGuessOptions(shaped.options, selectChallengeOptions(optionSource), false),
-  };
-}
-
-export async function loadPublicArchive(matchParam: string): Promise<ArchivePayload | null> {
-  const fixture = await loadArchiveMatch(matchParam);
-  if (!fixture) return null;
-  const file = findCase(matchParam);
-  return {
-    challenge: {
-      ...toPublicDaily(fixture),
-      sportId: file?.sport ?? "",
-      sportName: file ? SPORT_NAME[file.sport] : fixture.category,
-    },
-    optionSource: fixture.optionSource ?? {
-      subject: fixture.subject,
-      year: fixture.year,
-      category: fixture.category,
-      sport: file?.sport,
-      decoys: fixture.decoys,
-    },
-    isArchive: true,
-    mode: "archive",
-  };
-}
-
-async function loadMatchRow(matchParam: string): Promise<SecretDaily | null> {
-  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
-  if (!client) return null;
-  for (const table of ["challenges", "puzzles"] as const) {
-    try {
-      const { data, error } = await client
-        .from(table)
-        .select("*")
-        .or(`slug.eq.${matchParam},id.eq.${matchParam}`)
-        .limit(1)
-        .maybeSingle();
-      if (error || !data) continue;
-      const normalized = normalizeRow(data, stringField(data, "date_key") || `${numberField(data, "year") || 1970}-01-01`);
-      if (normalized) return normalized;
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
-
-function fromCatalogMatch(matchParam: string): SecretDaily | null {
-  const file = findCase(matchParam);
-  const ids = new Set([matchParam, ...(file?.ids ?? [])]);
-  const puzzle = puzzles.find((item) => ids.has(item.id));
-  if (!puzzle) return null;
-  return secretFromPuzzle(puzzle, matchParam, file?.context);
-}
-
-function secretFromPuzzle(puzzle: Puzzle, id: string, context?: string): SecretDaily | null {
-  const clues = puzzle.clues.slice(0, 6).map(clueLine);
-  if (clues.length === 0) return null;
-  return {
-    id,
-    date_key: `${puzzle.year}-01-01`,
-    category: context || SPORT_LABEL[puzzle.sport] || "Sports History",
-    clues,
-    options: [puzzle.title],
-    subject: puzzle.title,
-    year: puzzle.year,
   };
 }
 
@@ -251,78 +59,143 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
   }
 }
 
-export async function loadArchiveIndex(now = new Date()): Promise<ArchiveFixture[]> {
-  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
-  if (!client) return [];
-  try {
-    return await fetchArchiveFixtures(
-      client as unknown as Parameters<typeof fetchArchiveFixtures>[0],
-      utcTodayKey(now),
-    );
-  } catch (error) {
-    console.error("Supabase query error:", error);
-    return [];
-  }
-}
+const OLYMPIC_DECOYS = [
+  "1896 Athens: First Modern Olympiad (1896)",
+  "1936 Berlin Olympics (1936)",
+  "1968 Mexico City: Black Power Salute (1968)",
+  "1988 Seoul Olympics (1988)",
+];
 
-export async function loadPublicChallengeById(id: string): Promise<PublicDaily | null> {
-  const fixture = await loadArchiveMatch(id);
-  if (!fixture) return null;
-  return withSport(fixture);
-}
+const GENERAL_DECOYS = [
+  "1980 Lake Placid: USA vs Soviet Union",
+  "1992 Barcelona: USA Dream Team vs Croatia",
+  "1994 Lillehammer: Sweden vs Canada",
+  "1974 Munich: West Germany vs Netherlands",
+];
 
-export async function loadDatedPublicDrop(dateKey: string, now = new Date()): Promise<PublicDaily | null> {
-  if (!DATE_KEY.test(dateKey) || dateKey > utcTodayKey(now)) return null;
-  return withSport(await loadDailyFixture(dateKey));
-}
-
-function withSport(fixture: SecretDaily): PublicDaily {
-  const file = findCase(fixture.id);
-  return {
-    ...toPublicDaily(fixture),
-    sportId: file?.sport,
-    sportName: file ? SPORT_NAME[file.sport] : fixture.category,
-  };
-}
-
-export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily> {
-  const today = now.toISOString().split("T")[0];
-  return withSport(await loadDailyFixture(today));
+export function fourDistinctOptions(rawOptions: string[], correct: string, decoys: string[]): string[] {
+  return shuffle(distinctOptionValues([correct, ...rawOptions, ...decoys], 4));
 }
 
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
   const fromChallenges = await loadFromTable("challenges", dateKey);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
-  if (fixture.optionsLocked && fixture.options.length > 0) {
-    return { ...fixture, options: resolveGuessOptions(fixture.options, [], true) };
+  return withDistinctOptions(fixture);
+}
+
+const CASE_SPORT_LABEL: Record<string, string> = {
+  ice_hockey: "Ice Hockey",
+  football: "Football",
+  boxing: "Boxing",
+  tennis: "Tennis",
+  athletics: "Athletics",
+  gymnastics: "Gymnastics",
+  basketball: "Basketball",
+};
+
+export async function loadMatchFixture(matchId: string, now = new Date()): Promise<SecretDaily | null> {
+  const trimmed = matchId.trim();
+  if (!trimmed || trimmed.length > 80) return null;
+
+  const file = findCase(trimmed);
+  const ids = file?.ids ?? [trimmed];
+  const dateKey = utcTodayKey(now);
+  const puzzle = puzzles.find((item) => ids.includes(item.id));
+  const matchup = ids.map((id) => solvedMatchup(id)).find((label): label is string => Boolean(label));
+  const year = puzzle?.year ?? file?.year ?? 0;
+  const parsed = matchup ? subjectFromMatchup(matchup, year) : null;
+  const subject = parsed?.subject || puzzle?.title || "";
+  const resolvedYear = parsed?.year || year;
+
+  let clues: string[] = [];
+  for (const table of ["challenges", "puzzles"] as const) {
+    const row = await loadRowByIds(table, ids);
+    const tactical = resolveTacticalClueList(row?.tactical_clues);
+    if (tactical.some(Boolean)) {
+      clues = tactical;
+      break;
+    }
   }
-  const optionSource = await buildDecoySource(fixture);
+  if (!clues.some(Boolean) && puzzle) clues = resolveTacticalClueList(puzzle.clues);
+  if (!clues.some(Boolean)) {
+    for (const table of ["challenges", "puzzles"] as const) {
+      const row = await loadRowByIds(table, ids);
+      if (!row) continue;
+      const normalized = normalizeRow({ ...row, id: trimmed }, dateKey);
+      if (normalized?.clues.some(Boolean)) {
+        clues = normalized.clues;
+        break;
+      }
+    }
+  }
+  if (!clues.some(Boolean) && file) clues = caseLadder(file);
+  if (!subject || !resolvedYear || clues.filter(Boolean).length === 0) return null;
+
+  const category = file
+    ? CASE_SPORT_LABEL[file.sport] ?? "Sports History"
+    : puzzle
+      ? SPORT_LABEL[puzzle.sport] ?? puzzle.sport
+      : "Sports History";
+
+  return withDistinctOptions({
+    id: trimmed,
+    date_key: dateKey,
+    category,
+    clues,
+    options: matchup ? [matchup] : [`${subject} (${resolvedYear})`],
+    subject,
+    year: resolvedYear,
+  });
+}
+
+function subjectFromMatchup(label: string, fallbackYear: number): { subject: string; year: number } {
+  const matched = label.match(/^(.*?)\s*\(((?:18|19|20)\d{2})\)\s*$/);
+  if (!matched) return { subject: label.trim(), year: fallbackYear };
+  return { subject: matched[1].trim(), year: Number(matched[2]) };
+}
+
+function caseLadder(file: { context: string; year: number }): string[] {
+  return [
+    `${file.context}. The venue card is the first one in this file.`,
+    `${file.year} belongs to a longer stretch of the sport.`,
+    "Names and numbers stay off this card.",
+    `A cropped photograph from the ${file.context.toLowerCase()}.`,
+    "The decisive call is the last card in this file.",
+  ];
+}
+
+async function withDistinctOptions(fixture: SecretDaily): Promise<SecretDaily> {
+  const decoys = await decoyLabels(fixture);
+  const correct =
+    fixture.options.find((option) => gradeOption(fixture, option)) ??
+    `${fixture.subject} (${fixture.year})`;
   return {
     ...fixture,
-    optionSource,
-    options: resolveGuessOptions(fixture.options, selectChallengeOptions(optionSource), false),
+    options: fourDistinctOptions(fixture.options, correct, decoys),
   };
 }
 
 export function gradeOption(fixture: SecretDaily, option: string): boolean {
   const guess = option.trim().toLowerCase();
-  if (fixture.correctOption && guess === fixture.correctOption.trim().toLowerCase()) return true;
-  return optionMatchesChallenge(option, {
-    subject: fixture.subject,
-    year: fixture.year,
-    category: fixture.category,
-    sport: findCase(fixture.id)?.sport,
-  });
+  const subject = fixture.subject.trim().toLowerCase();
+  if (!guess || !subject) return false;
+  if (guess === subject) return true;
+  if (guess === `${subject} (${fixture.year})`) return true;
+  return guess.includes(subject) && guess.includes(String(fixture.year));
 }
 
 function fromCatalog(dateKey: string): SecretDaily {
   const puzzle = puzzles[hashString(dateKey) % puzzles.length];
+  const decoys = puzzles
+    .filter((item) => item.id !== puzzle.id)
+    .slice(0, 3)
+    .map((item) => item.title);
   return {
     id: puzzle.id,
     date_key: dateKey,
     category: SPORT_LABEL[puzzle.sport] ?? puzzle.sport,
-    clues: puzzle.clues.slice(0, 6).map(clueLine),
-    options: [puzzle.title],
+    clues: resolveTacticalClueList(puzzle.clues),
+    options: [puzzle.title, ...decoys],
     subject: puzzle.title,
     year: puzzle.year,
   };
@@ -337,59 +210,46 @@ function clueLine(clue: Clue): string {
   return clue.kicker ?? "A detail from the archive.";
 }
 
-async function buildDecoySource(fixture: SecretDaily): Promise<DecoyChallenge> {
-  const sport = findCase(fixture.id)?.sport || fixture.category;
-  return {
-    id: fixture.id,
-    subject: fixture.subject,
-    year: fixture.year,
-    category: fixture.category,
-    sport,
-    decoys: fixture.decoys,
-    peers: await sameSportPeers(fixture, canonicalSport(sport)),
-  };
+function shuffle(items: string[]): string[] {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    const current = copy[index];
+    copy[index] = copy[swap];
+    copy[swap] = current;
+  }
+  return copy;
 }
 
-async function sameSportPeers(fixture: SecretDaily, sport: string): Promise<DecoyPeer[]> {
-  const catalogPeers = puzzles
-    .filter((puzzle) => canonicalSport(puzzle.sport) === sport)
-    .filter((puzzle) => puzzle.id !== fixture.id && puzzle.title.trim().toLowerCase() !== fixture.subject.trim().toLowerCase())
-    .filter((puzzle) => !isUnrelatedEra(fixture.year, puzzle.year))
-    .filter((puzzle) => /\bvs\.?\b/i.test(puzzle.title))
-    .map((puzzle) => ({
-      subject: puzzle.title,
-      year: puzzle.year,
-      category: SPORT_LABEL[puzzle.sport] ?? puzzle.sport,
-      sport: puzzle.sport,
-    }));
+async function decoyLabels(fixture: SecretDaily): Promise<string[]> {
+  const themed = /olympic/i.test(fixture.category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
+  const fromArchive = await challengeDecoys(fixture);
+  const fromCatalog = puzzles
+    .filter((puzzle) => puzzle.title !== fixture.subject)
+    .map((puzzle) => puzzle.title);
+  return [...allMatchupLabels(), ...fromArchive, ...fromCatalog, ...themed, ...GENERAL_DECOYS];
+}
 
+async function challengeDecoys(fixture: SecretDaily): Promise<string[]> {
   const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
-  const sportFilter = sportSearchTokens(sport)
-    .flatMap((token) => [`sport.ilike.%${token}%`, `category.ilike.%${token}%`])
-    .join(",");
-  if (!client || !sportFilter) return catalogPeers;
+  if (!client) return [];
   try {
-    const { data, error } = await client
-      .from("challenges")
-      .select("subject, title, year, category, sport, id, slug")
-      .or(sportFilter)
-      .limit(80);
-    if (error || !data?.length) return catalogPeers;
-    const rows = data.flatMap((row) => {
-      const subject = stringField(row, "subject") || stringField(row, "title");
-      const year = numberField(row, "year");
+    const { data, error } = await client.from("challenges").select("subject, year, category").limit(8);
+    if (error || !data?.length) return [];
+    const sameCategory = data.filter((row) => {
       const category = stringField(row, "category");
-      const rowSport = stringField(row, "sport") || category;
-      const id = stringField(row, "slug") || stringField(row, "id");
-      if (!subject || !year) return [];
-      if (id === fixture.id || subject.toLowerCase() === fixture.subject.toLowerCase()) return [];
-      if (canonicalSport(rowSport) !== sport && canonicalSport(category) !== sport) return [];
-      if (isUnrelatedEra(fixture.year, year)) return [];
-      return [{ subject, year, category, sport: rowSport }];
+      return category && category.toLowerCase() === fixture.category.toLowerCase();
     });
-    return [...rows, ...catalogPeers];
+    const pool = (sameCategory.length >= 3 ? sameCategory : data).slice(0, 5);
+    return pool
+      .map((row) => {
+        const subject = stringField(row, "subject");
+        const year = numberField(row, "year");
+        return subject && year ? `${subject} (${year})` : "";
+      })
+      .filter(Boolean);
   } catch {
-    return catalogPeers;
+    return [];
   }
 }
 
@@ -401,14 +261,6 @@ async function loadFromTable(
   if (!client) return null;
 
   try {
-    if (table === "challenges") {
-      const today = new Date().toISOString().split("T")[0];
-      const row = await fetchDailyChallengeRow(client as unknown as Parameters<typeof fetchDailyChallengeRow>[0], dateKey, {
-        allowLatestFallback: dateKey === today,
-      });
-      return row ? normalizeRow(row, dateKey) : null;
-    }
-
     const matched = await client
       .from(table)
       .select("*")
@@ -430,52 +282,31 @@ async function loadFromTable(
 }
 
 function normalizeRow(row: Record<string, unknown>, dateKey: string): SecretDaily | null {
-  const stored = readStoredChallenge(row);
-  const subject = stringField(row, "subject") || stored.title || stringField(row, "target_subject");
+  const subject = stringField(row, "subject") || stringField(row, "title") || stringField(row, "target_subject");
   const year = numberField(row, "year") || numberField(row, "target_year");
-  const clues = stored.clues;
-  const optionsLocked = stored.options.length > 0;
-  if (!subject) return null;
-  if (clues.length === 0 && !optionsLocked) return null;
-  if (!year && !optionsLocked) return null;
+  const tactical = resolveTacticalClueList(row.tactical_clues);
+  const clues = tactical.some(Boolean) ? tactical : resolveTacticalClueList(row.clues);
+  if (!subject || !year || !clues.some(Boolean)) return null;
 
   const category =
     stringField(row, "category") ||
     SPORT_LABEL[stringField(row, "sport") as Sport] ||
     "Sports History";
-  const options = optionsLocked ? stored.options : [`${subject} (${year})`];
-  const marked = stringField(row, "correct_option") || stringField(row, "answer");
-  const correct =
-    (marked
-      ? options.find((option) => option.trim().toLowerCase() === marked.trim().toLowerCase())
-      : undefined) ||
-    (year
-      ? options.find((option) =>
-          optionMatchesChallenge(option, { subject, year, category, sport: stringField(row, "sport") }),
-        )
-      : options.find((option) => option.trim().toLowerCase() === subject.trim().toLowerCase()));
+  const provided = stringList(row.options);
+  const correct = provided.find((option) =>
+    gradeOption({ subject, year, id: "", date_key: dateKey, category, clues, options: [] }, option),
+  );
+  const options = provided.length > 0 ? provided : [`${subject} (${year})`];
 
   return {
     id: stringField(row, "id") || stringField(row, "slug") || `${dateKey}`,
     date_key: dateKey,
     category,
-    title: displayTitle(stored.title, subject),
-    clues: clues.slice(0, 6),
-    options,
-    optionsLocked,
-    decoys: optionsLocked ? [] : stringList(row.decoys),
+    clues,
+    options: correct ? options : [`${subject} (${year})`, ...options],
     subject,
     year,
-    correctOption: correct,
   };
-}
-
-function displayTitle(title: string, subject: string): string {
-  const label = title.trim();
-  const answer = subject.trim().toLowerCase();
-  if (!label || label.toLowerCase() === answer) return "";
-  if (answer && label.toLowerCase().includes(answer)) return "";
-  return label;
 }
 
 function stringField(row: Record<string, unknown>, key: string): string {
@@ -486,6 +317,23 @@ function stringField(row: Record<string, unknown>, key: string): string {
 function numberField(row: Record<string, unknown>, key: string): number {
   const value = row[key];
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+async function loadRowByIds(
+  table: "challenges" | "puzzles",
+  ids: string[],
+): Promise<Record<string, unknown> | null> {
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  if (!client || ids.length === 0) return null;
+  try {
+    const byId = await client.from(table).select("*").in("id", ids).limit(1).maybeSingle();
+    if (!byId.error && byId.data) return byId.data;
+    const bySlug = await client.from(table).select("*").in("slug", ids).limit(1).maybeSingle();
+    if (!bySlug.error && bySlug.data) return bySlug.data;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 function stringList(value: unknown): string[] {

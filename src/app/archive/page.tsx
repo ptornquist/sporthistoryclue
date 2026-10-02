@@ -1,10 +1,16 @@
-import { ArchiveVault } from "@/components/archive/ArchiveVault";
-import { loadArchiveIndex } from "@/lib/daily-drop";
+import Link from "next/link";
+import { ArchiveMonth } from "@/components/game/ArchiveMonth";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-export default async function ArchivePage() {
-  const fixtures = await loadArchiveIndex();
-  return <ArchiveVault fixtures={fixtures} />;
+export default function ArchivePage() {
+  return (
+    <main className="min-h-screen bg-[#fafafa] px-6 py-10 text-zinc-900">
+      <div className="mx-auto mb-8 flex max-w-lg items-center justify-between">
+        <Link href="/" className="text-xs font-black uppercase tracking-wider text-zinc-500">
+          ← Daily Drop
+        </Link>
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Archive</span>
+      </div>
+      <ArchiveMonth />
+    </main>
+  );
 }

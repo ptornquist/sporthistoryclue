@@ -3,11 +3,10 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { supabaseClient } from '@/lib/supabase/client';
-import { arrangeClueLadder } from '@/lib/clue-ladder';
-import { optionMatchesChallenge, selectChallengeOptions } from '@/lib/decoy-options';
-import { DailyDropArena } from '@/components/game/DailyDropArena';
-import { isDateKey } from '@/lib/archive-calendar';
+import { findFixtureSolve, recordFixtureWin } from '@/lib/fixture-solves';
+import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 
 interface Challenge {
   id: string;
@@ -21,19 +20,7 @@ interface Challenge {
 
 function PlayContent() {
   const searchParams = useSearchParams();
-  const requestedDate = searchParams.get('date') || '';
-  if (isDateKey(requestedDate)) {
-    return (
-      <DailyDropArena
-        archiveDate={requestedDate}
-        training={searchParams.get('training') === '1'}
-      />
-    );
-  }
-  return <CategoryPlay category={searchParams.get('category') || 'ice_hockey'} />;
-}
-
-function CategoryPlay({ category }: { category: string }) {
+  const category = searchParams.get('category') || 'ice_hockey';
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
@@ -55,20 +42,27 @@ function CategoryPlay({ category }: { category: string }) {
         .maybeSingle();
 
       if (data) {
-        const clues = arrangeClueLadder(clueTexts(data.clues), { category: data.category });
-        const subject = typeof data.subject === 'string' && data.subject.trim() ? data.subject : data.title;
-        const year = typeof data.year === 'number' ? data.year : Number(data.year) || 0;
-        setChallenge({ ...data, subject, year, clues });
-        setOptions(
-          selectChallengeOptions({
-            id: data.id,
-            subject,
-            year,
-            category: data.category || category,
-            sport: data.sport || data.category || category,
-            decoys: stringList(data.decoys),
-          }),
+        setChallenge(data);
+        const solvedRecord = await findFixtureSolve(data.id);
+        if (solvedRecord) {
+          setGameWon(true);
+          setScore(solvedRecord.score_awarded);
+        }
+
+        const provided = data.options && Array.isArray(data.options) ? data.options : [];
+        const seeded = provided.length > 0
+          ? provided
+          : [
+              `${data.subject} (${data.year})`,
+              'Canada vs Soviet Union (1972)',
+              'USA vs Soviet Union (1980)',
+              'Sweden vs Finland (2006)',
+            ];
+        const distinct = distinctOptionValues(
+          seeded.filter((option: unknown): option is string => typeof option === 'string'),
+          4,
         );
+        setOptions(distinct.sort(() => Math.random() - 0.5));
       }
       setLoading(false);
     };
@@ -79,12 +73,10 @@ function CategoryPlay({ category }: { category: string }) {
   const handleSelectOption = (option: string) => {
     if (selectedWrong.includes(option) || gameWon || gameOver || !challenge) return;
 
-    const isCorrect = optionMatchesChallenge(option, {
-      subject: challenge.subject,
-      year: challenge.year,
-      category: challenge.category,
-      sport: challenge.category,
-    });
+    const isCorrect =
+      option.toLowerCase().includes(challenge.subject.toLowerCase()) ||
+      option.toLowerCase().includes(challenge.title.toLowerCase()) ||
+      (challenge.options && option === challenge.options[0]);
 
     if (isCorrect) {
       setGameWon(true);
@@ -110,14 +102,20 @@ function CategoryPlay({ category }: { category: string }) {
 
   const saveScore = async (finalScore: number) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user || !challenge) return;
+    if (!user?.id || !challenge) return;
 
-    await supabaseClient.from('match_history').insert({
+    const saved = await recordFixtureWin(challenge.id, finalScore);
+    if (saved && !saved.already_solved) {
+      setGameWon(true);
+    }
+
+    const { error } = await supabaseClient.from('match_history').insert({
       user_id: user.id,
       challenge_id: challenge.id,
       score: finalScore,
       clues_used: currentClueIdx + 1,
     });
+    if (error) console.error('Failed to save score:', error);
   };
 
   if (loading) {
@@ -191,7 +189,7 @@ function CategoryPlay({ category }: { category: string }) {
             {currentClueIdx < challenge.clues.length - 1 && !gameWon && !gameOver && (
               <button
                 onClick={handleUnlockClue}
-                className="min-h-[48px] touch-manipulation text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors active:scale-[0.98]"
+                className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors"
               >
                 Skip to next clue (-2,000 PTS) →
               </button>
@@ -201,27 +199,26 @@ function CategoryPlay({ category }: { category: string }) {
 
         {/* 4 Suggestion Cards */}
         <div>
-          <span className="block text-center text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-4">
-            Select Your Historical Deduction
-          </span>
+          <GuessQuestionHeader />
 
-          <div className="grid grid-cols-1 touch-manipulation sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-2 gap-3.5">
             {options.map((option, idx) => {
               const isWrong = selectedWrong.includes(option);
+              const label = formatOptionText(option) || option;
               return (
                 <button
-                  key={idx}
+                  key={option}
                   onClick={() => handleSelectOption(option)}
                   disabled={isWrong || gameWon || gameOver}
-                  className={`min-h-[48px] touch-manipulation p-4 md:p-5 rounded-2xl border text-left font-bold text-sm transition-all duration-150 flex items-center justify-between active:scale-[0.98] ${
+                  className={`p-4 md:p-5 rounded-2xl border text-left font-bold text-sm transition-all duration-150 flex items-center justify-between ${
                     isWrong
                       ? 'bg-zinc-100 border-zinc-200 text-zinc-400 line-through cursor-not-allowed opacity-60'
                       : gameWon
                       ? 'bg-zinc-50 border-zinc-200 text-zinc-400'
-                      : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm'
+                      : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm active:scale-[0.99]'
                   }`}
                 >
-                  <span className="truncate pr-2">{option}</span>
+                  <span className="truncate pr-2">{label}</span>
                   <span className="text-xs font-mono text-zinc-400">
                     {isWrong ? '✕' : `[${String.fromCharCode(65 + idx)}]`}
                   </span>
@@ -255,7 +252,7 @@ function CategoryPlay({ category }: { category: string }) {
 
             <div className="flex gap-3">
               <Link
-                href="/standings"
+                href="/leaderboard"
                 className="flex-1 py-3 bg-zinc-100 text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200 text-center"
               >
                 Standings
@@ -274,35 +271,6 @@ function CategoryPlay({ category }: { category: string }) {
       <div className="h-6"></div>
     </main>
   );
-}
-
-function clueTexts(value: unknown): string[] {
-  const list = Array.isArray(value) ? value : [];
-  return list
-    .map((item) => {
-      if (typeof item === 'string') return item.trim();
-      if (item && typeof item === 'object') {
-        const row = item as { body?: unknown; quote?: unknown; kicker?: unknown };
-        const text = [row.body, row.quote, row.kicker].find((part) => typeof part === 'string' && part.trim());
-        return typeof text === 'string' ? text.trim() : '';
-      }
-      return '';
-    })
-    .filter((item) => item.length > 0);
-}
-
-function stringList(value: unknown): string[] {
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-    try {
-      return stringList(JSON.parse(trimmed));
-    } catch {
-      return [trimmed];
-    }
-  }
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 }
 
 export default function PlayArenaPage() {

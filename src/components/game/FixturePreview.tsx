@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { fixtureSubtitle, publicCaseTitle } from "@/lib/case-files";
+import { fixtureSubtitle } from "@/lib/case-files";
 
 interface FixturePreviewProps {
   title: string;
@@ -9,9 +8,8 @@ interface FixturePreviewProps {
   context: string;
   solvedScore: number | null;
   matchup: string | null;
-  href: string;
+  onDeduce: () => void;
   density?: "compact" | "row";
-  onChallenge?: () => void;
 }
 
 export function FixturePreview({
@@ -20,32 +18,23 @@ export function FixturePreview({
   context,
   solvedScore,
   matchup,
-  href,
+  onDeduce,
   density = "compact",
-  onChallenge,
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
   const reveal = solved ? matchup : null;
-  const heading = publicCaseTitle(title);
+  const subtitle = fixtureSubtitle(year, context);
 
   const body = (
     <div className="min-w-0 text-left">
       <span
-        className={`font-bold text-zinc-900 group-hover:text-blue-600 block ${
-          density === "row" ? "text-sm font-black truncate" : "text-xs"
+        className={`block max-w-full break-words font-bold text-zinc-900 group-hover:text-blue-600 ${
+          density === "row" ? "text-sm font-black" : "text-xs"
         }`}
       >
-        {heading}
+        {title}
       </span>
-      {solved ? (
-        <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">
-          {fixtureSubtitle(year, context)}
-        </span>
-      ) : (
-        <p className="text-xs font-mono text-zinc-400 font-medium">
-          Classified Dossier · 6 Clues · 10 000 Max PTS
-        </p>
-      )}
+      <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">{subtitle}</span>
       {solved ? (
         <span className="mt-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
           ✓ SOLVED · {solvedScore} PTS
@@ -57,52 +46,48 @@ export function FixturePreview({
     </div>
   );
 
-  const action = solved ? null : (
-    <span className="inline-flex min-h-[48px] shrink-0 items-center bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider active:scale-[0.98] touch-manipulation">
-      PLAY →
-    </span>
-  );
-
-  const challengeButton = onChallenge ? (
-    <button
-      type="button"
-      title="Challenge a friend to this fixture"
-      onClick={onChallenge}
-      className="inline-flex min-h-[48px] shrink-0 items-center border border-zinc-200 hover:border-blue-400 text-zinc-700 hover:text-blue-600 px-3 py-2 rounded-xl text-xs font-bold active:scale-[0.98] touch-manipulation"
-    >
-      ⚔️ Challenge
-    </button>
-  ) : null;
-
-  if (!onChallenge) {
+  if (density === "row") {
     return (
-      <Link
-        href={href}
-        className={
-          density === "row"
-            ? "group flex touch-manipulation items-center justify-between gap-4 border-2 border-zinc-200 hover:border-zinc-400 bg-zinc-50/40 hover:bg-white transition-all rounded-2xl p-4 active:scale-[0.98]"
-            : "group flex w-full touch-manipulation items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50 active:scale-[0.98]"
+      <div
+        className="flex w-full max-w-full flex-col gap-2 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all group hover:bg-zinc-100/80 sm:flex-row sm:items-center sm:justify-between"
+        onClick={solved ? onDeduce : undefined}
+        onKeyDown={
+          solved
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onDeduce();
+                }
+              }
+            : undefined
         }
+        role={solved ? "button" : undefined}
+        tabIndex={solved ? 0 : undefined}
       >
         {body}
-        {action}
-      </Link>
+        {solved ? null : (
+          <button
+            type="button"
+            onClick={onDeduce}
+            className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
+          >
+            DEDUCE →
+          </button>
+        )}
+      </div>
     );
   }
 
   return (
-    <div
-      className={
-          density === "row"
-          ? "flex items-center justify-between gap-3 border-2 border-zinc-200 hover:border-zinc-400 bg-zinc-50/40 hover:bg-white transition-all rounded-2xl p-4"
-          : "flex items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3"
-      }
+    <button
+      type="button"
+      onClick={onDeduce}
+      className="group flex w-full max-w-full flex-col justify-between gap-2 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50 sm:flex-row sm:items-center"
     >
-      <Link href={href} className="group flex min-w-0 flex-1 touch-manipulation items-center justify-between gap-4 text-left active:scale-[0.98]">
-        {body}
-        {action}
-      </Link>
-      {challengeButton}
-    </div>
+      {body}
+      {solved ? null : (
+        <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCE →</span>
+      )}
+    </button>
   );
 }
