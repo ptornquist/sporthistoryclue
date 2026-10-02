@@ -55,7 +55,7 @@ interface ViewerClient {
   auth: {
     getUser: () => PromiseLike<{ data: { user: { id: string } | null } }>;
   };
-  from: (table: "profiles" | "scout_connections") => {
+  from: (table: "profiles" | "scout_follows") => {
     select: (columns: string) => ViewerFilter;
   };
 }
@@ -153,10 +153,10 @@ export async function loadScoutActions(
     }
 
     const { data: link } = await client
-      .from("scout_connections")
-      .select("connected_user_id")
-      .eq("user_id", user.id)
-      .eq("connected_user_id", profileId)
+      .from("scout_follows")
+      .select("following_id")
+      .eq("follower_id", user.id)
+      .eq("following_id", profileId)
       .maybeSingle();
 
     return {

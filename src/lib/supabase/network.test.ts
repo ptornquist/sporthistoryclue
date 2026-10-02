@@ -1,5 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
-import { cleanScoutQuery, searchScouts } from "./network";
+
+const { from, insert, followerEq, followingEq, select, selectEq } = vi.hoisted(() => {
+  const insert = vi.fn(async () => ({ error: null }));
+  const followingEq = vi.fn(async () => ({ error: null }));
+  const followerEq = vi.fn(() => ({ eq: followingEq }));
+  const selectEq = vi.fn(async () => ({ data: [{ following_id: "scout-2" }], error: null }));
+  const select = vi.fn(() => ({ eq: selectEq }));
+  const from = vi.fn(() => ({
+    insert,
+    delete: () => ({ eq: followerEq }),
+    select,
+  }));
+  return { from, insert, followerEq, followingEq, select, selectEq };
+});
+
+vi.mock("@/lib/supabase/client", () => ({
+  supabaseClient: { from },
+}));
+
+import { cleanScoutQuery, followScout, getFollowingIds, searchScouts, unfollowScout } from "./network";
 
 describe("searchScouts", () => {
   it("strips a leading @ and matches usernames", async () => {
@@ -22,6 +41,20 @@ describe("searchScouts", () => {
     expect(neq).toHaveBeenCalledWith("id", "self");
     expect(limit).toHaveBeenCalledWith(10);
     expect(rows[0]?.username).toBe("ptornquist");
+  });
+
+  it("writes follow rows on scout_follows", async () => {
+    await followScout("me", "them");
+    expect(from).toHaveBeenCalledWith("scout_follows");
+    expect(insert).toHaveBeenCalledWith({ follower_id: "me", following_id: "them" });
+
+    await unfollowScout("me", "them");
+    expect(followerEq).toHaveBeenCalledWith("follower_id", "me");
+    expect(followingEq).toHaveBeenCalledWith("following_id", "them");
+
+    await expect(getFollowingIds("me")).resolves.toEqual(["scout-2"]);
+    expect(select).toHaveBeenCalledWith("following_id");
+    expect(selectEq).toHaveBeenCalledWith("follower_id", "me");
   });
 
   it("skips an empty handle", async () => {

@@ -8,7 +8,7 @@ interface FindScoutsProps {
   currentUserId?: string | null;
   currentUsername?: string | null;
   followingIds?: string[];
-  onToggleFollow?: (targetId: string) => Promise<void> | void;
+  onToggleFollow?: (targetId: string, isCurrentlyFollowing: boolean) => Promise<void> | void;
   onChallenge?: (username: string) => void;
   framed?: boolean;
 }
@@ -27,7 +27,7 @@ export function ScoutSearchResults({
   results: ScoutProfile[] | null;
   followingIds: string[];
   currentUsername?: string | null;
-  onToggleFollow: (scoutId: string) => void;
+  onToggleFollow: (scoutId: string, isCurrentlyFollowing: boolean) => void;
   onChallenge?: (username: string) => void;
 }) {
   return (
@@ -72,7 +72,7 @@ export function ScoutSearchResults({
                     )}
                     <button
                       type="button"
-                      onClick={() => onToggleFollow(scout.id)}
+                        onClick={() => onToggleFollow(scout.id, following)}
                       className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-black uppercase"
                     >
                       {following ? 'Following' : 'Follow'}
@@ -123,13 +123,13 @@ export default function FindScouts({
     }
   };
 
-  const handleToggleFollow = async (scoutId: string) => {
+  const handleToggleFollow = async (scoutId: string, isCurrentlyFollowing: boolean) => {
     if (onToggleFollow) {
-      await onToggleFollow(scoutId);
+      await onToggleFollow(scoutId, isCurrentlyFollowing);
       return;
     }
     if (!currentUserId) return;
-    const already = followed.includes(scoutId);
+    const already = isCurrentlyFollowing;
     if (already) {
       await unfollowScout(currentUserId, scoutId);
     } else {

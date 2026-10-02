@@ -47,5 +47,7 @@ describe("career stats shop access", () => {
     expect(html).toContain("Scout Accolades (0)");
     expect(html).toContain("No badges unlocked yet. Spend career points in the shop!");
     expect(html.indexOf("Scout Accolades")).toBeLessThan(html.indexOf("Find Scouts"));
+    expect(html).toContain("You haven&#x27;t followed any scouts yet.");
+    expect(html).toContain("My Network");
   });
 });

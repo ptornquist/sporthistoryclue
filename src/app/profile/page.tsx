@@ -11,12 +11,7 @@ import { loadMyDuels, sendDuelChallenge, type DuelRow } from '@/lib/duels';
 import FindScouts from '@/components/game/FindScouts';
 import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
-import {
-  followScout,
-  getFollowingIds,
-  unfollowScout,
-  type ScoutProfile,
-} from '@/lib/supabase/network';
+import { type ScoutProfile } from '@/lib/supabase/network';
 
 interface Profile {
   id: string;
@@ -101,17 +96,41 @@ export default function ProfilePage() {
     const handle = (prof?.username || '').replace(/^@/, '');
     if (handle) setDuels(await loadMyDuels(handle));
 
-    const ids = await getFollowingIds(user.id);
-    setFollowingIds(ids);
-    if (ids.length > 0) {
-      const { data: scoutProfiles } = await supabaseClient
-        .from('profiles')
-        .select('id, username, avatar_url, streak, total_score')
-        .in('id', ids);
-      setNetwork((scoutProfiles as ScoutProfile[]) || []);
-    } else {
-      setNetwork([]);
+    await loadNetwork(user.id);
+  };
+
+  const loadNetwork = async (followerId?: string) => {
+    const id = followerId || user?.id;
+    if (!id) return;
+    const supabase = supabaseClient;
+    const { data: networkData, error } = await supabase
+      .from('scout_follows')
+      .select('following_id, profiles:following_id(id, username, career_score, fixtures_cleared)')
+      .eq('follower_id', id);
+    if (error) {
+      console.error('Failed to load network:', error);
+      return;
     }
+
+    const scouts: ScoutProfile[] = [];
+    for (const row of (networkData ?? []) as Array<{
+      following_id: string;
+      profiles:
+        | ScoutProfile
+        | ScoutProfile[]
+        | null;
+    }>) {
+      const embedded = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+      if (!embedded?.id) continue;
+      scouts.push({
+        id: embedded.id,
+        username: embedded.username,
+        career_score: embedded.career_score,
+        fixtures_cleared: embedded.fixtures_cleared,
+      });
+    }
+    setNetwork(scouts);
+    setFollowingIds(scouts.map((scout) => scout.id));
   };
 
   useEffect(() => {
@@ -149,14 +168,29 @@ export default function ProfilePage() {
     }
   };
 
-  const toggleFollow = async (targetId: string) => {
+  const handleToggleFollow = async (targetId: string, isCurrentlyFollowing: boolean) => {
     if (!user) return;
-    if (followingIds.includes(targetId)) {
-      await unfollowScout(user.id, targetId);
+    const supabase = supabaseClient;
+    if (isCurrentlyFollowing) {
+      const { error } = await supabase
+        .from('scout_follows')
+        .delete()
+        .eq('follower_id', user.id)
+        .eq('following_id', targetId);
+      if (error) {
+        alert(error.message || 'Could not update your network');
+        return;
+      }
     } else {
-      await followScout(user.id, targetId);
+      const { error } = await supabase
+        .from('scout_follows')
+        .insert({ follower_id: user.id, following_id: targetId });
+      if (error && error.code !== '23505') {
+        alert(error.message || 'Could not update your network');
+        return;
+      }
     }
-    await loadData();
+    await loadNetwork();
   };
 
   return (
@@ -242,7 +276,7 @@ export default function ProfilePage() {
           currentUserId={user?.id ?? null}
           currentUsername={profile?.username}
           followingIds={followingIds}
-          onToggleFollow={toggleFollow}
+          onToggleFollow={handleToggleFollow}
           onChallenge={handleChallenge}
         />
 
@@ -254,43 +288,26 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {network.map((scout) => {
-                const handle = scout.username || 'scout';
-                const streak = scout.streak ?? 0;
-                const points = scout.total_score ?? 0;
-                return (
-                  <div key={scout.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {scout.avatar_url ? (
-                        <img src={scout.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border border-zinc-200" />
-                      ) : (
-                        <span className="w-10 h-10 rounded-full bg-blue-600 text-white text-sm font-black flex items-center justify-center shrink-0">
-                          {handle.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <ScoutHandleLink
-                          username={scout.username}
-                          className="font-black text-xs text-zinc-900 block truncate hover:underline"
-                        />
-                        <span className="text-[10px] font-mono text-blue-600 font-bold block">
-                          {streak} day streak
-                        </span>
-                        <span className="text-[10px] font-mono text-zinc-500 font-bold">
-                          {points.toLocaleString()} PTS
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleFollow(scout.id)}
-                      className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-white text-zinc-700 border-zinc-200"
-                    >
-                      Unfollow
-                    </button>
+              {network.map((scout) => (
+                <div key={scout.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <ScoutHandleLink
+                      username={scout.username}
+                      className="font-black text-xs text-zinc-900 block truncate hover:underline"
+                    />
+                    <span className="text-[10px] font-mono text-zinc-500 font-bold">
+                      {(scout.career_score || 0).toLocaleString()} PTS
+                    </span>
                   </div>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFollow(scout.id, true)}
+                    className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-white text-zinc-700 border-zinc-200"
+                  >
+                    UNFOLLOW
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </section>
