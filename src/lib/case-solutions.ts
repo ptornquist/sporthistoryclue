@@ -21,3 +21,7 @@ const MATCHUPS: Record<string, string> = {
 export function solvedMatchup(id: string): string | null {
   return MATCHUPS[id] ?? null;
 }
+
+export function allMatchupLabels(): string[] {
+  return Array.from(new Set(Object.values(MATCHUPS)));
+}

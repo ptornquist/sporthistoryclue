@@ -1,6 +1,7 @@
 import {
   fourDistinctOptions,
   loadDailyFixture,
+  loadMatchFixture,
   parseDateKey,
   toPublicDaily,
   utcTodayKey,
@@ -10,7 +11,17 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const dateKey = parseDateKey(new URL(request.url).searchParams.get("date"));
+  const url = new URL(request.url);
+  const match = url.searchParams.get("match")?.trim();
+  if (match) {
+    const storyline = await loadMatchFixture(match);
+    if (!storyline) {
+      return Response.json({ error: "That storyline match could not be opened." }, { status: 404 });
+    }
+    return Response.json(toPublicDaily(storyline));
+  }
+
+  const dateKey = parseDateKey(url.searchParams.get("date"));
   if (!dateKey) {
     return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });
   }

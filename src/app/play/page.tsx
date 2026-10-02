@@ -3,7 +3,9 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { supabaseClient } from '@/lib/supabase/client';
+import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 
 interface Challenge {
   id: string;
@@ -41,17 +43,20 @@ function PlayContent() {
       if (data) {
         setChallenge(data);
 
-        if (data.options && Array.isArray(data.options) && data.options.length > 0) {
-          setOptions([...data.options].sort(() => Math.random() - 0.5));
-        } else {
-          const correctAnswer = `${data.subject} (${data.year})`;
-          setOptions([
-            correctAnswer,
-            'Canada vs Soviet Union (1972)',
-            'USA vs Soviet Union (1980)',
-            'Sweden vs Finland (2006)',
-          ].sort(() => Math.random() - 0.5));
-        }
+        const provided = data.options && Array.isArray(data.options) ? data.options : [];
+        const seeded = provided.length > 0
+          ? provided
+          : [
+              `${data.subject} (${data.year})`,
+              'Canada vs Soviet Union (1972)',
+              'USA vs Soviet Union (1980)',
+              'Sweden vs Finland (2006)',
+            ];
+        const distinct = distinctOptionValues(
+          seeded.filter((option: unknown): option is string => typeof option === 'string'),
+          4,
+        );
+        setOptions(distinct.sort(() => Math.random() - 0.5));
       }
       setLoading(false);
     };
@@ -182,16 +187,15 @@ function PlayContent() {
 
         {/* 4 Suggestion Cards */}
         <div>
-          <span className="block text-center text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-4">
-            Select Your Historical Deduction
-          </span>
+          <GuessQuestionHeader />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-2 gap-3.5">
             {options.map((option, idx) => {
               const isWrong = selectedWrong.includes(option);
+              const label = formatOptionText(option) || option;
               return (
                 <button
-                  key={idx}
+                  key={option}
                   onClick={() => handleSelectOption(option)}
                   disabled={isWrong || gameWon || gameOver}
                   className={`p-4 md:p-5 rounded-2xl border text-left font-bold text-sm transition-all duration-150 flex items-center justify-between ${
@@ -202,7 +206,7 @@ function PlayContent() {
                       : 'bg-white border-zinc-200 text-zinc-800 hover:border-blue-600 hover:bg-blue-50/40 hover:shadow-sm active:scale-[0.99]'
                   }`}
                 >
-                  <span className="truncate pr-2">{option}</span>
+                  <span className="truncate pr-2">{label}</span>
                   <span className="text-xs font-mono text-zinc-400">
                     {isWrong ? '✕' : `[${String.fromCharCode(65 + idx)}]`}
                   </span>

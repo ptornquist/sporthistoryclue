@@ -1,6 +1,10 @@
 import "server-only";
 
+import { findCase } from "@/lib/case-files";
+import { allMatchupLabels, solvedMatchup } from "@/lib/case-solutions";
 import { puzzles } from "@/lib/catalog";
+import { distinctOptionValues } from "@/lib/option-text";
+import { resolveTacticalClueList } from "@/lib/tactical-clues";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   createPublicSupabaseClient,
@@ -70,18 +74,97 @@ const GENERAL_DECOYS = [
 ];
 
 export function fourDistinctOptions(rawOptions: string[], correct: string, decoys: string[]): string[] {
-  const clean = Array.from(new Set([correct, ...rawOptions].map((option) => option.trim()).filter(Boolean)));
-  for (const decoy of decoys) {
-    if (clean.length >= 4) break;
-    if (!clean.includes(decoy)) clean.push(decoy);
-  }
-  const picked = [clean[0], ...clean.slice(1)].slice(0, 4);
-  return shuffle(picked);
+  return shuffle(distinctOptionValues([correct, ...rawOptions, ...decoys], 4));
 }
 
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
   const fromChallenges = await loadFromTable("challenges", dateKey);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
+  return withDistinctOptions(fixture);
+}
+
+const CASE_SPORT_LABEL: Record<string, string> = {
+  ice_hockey: "Ice Hockey",
+  football: "Football",
+  boxing: "Boxing",
+  tennis: "Tennis",
+  athletics: "Athletics",
+  gymnastics: "Gymnastics",
+  basketball: "Basketball",
+};
+
+export async function loadMatchFixture(matchId: string, now = new Date()): Promise<SecretDaily | null> {
+  const trimmed = matchId.trim();
+  if (!trimmed || trimmed.length > 80) return null;
+
+  const file = findCase(trimmed);
+  const ids = file?.ids ?? [trimmed];
+  const dateKey = utcTodayKey(now);
+  const puzzle = puzzles.find((item) => ids.includes(item.id));
+  const matchup = ids.map((id) => solvedMatchup(id)).find((label): label is string => Boolean(label));
+  const year = puzzle?.year ?? file?.year ?? 0;
+  const parsed = matchup ? subjectFromMatchup(matchup, year) : null;
+  const subject = parsed?.subject || puzzle?.title || "";
+  const resolvedYear = parsed?.year || year;
+
+  let clues: string[] = [];
+  for (const table of ["challenges", "puzzles"] as const) {
+    const row = await loadRowByIds(table, ids);
+    const tactical = resolveTacticalClueList(row?.tactical_clues);
+    if (tactical.some(Boolean)) {
+      clues = tactical;
+      break;
+    }
+  }
+  if (!clues.some(Boolean) && puzzle) clues = resolveTacticalClueList(puzzle.clues);
+  if (!clues.some(Boolean)) {
+    for (const table of ["challenges", "puzzles"] as const) {
+      const row = await loadRowByIds(table, ids);
+      if (!row) continue;
+      const normalized = normalizeRow({ ...row, id: trimmed }, dateKey);
+      if (normalized?.clues.some(Boolean)) {
+        clues = normalized.clues;
+        break;
+      }
+    }
+  }
+  if (!clues.some(Boolean) && file) clues = caseLadder(file);
+  if (!subject || !resolvedYear || clues.filter(Boolean).length === 0) return null;
+
+  const category = file
+    ? CASE_SPORT_LABEL[file.sport] ?? "Sports History"
+    : puzzle
+      ? SPORT_LABEL[puzzle.sport] ?? puzzle.sport
+      : "Sports History";
+
+  return withDistinctOptions({
+    id: trimmed,
+    date_key: dateKey,
+    category,
+    clues,
+    options: matchup ? [matchup] : [`${subject} (${resolvedYear})`],
+    subject,
+    year: resolvedYear,
+  });
+}
+
+function subjectFromMatchup(label: string, fallbackYear: number): { subject: string; year: number } {
+  const matched = label.match(/^(.*?)\s*\(((?:18|19|20)\d{2})\)\s*$/);
+  if (!matched) return { subject: label.trim(), year: fallbackYear };
+  return { subject: matched[1].trim(), year: Number(matched[2]) };
+}
+
+function caseLadder(file: { context: string; year: number }): string[] {
+  return [
+    `${file.context}. The venue card is the first one in this file.`,
+    `${file.year} belongs to a longer stretch of the sport.`,
+    "Names and numbers stay off this card.",
+    `A cropped photograph from the ${file.context.toLowerCase()}.`,
+    "The decisive call is the last card in this file.",
+  ];
+}
+
+async function withDistinctOptions(fixture: SecretDaily): Promise<SecretDaily> {
   const decoys = await decoyLabels(fixture);
   const correct =
     fixture.options.find((option) => gradeOption(fixture, option)) ??
@@ -111,7 +194,7 @@ function fromCatalog(dateKey: string): SecretDaily {
     id: puzzle.id,
     date_key: dateKey,
     category: SPORT_LABEL[puzzle.sport] ?? puzzle.sport,
-    clues: puzzle.clues.slice(0, 6).map(clueLine),
+    clues: resolveTacticalClueList(puzzle.clues),
     options: [puzzle.title, ...decoys],
     subject: puzzle.title,
     year: puzzle.year,
@@ -144,7 +227,7 @@ async function decoyLabels(fixture: SecretDaily): Promise<string[]> {
   const fromCatalog = puzzles
     .filter((puzzle) => puzzle.title !== fixture.subject)
     .map((puzzle) => puzzle.title);
-  return [...fromArchive, ...fromCatalog, ...themed, ...GENERAL_DECOYS];
+  return [...allMatchupLabels(), ...fromArchive, ...fromCatalog, ...themed, ...GENERAL_DECOYS];
 }
 
 async function challengeDecoys(fixture: SecretDaily): Promise<string[]> {
@@ -201,8 +284,9 @@ async function loadFromTable(
 function normalizeRow(row: Record<string, unknown>, dateKey: string): SecretDaily | null {
   const subject = stringField(row, "subject") || stringField(row, "title") || stringField(row, "target_subject");
   const year = numberField(row, "year") || numberField(row, "target_year");
-  const clues = stringList(row.clues);
-  if (!subject || !year || clues.length === 0) return null;
+  const tactical = resolveTacticalClueList(row.tactical_clues);
+  const clues = tactical.some(Boolean) ? tactical : resolveTacticalClueList(row.clues);
+  if (!subject || !year || !clues.some(Boolean)) return null;
 
   const category =
     stringField(row, "category") ||
@@ -218,7 +302,7 @@ function normalizeRow(row: Record<string, unknown>, dateKey: string): SecretDail
     id: stringField(row, "id") || stringField(row, "slug") || `${dateKey}`,
     date_key: dateKey,
     category,
-    clues: clues.slice(0, 6),
+    clues,
     options: correct ? options : [`${subject} (${year})`, ...options],
     subject,
     year,
@@ -233,6 +317,23 @@ function stringField(row: Record<string, unknown>, key: string): string {
 function numberField(row: Record<string, unknown>, key: string): number {
   const value = row[key];
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+async function loadRowByIds(
+  table: "challenges" | "puzzles",
+  ids: string[],
+): Promise<Record<string, unknown> | null> {
+  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
+  if (!client || ids.length === 0) return null;
+  try {
+    const byId = await client.from(table).select("*").in("id", ids).limit(1).maybeSingle();
+    if (!byId.error && byId.data) return byId.data;
+    const bySlug = await client.from(table).select("*").in("slug", ids).limit(1).maybeSingle();
+    if (!bySlug.error && bySlug.data) return bySlug.data;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 function stringList(value: unknown): string[] {

@@ -14,7 +14,9 @@ import {
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
+import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { rememberSolvedCase } from '@/lib/solved-cases';
+import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 
 interface DailyFixture {
   id: string;
@@ -49,13 +51,8 @@ const GENERAL_DECOYS = [
 ];
 
 function setupOptions(options: string[], category: string): string[] {
-  const cleanOptions = Array.from(new Set(options.filter(Boolean)));
   const pool = /olympic/i.test(category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
-  for (const decoy of [...pool, ...GENERAL_DECOYS]) {
-    if (cleanOptions.length >= 4) break;
-    if (!cleanOptions.includes(decoy)) cleanOptions.push(decoy);
-  }
-  const four = cleanOptions.slice(0, 4);
+  const four = distinctOptionValues([...options, ...pool, ...GENERAL_DECOYS], 4);
   for (let index = four.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(Math.random() * (index + 1));
     const current = four[index];
@@ -77,6 +74,7 @@ export function DailyDropArena() {
   const [duelPts, setDuelPts] = useState(0);
 
   const [challenge, setChallenge] = useState<DailyFixture | null>(null);
+  const [activeMatch, setActiveMatch] = useState<string | null>(null);
   const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [solution, setSolution] = useState<Solution | null>(null);
@@ -164,13 +162,20 @@ export function DailyDropArena() {
       setGameWon(false);
       setGameOver(false);
       try {
-        const query = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
+        const params = new URLSearchParams(window.location.search);
+        const match = params.get('match')?.trim() || '';
+        const query = match && !selectedDate
+          ? `?match=${encodeURIComponent(match)}`
+          : selectedDate
+            ? `?date=${encodeURIComponent(selectedDate)}`
+            : '';
         const response = await fetch(`/api/daily${query}`);
         if (!response.ok) {
           throw new Error('Daily drop unavailable');
         }
         const fixture = (await response.json()) as DailyFixture;
         whistled.current = false;
+        setActiveMatch(match && !selectedDate ? match : null);
         setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
         setChallenge(fixture);
       } catch {
@@ -229,6 +234,7 @@ export function DailyDropArena() {
           id: challenge.id,
           date_key: challenge.date_key,
           option,
+          match: activeMatch,
         }),
       });
       if (!response.ok) throw new Error('Verify failed');
@@ -272,6 +278,7 @@ export function DailyDropArena() {
             id: challenge.id,
             date_key: challenge.date_key,
             option,
+            match: activeMatch,
             reveal: true,
           }),
         });
@@ -495,15 +502,14 @@ export function DailyDropArena() {
           {/* Options / Deduction Grid */}
           {!gameWon && !gameOver && (
             <div>
-              <p className="text-xs font-mono font-bold uppercase text-zinc-400 mb-3">
-                Identify the Historical Matchup
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {choiceOptions.map((option, idx) => {
+              <GuessQuestionHeader />
+              <div className="grid grid-cols-2 gap-3">
+                {choiceOptions.map((option) => {
                   const isWrong = selectedWrong.includes(option);
+                  const label = formatOptionText(option) || option;
                   return (
                     <button
-                      key={idx}
+                      key={option}
                       disabled={isWrong || guessing}
                       onClick={() => handleGuess(option)}
                       className={`p-4 rounded-2xl text-left text-xs font-bold transition-all border ${
@@ -512,7 +518,7 @@ export function DailyDropArena() {
                           : 'bg-white border-zinc-200 hover:border-blue-600 hover:shadow-md text-zinc-800'
                       }`}
                     >
-                      {option}
+                      {label}
                     </button>
                   );
                 })}
