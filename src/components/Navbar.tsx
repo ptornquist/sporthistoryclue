@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { supabaseClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 
 export const NAV_LINKS = [
   { name: 'Daily Drop', href: '/' },
@@ -20,28 +20,37 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    let unsubscribe = () => {};
     const fetchUserData = async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      setUser(user);
-      if (user) {
-        const { data } = await supabaseClient
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', user.id)
-          .maybeSingle();
-        setProfile(data);
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        setUser(user);
+        if (user) {
+          const { data } = await supabaseClient
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', user.id)
+            .maybeSingle();
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error('Failed to load nav user:', error);
       }
     };
 
     fetchUserData();
 
-    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    try {
+      const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user || null);
+      });
+      unsubscribe = () => listener.subscription.unsubscribe();
+    } catch (error) {
+      console.error('Failed to subscribe to auth:', error);
+    }
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   const handleSignOut = async () => {

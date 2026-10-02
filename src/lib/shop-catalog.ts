@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 
 export interface ShopItem {
   id: string;
@@ -69,19 +69,27 @@ function gameClient(): ShopClient {
 }
 
 /** Signed-in career score for the shop balance. Guests receive null. */
-export async function loadShopBalance(supabase: ShopClient = gameClient()): Promise<number | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+export async function loadShopBalance(supabase?: ShopClient): Promise<number | null> {
+  const client = supabase ?? (isSupabaseConfigured ? gameClient() : null);
+  if (!client) return null;
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("career_score")
-    .eq("id", user.id)
-    .maybeSingle();
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return null;
 
-  if (error) {
+    const { data, error } = await client
+      .from("profiles")
+      .select("career_score")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to load shop balance:", error);
+      return null;
+    }
+    return data?.career_score ?? 0;
+  } catch (error) {
     console.error("Failed to load shop balance:", error);
     return null;
   }
-  return data?.career_score ?? 0;
 }

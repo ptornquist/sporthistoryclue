@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabaseClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { fetchCareerStandings } from '@/lib/career-standings';
 import {
   followScout,
@@ -50,6 +50,7 @@ export default function ProfilePage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadData = async () => {
+    if (!isSupabaseConfigured) return;
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
       window.location.href = '/login';

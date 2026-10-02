@@ -32,4 +32,11 @@ describe("shop catalog", () => {
     expect(eq).toHaveBeenCalledWith("id", "scout-1");
     expect(balance).toBe(7500);
   });
+
+  it("keeps the catalog available when the session lookup fails", async () => {
+    const getUser = vi.fn(async () => {
+      throw new Error("Supabase is not configured.");
+    });
+    await expect(loadShopBalance({ auth: { getUser }, from: vi.fn() } as never)).resolves.toBeNull();
+  });
 });
