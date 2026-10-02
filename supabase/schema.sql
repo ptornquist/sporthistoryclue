@@ -70,6 +70,38 @@ create table if not exists public.profiles (
 
 alter table public.profiles add column if not exists avatar_url text;
 alter table public.profiles add column if not exists streak integer not null default 0;
+alter table public.profiles add column if not exists career_score integer not null default 0 check (career_score >= 0);
+alter table public.profiles add column if not exists fixtures_cleared integer not null default 0 check (fixtures_cleared >= 0);
+
+-- One scored result per scout, fixture, and drop day. Blocks replaying the same card for points.
+create table if not exists public.played_fixtures (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  fixture_id text not null,
+  played_on date not null,
+  score integer not null check (score >= 0),
+  created_at timestamptz not null default now(),
+  constraint played_fixtures_once unique (user_id, fixture_id, played_on)
+);
+
+create index if not exists played_fixtures_user_idx
+  on public.played_fixtures (user_id, played_on desc);
+
+alter table public.played_fixtures enable row level security;
+
+drop policy if exists "played_fixtures_select_own" on public.played_fixtures;
+create policy "played_fixtures_select_own"
+  on public.played_fixtures
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "played_fixtures_insert_own" on public.played_fixtures;
+create policy "played_fixtures_insert_own"
+  on public.played_fixtures
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
 
 alter table public.profiles enable row level security;
 

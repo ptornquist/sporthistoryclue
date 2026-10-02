@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
+import { loadCareerStats } from '@/lib/career-score';
 import {
   followScout,
   getFollowingIds,
@@ -38,7 +39,8 @@ export default function ProfilePage() {
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
-  const [totalScore, setTotalScore] = useState(0);
+  const [careerScore, setCareerScore] = useState<number | null>(null);
+  const [fixturesCleared, setFixturesCleared] = useState<number | null>(null);
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -66,6 +68,10 @@ export default function ProfilePage() {
       setUsernameInput(prof.username || '');
     }
 
+    const career = await loadCareerStats(user.id);
+    setCareerScore(career.careerScore);
+    setFixturesCleared(career.fixturesCleared);
+
     const { data: matchHistory } = await supabaseClient
       .from('match_history')
       .select('id, score, clues_used, created_at, challenges(subject, year, category)')
@@ -74,8 +80,6 @@ export default function ProfilePage() {
 
     if (matchHistory) {
       setMatches(matchHistory as any);
-      const sum = matchHistory.reduce((acc, curr) => acc + (curr.score || 0), 0);
-      setTotalScore(sum);
     }
 
     const ids = await getFollowingIds(user.id);
@@ -217,13 +221,13 @@ export default function ProfilePage() {
             <div>
               <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Career Score</span>
               <span className="text-3xl font-black font-mono text-blue-600">
-                {totalScore.toLocaleString()}
+                {careerScore == null ? '—' : careerScore.toLocaleString()}
               </span>
             </div>
             <div>
               <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Fixtures Cleared</span>
               <span className="text-3xl font-black font-mono text-zinc-900">
-                {matches.length}
+                {fixturesCleared == null ? '—' : fixturesCleared.toLocaleString()}
               </span>
             </div>
           </div>

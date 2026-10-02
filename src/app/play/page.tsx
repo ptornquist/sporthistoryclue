@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { supabaseClient } from '@/lib/supabase/client';
+import { recordCareerSolve } from '@/lib/career-score';
+import { utcDateKey } from '@/lib/drop-dates';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 
 interface Challenge {
@@ -96,14 +98,20 @@ function PlayContent() {
 
   const saveScore = async (finalScore: number) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user || !challenge) return;
+    if (!user?.id || !challenge) return;
 
-    await supabaseClient.from('match_history').insert({
+    await recordCareerSolve(
+      { id: challenge.id, playedOn: utcDateKey() },
+      finalScore,
+    );
+
+    const { error } = await supabaseClient.from('match_history').insert({
       user_id: user.id,
       challenge_id: challenge.id,
       score: finalScore,
       clues_used: currentClueIdx + 1,
     });
+    if (error) console.error('Failed to save score:', error);
   };
 
   if (loading) {

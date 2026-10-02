@@ -18,6 +18,7 @@ import { ClueStack } from '@/components/game/ClueStack';
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
+import { recordCareerSolve } from '@/lib/career-score';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
@@ -262,12 +263,23 @@ export function DailyDropArena() {
         setStreak(newStreak);
         localStorage.setItem('shc_streak', newStreak.toString());
 
-        if (currentUser?.id && isSupabaseConfigured) {
-          supabaseClient
-            .from('profiles')
-            .update({ streak: newStreak })
-            .eq('id', currentUser.id)
-            .then();
+        if (isSupabaseConfigured) {
+          try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user?.id) {
+              await recordCareerSolve(
+                { id: challenge.id, playedOn: challenge.date_key },
+                score,
+              );
+              const { error: streakError } = await supabaseClient
+                .from('profiles')
+                .update({ streak: newStreak })
+                .eq('id', user.id);
+              if (streakError) console.error('Failed to save score:', streakError);
+            }
+          } catch (error) {
+            console.error('Failed to save score:', error);
+          }
         }
         return;
       }
