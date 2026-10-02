@@ -6,50 +6,48 @@ import { ShopBoard } from '@/components/game/ShopBoard';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { loadShopBalance, purchaseBadge } from '@/lib/shop-catalog';
 
-const BADGES = [
+export const BADGES = [
   {
     id: 'rookie_pin',
     name: 'ROOKIE PIN',
-    cost: 500,
+    cost: 10000,
     icon: '📌',
     bg: 'bg-amber-100 border-amber-300 text-amber-900',
-    desc: 'A first-season scout badge for clearing the opening fixtures.',
+    desc: 'Awarded to scouts who complete their first full match cycles.',
   },
   {
     id: 'archive_lantern',
     name: 'ARCHIVE LANTERN',
-    cost: 1500,
+    cost: 35000,
     icon: '🏮',
     bg: 'bg-orange-100 border-orange-300 text-orange-900',
-    desc: 'Lights the older drawers in the match archive.',
+    desc: 'Lights the deeper vaults of vintage sports history.',
   },
   {
     id: 'gold_whistle',
     name: 'GOLD WHISTLE',
-    cost: 3000,
+    cost: 75000,
     icon: '🪙',
     bg: 'bg-yellow-100 border-yellow-300 text-yellow-900',
-    desc: 'Marks a scout who reads the room before the climax.',
+    desc: 'For elite analysts reading momentum long before the climax.',
   },
   {
     id: 'hof_sash',
     name: 'HALL OF FAME SASH',
-    cost: 7500,
+    cost: 150000,
     icon: '🎖️',
     bg: 'bg-purple-100 border-purple-300 text-purple-900',
-    desc: 'Worn after a long career on the standings board.',
+    desc: 'A permanent banner reserved for leaderboard veterans.',
   },
   {
     id: 'chief_intel',
     name: 'CHIEF OF INTEL CREST',
-    cost: 12000,
+    cost: 300000,
     icon: '👑',
     bg: 'bg-emerald-100 border-emerald-300 text-emerald-950',
-    desc: 'The top shelf of the club shop.',
+    desc: 'The pinnacle archive honour for master scouts.',
   },
 ];
-
-export { BADGES };
 
 export default function ShopPage() {
   const [careerScore, setCareerScore] = useState<number | null>(null);

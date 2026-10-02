@@ -16,7 +16,7 @@ describe("shop catalog", () => {
       "hof_sash",
       "chief_intel",
     ]);
-    expect(BADGES.map((item) => item.cost)).toEqual([500, 1500, 3000, 7500, 12000]);
+    expect(BADGES.map((item) => item.cost)).toEqual([10000, 35000, 75000, 150000, 300000]);
   });
 
   it("reads the signed-in scout career score", async () => {
@@ -60,8 +60,8 @@ describe("shop catalog", () => {
 
   it("asks purchase_badge to spend the listed cost", async () => {
     const rpc = vi.fn(async () => ({ data: { success: true, new_score: 7000 }, error: null }));
-    const result = await purchaseBadge("rookie_pin", 500, { rpc } as never);
-    expect(rpc).toHaveBeenCalledWith("purchase_badge", { p_badge_id: "rookie_pin", p_cost: 500 });
+    const result = await purchaseBadge("rookie_pin", 10000, { rpc } as never);
+    expect(rpc).toHaveBeenCalledWith("purchase_badge", { p_badge_id: "rookie_pin", p_cost: 10000 });
     expect(result.data).toEqual({ success: true, new_score: 7000 });
   });
 });

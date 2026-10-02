@@ -356,11 +356,11 @@ begin
   end if;
 
   catalog_cost := case p_badge_id
-    when 'rookie_pin' then 500
-    when 'archive_lantern' then 1500
-    when 'gold_whistle' then 3000
-    when 'hof_sash' then 7500
-    when 'chief_intel' then 12000
+    when 'rookie_pin' then 10000
+    when 'archive_lantern' then 35000
+    when 'gold_whistle' then 75000
+    when 'hof_sash' then 150000
+    when 'chief_intel' then 300000
     else null
   end;
 
