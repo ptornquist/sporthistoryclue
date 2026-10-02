@@ -37,5 +37,8 @@ describe("career stats shop access", () => {
     expect(html).toContain("🛍️ SHOP");
     expect(html).toContain("🛍️ Spend Points in Shop");
     expect(html).toContain("shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]");
+    expect(html).toContain("Scout Accolades (0)");
+    expect(html).toContain("No badges unlocked yet. Spend career points in the shop!");
+    expect(html.indexOf("Scout Accolades")).toBeLessThan(html.indexOf("Find Scouts"));
   });
 });

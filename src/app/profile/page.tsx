@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { fetchCareerStandings } from '@/lib/career-standings';
+import { resolveUnlockedBadges, type UnlockedAccolade } from '@/lib/scout-badges';
+import { BadgeHandleFlair, ScoutAccolades } from '@/components/game/ScoutAccolades';
 import {
   followScout,
   getFollowingIds,
@@ -41,6 +43,7 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [careerScore, setCareerScore] = useState<number | null>(null);
   const [fixturesCleared, setFixturesCleared] = useState<number | null>(null);
+  const [badges, setBadges] = useState<UnlockedAccolade[]>([]);
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -85,6 +88,13 @@ export default function ProfilePage() {
     if (matchHistory) {
       setMatches(matchHistory as any);
     }
+
+    const supabase = supabaseClient;
+    const { data: badgeData } = await supabase
+      .from('user_badges')
+      .select('badge_id, unlocked_at')
+      .eq('user_id', user.id);
+    setBadges(resolveUnlockedBadges(badgeData));
 
     const ids = await getFollowingIds(user.id);
     setFollowingIds(ids);
@@ -201,8 +211,9 @@ export default function ProfilePage() {
             <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
               Scout Handle
             </span>
-            <h1 className="text-3xl font-black tracking-tight text-zinc-900 uppercase mt-1">
-              @{profile?.username || 'scout'}
+            <h1 className="text-3xl font-black tracking-tight text-zinc-900 uppercase mt-1 flex flex-wrap items-center gap-2">
+              <span>@{profile?.username || 'scout'}</span>
+              <BadgeHandleFlair badges={badges} />
             </h1>
             <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
 
@@ -247,6 +258,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        <ScoutAccolades badges={badges} />
 
         {/* Social / Friends Section */}
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">

@@ -310,8 +310,11 @@ create table if not exists public.user_badges (
   user_id uuid not null references public.profiles (id) on delete cascade,
   badge_id text not null,
   created_at timestamptz not null default now(),
+  unlocked_at timestamptz not null default now(),
   constraint user_badges_once unique (user_id, badge_id)
 );
+
+alter table public.user_badges add column if not exists unlocked_at timestamptz not null default now();
 
 create index if not exists user_badges_user_idx
   on public.user_badges (user_id);
