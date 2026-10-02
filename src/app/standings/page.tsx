@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { fetchCareerStandings, type CareerStanding } from '@/lib/career-standings';
+import Header from '@/components/Header';
 import FindScouts from '@/components/game/FindScouts';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
@@ -104,9 +104,13 @@ export default function StandingsPage() {
 
   useEffect(() => {
     let active = true;
-    fetchCareerStandings()
+    const standingsPromise = isSupabaseConfigured ? fetchCareerStandings() : Promise.resolve([]);
+    standingsPromise
       .then((standings) => {
         if (active) setRows(standings);
+      })
+      .catch(() => {
+        if (active) setRows([]);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -147,16 +151,9 @@ export default function StandingsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fafafa] px-6 py-10 text-zinc-900">
-      <header className="mx-auto mb-8 flex max-w-4xl items-center justify-between">
-        <Link href="/" className="text-xl font-black uppercase tracking-tighter">
-          Sports<span className="text-blue-600">History</span>Clue
-        </Link>
-        <Link href="/profile" className="text-xs font-bold uppercase tracking-wider text-blue-600">
-          Profile
-        </Link>
-      </header>
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-screen bg-[#fafafa] text-zinc-900">
+      <Header />
+      <div className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="text-3xl font-black uppercase tracking-tight">Global Standings</h1>
         <p className="mt-1 text-xs font-medium text-zinc-500">
           Ranked by career score across every cleared fixture.

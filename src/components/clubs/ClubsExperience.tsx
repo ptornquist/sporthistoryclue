@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthGateModal from "@/components/AuthGateModal";
 import { ClubComposer, ClubStandings } from "@/components/clubs/ClubsBoard";
@@ -232,7 +231,6 @@ export function ClubsExperience({
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 flex flex-col justify-between">
       <div>
-        <Navbar />
         <div className="mx-auto max-w-5xl px-6 py-10">
           <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Friend &amp; office leagues</p>
           <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Private Scout Clubs</h1>

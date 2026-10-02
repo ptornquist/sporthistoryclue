@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Header from '@/components/Header';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { safeReturnPath } from '@/lib/clubs';
@@ -187,10 +188,13 @@ function AuthContent() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 selection:bg-blue-600 selection:text-white">
-      <Suspense fallback={<div className="text-xs font-mono text-zinc-400">Loading...</div>}>
-        <AuthContent />
-      </Suspense>
-    </main>
+    <>
+      <Header />
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 selection:bg-blue-600 selection:text-white">
+        <Suspense fallback={<div className="text-xs font-mono text-zinc-400">Loading...</div>}>
+          <AuthContent />
+        </Suspense>
+      </main>
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 import {
@@ -72,7 +72,7 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <Navbar />
+      <Header />
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

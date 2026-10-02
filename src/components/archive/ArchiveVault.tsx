@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { readLocalCompletions } from "@/lib/daily-completions";
 import {
@@ -38,7 +38,7 @@ export function ArchiveVault({ fixtures }: { fixtures: ArchiveFixture[] }) {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans">
-      <Navbar />
+      <Header />
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <header className="mb-6">
           <h1 className="text-3xl font-black tracking-tight text-zinc-900 sm:text-4xl">HISTORICAL VAULT</h1>

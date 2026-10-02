@@ -11,7 +11,6 @@ import {
   toggleSoundMute,
   triggerHaptic,
 } from '@/lib/audio';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { ClueStack } from '@/components/game/ClueStack';
@@ -442,8 +441,6 @@ export function DailyDropArena(props: {
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
       <div>
-        <Navbar />
-
         {/* Duel Banner */}
         {isDuelActive && !gameWon && !gameOver && (
           <div className="bg-blue-600 text-white px-4 py-2.5 text-center text-xs font-bold tracking-wide">

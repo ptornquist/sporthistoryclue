@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Header from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { expeditions } from "@/lib/catalog";
 
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
 
 export default function ExpeditionsPage() {
   return (
-    <div className="space-y-8">
+    <>
+      <Header />
+      <div className="space-y-8 px-6 py-10">
       <div>
         <Badge variant="gold">Time travel</Badge>
         <h1 className="mt-3 font-serif text-4xl text-paper sm:text-5xl">Expeditions</h1>
@@ -38,6 +41,7 @@ export default function ExpeditionsPage() {
           </Link>
         ))}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

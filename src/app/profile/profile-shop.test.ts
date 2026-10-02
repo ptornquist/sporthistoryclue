@@ -2,7 +2,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/profile",
+}));
+
 vi.mock("@/lib/supabase/client", () => ({
+  isSupabaseConfigured: false,
   supabaseClient: {
     auth: {
       getUser: async () => ({ data: { user: null } }),
@@ -34,7 +39,9 @@ describe("career stats shop access", () => {
     const { default: ProfilePage } = await import("./page");
     const html = renderToStaticMarkup(createElement(ProfilePage));
     expect(html).toContain('href="/shop"');
-    expect(html).toContain("🛍️ SHOP");
+    expect(html).toContain(">Shop<");
+    expect(html).toContain("SPORTSHISTORYCLUE");
+    expect(html).toContain("👤 Profile");
     expect(html).toContain("🛍️ Spend Points in Shop");
     expect(html).toContain("shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]");
     expect(html).toContain("Scout Accolades (0)");

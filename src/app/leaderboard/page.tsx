@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/Header';
 import { supabaseClient } from '@/lib/supabase/client';
 import FindScouts from '@/components/game/FindScouts';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
@@ -125,27 +125,7 @@ export default function LeaderboardPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <header className="bg-white border-b border-zinc-200 px-6 py-4 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl font-black tracking-tighter uppercase">
-              Sports<span className="text-blue-600">History</span>Clue
-            </Link>
-            <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
-              Standings
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
-              Arena
-            </Link>
-            <Link href="/profile" className="text-xs font-bold uppercase tracking-wider text-blue-600 hover:text-blue-800">
-              Profile
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
