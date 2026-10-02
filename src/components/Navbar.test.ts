@@ -7,8 +7,10 @@ describe("site navigation", () => {
     const { default: Navbar } = await import("./Navbar");
     const html = renderToStaticMarkup(createElement(Navbar));
     expect(html).toContain("w-full bg-[#fcfbf9] border-b border-zinc-200 py-4 px-6 md:px-12 flex items-center justify-between sticky top-0 z-50");
-    expect(html).toContain("font-black text-xl tracking-tight text-zinc-950");
-    expect(html).toContain("SPORTSHISTORYCLUE");
+    expect(html).toContain("font-black text-xl tracking-tight text-zinc-950 flex items-center gap-1");
+    expect(html).toContain(">SPORTS<");
+    expect(html).toContain("text-blue-600\">HISTORY");
+    expect(html).toContain(">CLUE<");
     expect(html).toContain(">BETA<");
     expect(html).toContain("hidden md:flex items-center gap-6 text-xs font-black uppercase tracking-wider text-zinc-700");
     expect(html).toContain('href="/"');
