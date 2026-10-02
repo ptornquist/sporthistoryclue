@@ -49,7 +49,7 @@ export function SportArchive({
         <div className="mb-5 flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
           <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">{sport.name} Fixtures</h2>
           <span className="shrink-0 rounded-full bg-zinc-900 px-3 py-1 text-xs font-mono font-black text-white">
-            {fixtures.length} matches
+            {fixtures.length} {fixtures.length === 1 ? "match" : "matches"}
           </span>
         </div>
 
