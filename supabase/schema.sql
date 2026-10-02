@@ -103,6 +103,30 @@ create policy "played_fixtures_insert_own"
   to authenticated
   with check (auth.uid() = user_id);
 
+-- One win per scout and fixture. Career totals move only through record_fixture_win.
+create table if not exists public.user_fixture_solves (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  challenge_id text not null,
+  score_awarded integer not null check (score_awarded >= 0 and score_awarded <= 10000),
+  created_at timestamptz not null default now(),
+  constraint user_fixture_solves_once unique (user_id, challenge_id)
+);
+
+create index if not exists user_fixture_solves_challenge_idx
+  on public.user_fixture_solves (challenge_id);
+
+alter table public.user_fixture_solves enable row level security;
+
+drop policy if exists "user_fixture_solves_select_own" on public.user_fixture_solves;
+create policy "user_fixture_solves_select_own"
+  on public.user_fixture_solves
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+revoke update (career_score, fixtures_cleared) on public.profiles from anon, authenticated;
+
 alter table public.profiles enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
@@ -191,6 +215,69 @@ end;
 $$;
 
 revoke all on function private.handle_new_user() from public, anon, authenticated;
+
+create or replace function private.record_fixture_win(p_challenge_id text, p_score integer)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  existing_score integer;
+begin
+  if uid is null then
+    raise exception 'Not authenticated';
+  end if;
+  if p_challenge_id is null or length(btrim(p_challenge_id)) = 0 or length(p_challenge_id) > 80 then
+    raise exception 'Invalid fixture';
+  end if;
+  if p_score is null or p_score < 0 or p_score > 10000 then
+    raise exception 'Invalid score';
+  end if;
+
+  select score_awarded into existing_score
+  from public.user_fixture_solves
+  where user_id = uid and challenge_id = p_challenge_id;
+
+  if found then
+    return jsonb_build_object('already_solved', true, 'score_awarded', existing_score);
+  end if;
+
+  insert into public.user_fixture_solves (user_id, challenge_id, score_awarded)
+  values (uid, p_challenge_id, p_score);
+
+  update public.profiles
+  set career_score = career_score + p_score,
+      fixtures_cleared = fixtures_cleared + 1,
+      updated_at = now()
+  where id = uid;
+
+  return jsonb_build_object('already_solved', false, 'score_awarded', p_score);
+exception
+  when unique_violation then
+    select score_awarded into existing_score
+    from public.user_fixture_solves
+    where user_id = uid and challenge_id = p_challenge_id;
+    return jsonb_build_object('already_solved', true, 'score_awarded', existing_score);
+end;
+$$;
+
+revoke all on function private.record_fixture_win(text, integer) from public, anon;
+grant execute on function private.record_fixture_win(text, integer) to authenticated;
+grant usage on schema private to authenticated;
+
+create or replace function public.record_fixture_win(p_challenge_id text, p_score integer)
+returns jsonb
+language sql
+security invoker
+set search_path = public
+as $$
+  select private.record_fixture_win(p_challenge_id, p_score);
+$$;
+
+revoke all on function public.record_fixture_win(text, integer) from public, anon;
+grant execute on function public.record_fixture_win(text, integer) to authenticated;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created

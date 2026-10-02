@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { supabaseClient } from '@/lib/supabase/client';
-import { recordCareerSolve } from '@/lib/career-score';
-import { utcDateKey } from '@/lib/drop-dates';
+import { findFixtureSolve, recordFixtureWin } from '@/lib/fixture-solves';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 
 interface Challenge {
@@ -44,6 +43,11 @@ function PlayContent() {
 
       if (data) {
         setChallenge(data);
+        const solvedRecord = await findFixtureSolve(data.id);
+        if (solvedRecord) {
+          setGameWon(true);
+          setScore(solvedRecord.score_awarded);
+        }
 
         const provided = data.options && Array.isArray(data.options) ? data.options : [];
         const seeded = provided.length > 0
@@ -100,10 +104,10 @@ function PlayContent() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user?.id || !challenge) return;
 
-    await recordCareerSolve(
-      { id: challenge.id, playedOn: utcDateKey() },
-      finalScore,
-    );
+    const saved = await recordFixtureWin(challenge.id, finalScore);
+    if (saved && !saved.already_solved) {
+      setGameWon(true);
+    }
 
     const { error } = await supabaseClient.from('match_history').insert({
       user_id: user.id,

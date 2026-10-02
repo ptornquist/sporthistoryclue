@@ -22,4 +22,6 @@ export const supabaseClient = {
   },
   from: ((...args: Parameters<BrowserClient["from"]>) =>
     createClient().from(...args)) as BrowserClient["from"],
+  rpc: ((...args: Parameters<BrowserClient["rpc"]>) =>
+    createClient().rpc(...args)) as BrowserClient["rpc"],
 };

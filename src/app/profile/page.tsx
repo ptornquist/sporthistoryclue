@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
-import { loadCareerStats } from '@/lib/career-score';
+import { fetchCareerStandings } from '@/lib/career-standings';
 import {
   followScout,
   getFollowingIds,
@@ -57,20 +57,23 @@ export default function ProfilePage() {
     }
     setUser(user);
 
-    const { data: prof } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
+    const standings = await fetchCareerStandings();
+    const prof = standings.find((row) => row.id === user.id);
     if (prof) {
-      setProfile(prof);
+      setProfile({
+        id: prof.id,
+        username: prof.username || '',
+        display_name: prof.display_name || prof.username || '',
+        avatar_url: prof.avatar_url,
+        streak: prof.streak,
+      });
       setUsernameInput(prof.username || '');
+      setCareerScore(prof.career_score || 0);
+      setFixturesCleared(prof.fixtures_cleared || 0);
+    } else {
+      setCareerScore(0);
+      setFixturesCleared(0);
     }
-
-    const career = await loadCareerStats(user.id);
-    setCareerScore(career.careerScore);
-    setFixturesCleared(career.fixturesCleared);
 
     const { data: matchHistory } = await supabaseClient
       .from('match_history')
@@ -165,7 +168,7 @@ export default function ProfilePage() {
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
               Arena
             </Link>
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
+            <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
               Standings
             </Link>
             <button

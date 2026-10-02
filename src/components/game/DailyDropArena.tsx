@@ -18,7 +18,7 @@ import { ClueStack } from '@/components/game/ClueStack';
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
-import { recordCareerSolve } from '@/lib/career-score';
+import { findFixtureSolve } from '@/lib/fixture-solves';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
@@ -80,6 +80,8 @@ export function DailyDropArena() {
   const [score, setScore] = useState(10000);
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
+  const [isSolved, setIsSolved] = useState(false);
+  const [earnedScore, setEarnedScore] = useState<number | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [guessing, setGuessing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -158,6 +160,8 @@ export function DailyDropArena() {
       setScore(10000);
       setSelectedWrong([]);
       setGameWon(false);
+      setIsSolved(false);
+      setEarnedScore(null);
       setGameOver(false);
       try {
         const params = new URLSearchParams(window.location.search);
@@ -183,6 +187,15 @@ export function DailyDropArena() {
         whistled.current = false;
         setActiveMatch(match || null);
         setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
+        if (isSupabaseConfigured) {
+          const solvedRecord = await findFixtureSolve(fixture.id);
+          if (solvedRecord) {
+            setIsSolved(true);
+            setGameWon(true);
+            setEarnedScore(solvedRecord.score_awarded);
+            setScore(solvedRecord.score_awarded);
+          }
+        }
         setChallenge(fixture);
       } catch {
         showToast('Could not load this drop.');
@@ -211,7 +224,7 @@ export function DailyDropArena() {
   };
 
   const handleRevealClue = () => {
-    if (!challenge) return;
+    if (!challenge || isSolved || gameWon || gameOver) return;
     if (currentClueIdx < challenge.clues.length - 1) {
       playCluePenalty();
       triggerHaptic(20);
@@ -235,7 +248,7 @@ export function DailyDropArena() {
   };
 
   const handleGuess = async (option: string) => {
-    if (!challenge || gameWon || gameOver || guessing) return;
+    if (!challenge || isSolved || gameWon || gameOver || guessing) return;
     setGuessing(true);
     try {
       const response = await fetch('/api/verify', {
@@ -258,6 +271,8 @@ export function DailyDropArena() {
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
         setGameWon(true);
+        setIsSolved(true);
+        setEarnedScore(score);
         rememberSolvedCase(challenge.id, score);
         const newStreak = streak + 1;
         setStreak(newStreak);
@@ -267,18 +282,25 @@ export function DailyDropArena() {
           try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user?.id) {
-              await recordCareerSolve(
-                { id: challenge.id, playedOn: challenge.date_key },
-                score,
-              );
+              const { data, error } = await supabaseClient.rpc('record_fixture_win', {
+                p_challenge_id: challenge.id,
+                p_score: score,
+              });
+              if (error) {
+                console.error('Score save error:', error);
+              } else if (data?.already_solved) {
+                console.log('Fixture was already solved.');
+              } else {
+                setIsSolved(true);
+              }
               const { error: streakError } = await supabaseClient
                 .from('profiles')
                 .update({ streak: newStreak })
                 .eq('id', user.id);
-              if (streakError) console.error('Failed to save score:', streakError);
+              if (streakError) console.error('Score save error:', streakError);
             }
           } catch (error) {
-            console.error('Failed to save score:', error);
+            console.error('Score save error:', error);
           }
         }
         return;
@@ -466,13 +488,13 @@ export function DailyDropArena() {
             <ClueStack
               clues={challenge.clues}
               revealedIndex={currentClueIdx}
-              locked={gameWon || gameOver}
+              locked={isSolved || gameWon || gameOver}
               onReveal={handleRevealClue}
             />
           </div>
 
           {/* Options / Deduction Grid */}
-          {!gameWon && !gameOver && (
+          {!isSolved && !gameWon && !gameOver && (
             <div>
               <GuessQuestionHeader />
               <div className="grid grid-cols-2 gap-3">
@@ -498,7 +520,7 @@ export function DailyDropArena() {
             </div>
           )}
 
-          {(gameWon || gameOver) && (
+          {(isSolved || gameWon || gameOver) && (
             <div className="space-y-4">
               {isDuelActive && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
@@ -529,11 +551,11 @@ export function DailyDropArena() {
                 </div>
               )}
 
-              {gameWon ? (
+              {isSolved || gameWon ? (
                 <SolvedFixtureCard
                   sport={challenge.category}
                   year={solution?.year ?? null}
-                  score={score}
+                  score={earnedScore ?? score}
                   cells={gridCells}
                   streak={streak}
                   onShare={handleShareResult}
