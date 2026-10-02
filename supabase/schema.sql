@@ -411,4 +411,139 @@ $$;
 revoke all on function public.purchase_badge(text, integer) from public, anon;
 grant execute on function public.purchase_badge(text, integer) to authenticated;
 
+-- Head-to-head challenges. Participants can read and update their own rows.
+create table if not exists public.duels (
+  id uuid primary key default gen_random_uuid(),
+  challenger_id uuid references public.profiles (id) on delete cascade,
+  challenged_id uuid references public.profiles (id) on delete cascade,
+  fixture_date date not null default current_date,
+  challenger_score integer default 0,
+  challenged_score integer default null,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined', 'completed')),
+  winner_id uuid references public.profiles (id) on delete set null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.duels add column if not exists challenger_id uuid references public.profiles (id) on delete cascade;
+alter table public.duels add column if not exists challenged_id uuid references public.profiles (id) on delete cascade;
+alter table public.duels add column if not exists fixture_date date not null default current_date;
+alter table public.duels add column if not exists challenger_score integer default 0;
+alter table public.duels add column if not exists challenged_score integer default null;
+alter table public.duels add column if not exists status text not null default 'pending';
+alter table public.duels add column if not exists winner_id uuid references public.profiles (id) on delete set null;
+alter table public.duels add column if not exists created_at timestamptz default now();
+alter table public.duels add column if not exists updated_at timestamptz default now();
+
+alter table public.duels drop constraint if exists duels_status_check;
+alter table public.duels add constraint duels_status_check
+  check (status in ('pending', 'accepted', 'declined', 'completed'));
+
+create unique index if not exists duels_pending_once
+  on public.duels (challenger_id, challenged_id, fixture_date)
+  where status = 'pending';
+
+alter table public.duels enable row level security;
+
+drop policy if exists "Users can view own duels" on public.duels;
+create policy "Users can view own duels"
+  on public.duels
+  for select
+  to authenticated
+  using (auth.uid() = challenger_id or auth.uid() = challenged_id);
+
+drop policy if exists "Users can create duels" on public.duels;
+create policy "Users can create duels"
+  on public.duels
+  for insert
+  to authenticated
+  with check (auth.uid() = challenger_id);
+
+drop policy if exists "Participants can update duels" on public.duels;
+create policy "Participants can update duels"
+  on public.duels
+  for update
+  to authenticated
+  using (auth.uid() = challenger_id or auth.uid() = challenged_id)
+  with check (auth.uid() = challenger_id or auth.uid() = challenged_id);
+
+revoke all on public.duels from anon;
+grant select, insert, update on public.duels to authenticated;
+
+create or replace function private.create_user_duel(
+  p_challenged_id uuid,
+  p_fixture_date date default current_date
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_my_score integer;
+  v_duel_id uuid;
+  v_day date;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    return jsonb_build_object('success', false, 'error', 'Not authenticated');
+  end if;
+
+  if p_challenged_id is null or v_user_id = p_challenged_id then
+    return jsonb_build_object('success', false, 'error', 'Cannot challenge yourself');
+  end if;
+
+  if not exists (select 1 from public.profiles where id = p_challenged_id) then
+    return jsonb_build_object('success', false, 'error', 'Scout not found');
+  end if;
+
+  v_day := coalesce(p_fixture_date, current_date);
+
+  -- Fixture solves store the day as text (YYYY-MM-DD).
+  select score_awarded into v_my_score
+  from public.user_fixture_solves
+  where user_id = v_user_id
+    and fixture_date = to_char(v_day, 'YYYY-MM-DD')
+  limit 1;
+
+  insert into public.duels (
+    challenger_id,
+    challenged_id,
+    fixture_date,
+    challenger_score,
+    status
+  ) values (
+    v_user_id,
+    p_challenged_id,
+    v_day,
+    coalesce(v_my_score, 0),
+    'pending'
+  ) returning id into v_duel_id;
+
+  return jsonb_build_object('success', true, 'duel_id', v_duel_id);
+exception
+  when unique_violation then
+    return jsonb_build_object('success', false, 'error', 'Challenge already sent');
+end;
+$$;
+
+revoke all on function private.create_user_duel(uuid, date) from public, anon;
+grant execute on function private.create_user_duel(uuid, date) to authenticated;
+
+create or replace function public.create_user_duel(
+  p_challenged_id uuid,
+  p_fixture_date date default current_date
+)
+returns jsonb
+language sql
+security invoker
+set search_path = public
+as $$
+  select private.create_user_duel(p_challenged_id, p_fixture_date);
+$$;
+
+revoke all on function public.create_user_duel(uuid, date) from public, anon;
+grant execute on function public.create_user_duel(uuid, date) to authenticated;
+
 -- After this file, run supabase/seed.sql to load catalog answer sheets.
