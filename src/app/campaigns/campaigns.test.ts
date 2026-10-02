@@ -13,18 +13,22 @@ describe("storylines layout", () => {
     const html = renderToStaticMarkup(createElement(CampaignsPage));
 
     expect(html).toContain("overflow-x-hidden w-full max-w-full");
-    expect(html).toContain("shrink-0 text-lg md:text-xl font-black tracking-tighter uppercase");
-    expect(html).toContain("hidden md:flex items-center gap-6");
+    expect(html).toContain("font-black text-lg md:text-xl tracking-tight text-zinc-950 shrink-0");
+    expect(html).toContain("SPORTSHISTORYCLUE");
+    expect(html).toContain("hidden md:flex items-center gap-6 text-sm font-black uppercase");
     expect(html).toContain("☰");
+    expect(html).toContain("🎯 Arena");
+    expect(html).toContain("📖 Campaigns");
+    expect(html).toContain("🏅 Archive");
+    expect(html).toContain("🏆 Standings");
+    expect(html).toContain("🛍 Shop");
+    expect(html).toContain("👤 Profile");
     expect(html).not.toContain("overflow-x-auto no-scrollbar");
     expect(html).toContain("w-full max-w-3xl mx-auto px-4 py-6 overflow-x-hidden");
     expect(html).toContain("flex w-full max-w-full flex-col justify-between gap-2");
     expect(html).toContain("sm:flex-row sm:items-center");
     expect(html).toContain("DEDUCE →");
     expect(html).toContain("Storylines");
-    expect(html).toContain("Daily Drop");
-    expect(html).toContain("Disciplines");
-    expect(html).toContain("Leaderboard");
     expect(html).not.toMatch(/w-\[\d+px\]/);
   });
 });

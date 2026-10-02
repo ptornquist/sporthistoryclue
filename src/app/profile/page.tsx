@@ -9,6 +9,7 @@ import { BadgeHandleFlair, ScoutAccolades } from '@/components/game/ScoutAccolad
 import { HeadToHeadDuels } from '@/components/game/HeadToHeadDuels';
 import { loadMyDuels, sendDuelChallenge, type DuelRow } from '@/lib/duels';
 import FindScouts from '@/components/game/FindScouts';
+import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import {
   followScout,
@@ -160,39 +161,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <header className="bg-white border-b border-zinc-200 px-6 py-4 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl font-black tracking-tighter uppercase">
-              Sports<span className="text-blue-600">History</span>Clue
-            </Link>
-            <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
-              Career Stats
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
-              Arena
-            </Link>
-            <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
-              Standings
-            </Link>
-            <Link href="/shop" className="font-bold text-sm tracking-wide uppercase hover:text-blue-600 transition-colors">
-              🛍️ SHOP
-            </Link>
-            <button
-              onClick={async () => {
-                await supabaseClient.auth.signOut();
-                window.location.href = '/login';
-              }}
-              className="text-xs font-medium text-zinc-400 hover:text-zinc-600"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
         {actionMessage && (
@@ -212,6 +181,16 @@ export default function ProfilePage() {
               <BadgeHandleFlair badges={badges} />
             </h1>
             <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
+            <button
+              type="button"
+              onClick={async () => {
+                await supabaseClient.auth.signOut();
+                window.location.href = '/login';
+              }}
+              className="mt-2 text-xs font-medium text-zinc-400 hover:text-zinc-600"
+            >
+              Sign Out
+            </button>
 
             <form onSubmit={handleUpdateUsername} className="flex gap-2 mt-4">
               <input

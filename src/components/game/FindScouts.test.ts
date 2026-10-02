@@ -8,6 +8,8 @@ describe("Find Scouts", () => {
     const html = renderToStaticMarkup(createElement(FindScouts));
     expect(html).toContain("Find Scouts");
     expect(html).toContain('placeholder="Find Scouts by @username"');
+    expect(html).toContain("flex flex-col sm:flex-row gap-2 w-full mt-2");
+    expect(html).toContain("w-full sm:w-auto");
     expect(html).toContain(">Search<");
     expect(html).not.toContain("Searching scouts...");
   });

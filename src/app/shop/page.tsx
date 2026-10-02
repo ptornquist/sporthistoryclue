@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
+import Header from '@/components/Header';
 import { ShopBoard } from '@/components/game/ShopBoard';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { loadShopBalance, purchaseBadge } from '@/lib/shop-catalog';
@@ -92,7 +92,7 @@ export default function ShopPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900">
-      <Navbar />
+      <Header />
       <div className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="text-3xl font-black uppercase tracking-tight">Scout Shop</h1>
         <p className="mt-1 text-xs font-medium text-zinc-500">

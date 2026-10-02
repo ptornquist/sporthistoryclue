@@ -151,18 +151,18 @@ export default function FindScouts({
         </div>
       )}
 
-      <form onSubmit={handleSearchScouts} className="flex gap-2">
+      <form onSubmit={handleSearchScouts} className="flex flex-col sm:flex-row gap-2 w-full mt-2">
         <input
           type="text"
           placeholder="Find Scouts by @username"
           value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           aria-label="Find Scouts"
-          className="flex-1 px-4 py-2.5 rounded-xl border-2 border-zinc-200 focus:border-zinc-900 outline-none font-bold text-sm"
+          className="w-full min-w-0 flex-1 px-4 py-2.5 rounded-xl border-2 border-zinc-200 focus:border-zinc-900 outline-none font-bold text-sm bg-white"
         />
         <button
           type="submit"
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
+          className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
         >
           Search
         </button>
