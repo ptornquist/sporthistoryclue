@@ -6,8 +6,8 @@ describe("site navigation", () => {
   it("renders the shared header links and profile pill", async () => {
     const { default: Navbar, MobileNavDropdown } = await import("./Navbar");
     const html = renderToStaticMarkup(createElement(Navbar));
-    expect(html).toContain("w-full bg-[#fcfbf9] border-b border-zinc-200 py-4 px-6 md:px-12 flex items-center justify-between sticky top-0 z-50");
-    expect(html).toContain("font-black text-xl tracking-tight text-zinc-950 flex items-center gap-1");
+    expect(html).toContain("w-full bg-[#fcfbf9] border-b border-zinc-200 py-4 px-3 min-[360px]:px-6 md:px-12 flex items-center justify-between sticky top-0 z-50");
+    expect(html).toContain("font-black text-sm min-[420px]:text-base md:text-xl tracking-tight text-zinc-950 flex items-center gap-1");
     expect(html).toContain(">SPORTS<");
     expect(html).toContain("text-blue-600\">HISTORY");
     expect(html).toContain(">CLUE<");

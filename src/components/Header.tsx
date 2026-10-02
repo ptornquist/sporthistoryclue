@@ -32,9 +32,9 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="relative w-full bg-[#fcfbf9] border-b border-zinc-200 py-4 px-6 md:px-12 flex items-center justify-between sticky top-0 z-50">
+    <header className="relative w-full bg-[#fcfbf9] border-b border-zinc-200 py-4 px-3 min-[360px]:px-6 md:px-12 flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center gap-8 min-w-0">
-        <Link className="font-black text-xl tracking-tight text-zinc-950 flex items-center gap-1" href="/">
+        <Link className="font-black text-sm min-[420px]:text-base md:text-xl tracking-tight text-zinc-950 flex items-center gap-1" href="/">
           <span>SPORTS</span><span className="text-blue-600">HISTORY</span><span>CLUE</span>
           <span className="text-[10px] bg-zinc-200 px-1.5 py-0.5 rounded text-zinc-700 ml-1">BETA</span>
         </Link>
