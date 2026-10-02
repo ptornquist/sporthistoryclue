@@ -6,10 +6,10 @@ import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { fetchCareerStandings } from '@/lib/career-standings';
 import { resolveUnlockedBadges, type UnlockedAccolade } from '@/lib/scout-badges';
 import { BadgeHandleFlair, ScoutAccolades } from '@/components/game/ScoutAccolades';
+import FindScouts from '@/components/game/FindScouts';
 import {
   followScout,
   getFollowingIds,
-  searchScouts,
   unfollowScout,
   type ScoutProfile,
 } from '@/lib/supabase/network';
@@ -47,9 +47,6 @@ export default function ProfilePage() {
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
-  const [scoutQuery, setScoutQuery] = useState('');
-  const [scoutHits, setScoutHits] = useState<ScoutProfile[]>([]);
-  const [searchingScouts, setSearchingScouts] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -112,25 +109,6 @@ export default function ProfilePage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    const needle = scoutQuery.trim();
-    if (!user || needle.length < 1) {
-      setScoutHits([]);
-      return;
-    }
-    const timer = window.setTimeout(async () => {
-      setSearchingScouts(true);
-      try {
-        setScoutHits(await searchScouts(needle, user.id));
-      } catch {
-        setScoutHits([]);
-      } finally {
-        setSearchingScouts(false);
-      }
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [scoutQuery, user]);
 
   const handleUpdateUsername = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,57 +239,11 @@ export default function ProfilePage() {
 
         <ScoutAccolades badges={badges} />
 
-        {/* Social / Friends Section */}
-        <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
-          <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">Find Scouts</h2>
-          <p className="text-xs text-zinc-500 font-medium mt-0.5 mb-4">
-            Search registered scouts by username.
-          </p>
-          <input
-            type="text"
-            value={scoutQuery}
-            onChange={(event) => setScoutQuery(event.target.value)}
-            placeholder="Find Scouts by @username"
-            aria-label="Find Scouts"
-            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-blue-600"
-          />
-          {searchingScouts && (
-            <p className="text-[11px] font-bold text-zinc-400 mt-3">Searching…</p>
-          )}
-          {scoutHits.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {scoutHits.map((scout) => {
-                const handle = scout.username || 'scout';
-                const following = followingIds.includes(scout.id);
-                return (
-                  <div key={scout.id} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {scout.avatar_url ? (
-                        <img src={scout.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-200" />
-                      ) : (
-                        <span className="w-9 h-9 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
-                          {handle.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                      <span className="font-black text-xs text-zinc-900 truncate">@{handle}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleFollow(scout.id)}
-                      className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
-                        following
-                          ? 'bg-white text-zinc-700 border-zinc-200'
-                          : 'bg-blue-600 text-white border-blue-600'
-                      }`}
-                    >
-                      {following ? 'Unfollow' : 'Follow'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <FindScouts
+          currentUserId={user?.id ?? null}
+          followingIds={followingIds}
+          onToggleFollow={toggleFollow}
+        />
 
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
           <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900 mb-4">My Network</h2>

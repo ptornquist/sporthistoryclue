@@ -1,143 +1,164 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { followScout, searchScouts, type ScoutProfile } from '@/lib/supabase/network';
+import { followScout, searchScouts, unfollowScout, type ScoutProfile } from '@/lib/supabase/network';
 
 interface FindScoutsProps {
-  currentUserId: string | null;
-  onConnected?: () => void;
+  currentUserId?: string | null;
+  followingIds?: string[];
+  onToggleFollow?: (targetId: string) => Promise<void> | void;
+  framed?: boolean;
 }
 
-export default function FindScouts({ currentUserId, onConnected }: FindScoutsProps) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<ScoutProfile[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [connectingId, setConnectingId] = useState<string | null>(null);
-
-  const handleSearch = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const needle = query.trim().replace(/^@/, '');
-    if (!needle) return;
-
-    if (!currentUserId) {
-      setMessage('Log in to search registered scouts.');
-      setResults([]);
-      return;
-    }
-
-    setSearching(true);
-    setMessage(null);
-
-    try {
-      const data = await searchScouts(needle, currentUserId);
-      if (data.length === 0) {
-        setMessage('No scouts match that handle.');
-        setResults([]);
-      } else {
-        setResults(data);
-      }
-    } catch {
-      setMessage('Could not search scouts. Try again in a moment.');
-      setResults([]);
-    }
-
-    setSearching(false);
-  };
-
-  const handleConnect = async (targetId: string) => {
-    if (!currentUserId) return;
-    setConnectingId(targetId);
-    setMessage(null);
-
-    try {
-      await followScout(currentUserId, targetId);
-      setMessage('Scout connected.');
-      setResults((prev) => prev.filter((scout) => scout.id !== targetId));
-      onConnected?.();
-    } catch (error) {
-      const code = (error as { code?: string }).code;
-      setMessage(code === '23505' ? 'You are already connected.' : 'Could not follow that scout.');
-    }
-
-    setConnectingId(null);
-  };
-
+export function ScoutSearchResults({
+  searching,
+  query,
+  results,
+  followingIds,
+  onToggleFollow,
+}: {
+  searching: boolean;
+  query: string;
+  results: ScoutProfile[] | null;
+  followingIds: string[];
+  onToggleFollow: (scoutId: string) => void;
+}) {
   return (
-    <div>
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Find Scouts by @username"
-          aria-label="Find Scouts"
-          className="min-w-0 flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-blue-600"
-        />
-        <button
-          type="submit"
-          disabled={searching}
-          className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-700 disabled:opacity-60"
-        >
-          {searching ? '...' : 'Search'}
-        </button>
-      </form>
-
-      {!currentUserId && (
-        <p className="text-[11px] text-zinc-500 font-medium mt-2">
-          <Link href="/login" className="font-bold text-blue-600 hover:underline">
-            Log in
-          </Link>{' '}
-          to search and connect with scouts.
-        </p>
+    <>
+      {searching && (
+        <p className="text-xs font-bold text-zinc-400 py-2">Searching scouts...</p>
       )}
-
-      {message && (
-        <p className="text-[11px] font-bold text-zinc-600 mt-3">{message}</p>
-      )}
-
-      {results.length > 0 && (
-        <div className="mt-4 p-4 bg-zinc-50 border border-zinc-200 rounded-2xl">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
-            Scouts found
-          </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {results.map((scout) => {
-              const handle = scout.username || 'scout';
+      {results && (
+        <div className="flex flex-col gap-2 pt-2">
+          {results.length === 0 ? (
+            <p className="text-xs font-bold text-zinc-400 py-2">
+              No scout found matching &apos;@{query}&apos;
+            </p>
+          ) : (
+            results.map((scout) => {
+              const handle = scout.username?.replace(/^@/, '') || 'scout';
+              const following = followingIds.includes(scout.id);
               return (
                 <div
                   key={scout.id}
-                  className="bg-white p-3 rounded-xl border border-zinc-200 flex justify-between items-center gap-3"
+                  className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 bg-zinc-50"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {scout.avatar_url ? (
-                      <img
-                        src={scout.avatar_url}
-                        alt=""
-                        className="w-8 h-8 rounded-full object-cover border border-zinc-200"
-                      />
-                    ) : (
-                      <span className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
-                        {handle.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    <span className="font-bold text-xs text-zinc-900 truncate">@{handle}</span>
+                  <div>
+                    <span className="font-black text-sm text-zinc-900">@{handle}</span>
+                    <span className="ml-2 text-xs font-semibold text-zinc-500">
+                      {(scout.career_score || 0).toLocaleString()} PTS · {scout.fixtures_cleared || 0} matches
+                    </span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleConnect(scout.id)}
-                    disabled={connectingId === scout.id}
-                    className="shrink-0 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 disabled:opacity-60"
+                    onClick={() => onToggleFollow(scout.id)}
+                    className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-black uppercase"
                   >
-                    {connectingId === scout.id ? '...' : 'Follow'}
+                    {following ? 'Following' : 'Follow'}
                   </button>
                 </div>
               );
-            })}
-          </div>
+            })
+          )}
         </div>
       )}
+    </>
+  );
+}
+
+export default function FindScouts({
+  currentUserId = null,
+  followingIds = [],
+  onToggleFollow,
+  framed = true,
+}: FindScoutsProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ScoutProfile[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [followOverrides, setFollowOverrides] = useState<Record<string, boolean>>({});
+
+  const followed = [
+    ...followingIds.filter((id) => followOverrides[id] !== false),
+    ...Object.entries(followOverrides).filter(([, on]) => on).map(([id]) => id),
+  ];
+
+  const handleSearchScouts = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const cleanTerm = searchQuery.trim().replace(/^@/, '');
+    if (!cleanTerm) return;
+
+    setSubmittedQuery(cleanTerm);
+    setSearching(true);
+    try {
+      setSearchResults(await searchScouts(cleanTerm, currentUserId || undefined));
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleToggleFollow = async (scoutId: string) => {
+    if (onToggleFollow) {
+      await onToggleFollow(scoutId);
+      return;
+    }
+    if (!currentUserId) return;
+    const already = followed.includes(scoutId);
+    if (already) {
+      await unfollowScout(currentUserId, scoutId);
+    } else {
+      await followScout(currentUserId, scoutId);
+    }
+    setFollowOverrides((prev) => ({ ...prev, [scoutId]: !already }));
+  };
+
+  const form = (
+    <>
+      {framed && (
+        <div>
+          <h2 className="text-xl font-black uppercase tracking-tight text-zinc-950">
+            Find Scouts
+          </h2>
+          <p className="text-xs text-zinc-500 font-medium">
+            Search registered scouts by username.
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSearchScouts} className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Find Scouts by @username"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          aria-label="Find Scouts"
+          className="flex-1 px-4 py-2.5 rounded-xl border-2 border-zinc-200 focus:border-zinc-900 outline-none font-bold text-sm"
+        />
+        <button
+          type="submit"
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
+        >
+          Search
+        </button>
+      </form>
+
+      <ScoutSearchResults
+        searching={searching}
+        query={submittedQuery}
+        results={searchResults}
+        followingIds={followed}
+        onToggleFollow={handleToggleFollow}
+      />
+    </>
+  );
+
+  if (!framed) return <div className="flex flex-col gap-4">{form}</div>;
+
+  return (
+    <div className="bg-white border-2 border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+      {form}
     </div>
   );
 }

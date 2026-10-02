@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchCareerStandings, type CareerStanding } from '@/lib/career-standings';
+import FindScouts from '@/components/game/FindScouts';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
+import { getFollowingIds } from '@/lib/supabase/network';
 
 export function StandingsBoard({ rows }: { rows: CareerStanding[] }) {
   if (rows.length === 0) {
@@ -65,6 +68,8 @@ export function StandingsBoard({ rows }: { rows: CareerStanding[] }) {
 export default function StandingsPage() {
   const [rows, setRows] = useState<CareerStanding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -75,6 +80,17 @@ export default function StandingsPage() {
       .finally(() => {
         if (active) setLoading(false);
       });
+    if (isSupabaseConfigured) {
+      supabaseClient.auth.getUser().then(({ data: { user } }) => {
+        if (!active || !user) return;
+        setUserId(user.id);
+        getFollowingIds(user.id).then((ids) => {
+          if (active) setFollowingIds(ids);
+        }).catch(() => {
+          if (active) setFollowingIds([]);
+        });
+      }).catch(() => undefined);
+    }
     return () => {
       active = false;
     };
@@ -95,6 +111,9 @@ export default function StandingsPage() {
         <p className="mt-1 text-xs font-medium text-zinc-500">
           Ranked by career score across every cleared fixture.
         </p>
+        <div className="mt-8">
+          <FindScouts currentUserId={userId} followingIds={followingIds} />
+        </div>
         <div className="mt-8">
           {loading ? (
             <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Loading rankings...</p>
