@@ -120,7 +120,7 @@ export function DuelHistory({
                     <p className="mt-1 font-mono text-xs font-bold text-zinc-700">
                       {sides.you.toLocaleString()} PTS <span className="text-zinc-400">vs</span> {sides.them.toLocaleString()} PTS
                     </p>
-                    <ClashTime iso={duel.created_at} />
+                    <ClashTime iso={duel.created_at ?? ""} />
                   </div>
                   <button
                     type="button"

@@ -68,11 +68,23 @@ function setupOptions(options: string[], category: string): string[] {
   return four;
 }
 
-export function DailyDropArena() {
-  const [duelHandle, setDuelHandle] = useState<string | null>(null);
-  const [duelPts, setDuelPts] = useState(0);
+export function DailyDropArena(props: {
+  specificMatch?: string;
+  campaignId?: string;
+  initialFixture?: DailyFixture | null;
+  initialDuel?: string;
+  initialDuelPts?: number;
+  archiveDate?: string;
+  archiveId?: string;
+  training?: boolean;
+}) {
+  const initialFixture = props.initialFixture ?? null;
+  const initialDuel = props.initialDuel ?? "";
+  const initialDuelPts = props.initialDuelPts ?? 0;
+  const [duelHandle, setDuelHandle] = useState<string | null>(initialDuel || null);
+  const [duelPts, setDuelPts] = useState(initialDuelPts);
 
-  const [challenge, setChallenge] = useState<DailyFixture | null>(null);
+  const [challenge, setChallenge] = useState<DailyFixture | null>(initialFixture);
   const [activeMatch, setActiveMatch] = useState<string | null>(null);
   const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
   const [pinnedDrop, setPinnedDrop] = useState<string | null>(null);

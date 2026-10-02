@@ -61,8 +61,132 @@ function gameClient(): DuelClient {
   return supabaseClient as unknown as DuelClient;
 }
 
-export function cleanHandle(username: string | null | undefined): string {
-  return (username || "").trim().replace(/^@/, "");
+export type DuelRecord = {
+  id: string;
+  challenge_id: string;
+  challenger_username: string;
+  challenger_score: number;
+  opponent_username: string;
+  opponent_score?: number | null;
+  winner_username?: string | null;
+  status?: string;
+  created_at?: string;
+};
+
+export type DuelOutcome = "victory" | "defeat" | "draw";
+
+export function cleanHandle(handle: string): string {
+  return handle.replace(/^@/, "").trim().toLowerCase();
+}
+
+export function validHandle(handle: unknown): boolean {
+  return typeof handle === "string" && handle.trim().length > 0;
+}
+
+export function validChallengeId(id: unknown): boolean {
+  return typeof id === "string" && id.trim().length > 0;
+}
+
+export function validScore(score: unknown): boolean {
+  return typeof score === "number" && !isNaN(score) && score >= 0;
+}
+
+export function decideWinner(
+  challengerUser: string,
+  challengerScore: number,
+  opponentUser: string,
+  opponentScore: number,
+): string {
+  if (challengerScore >= opponentScore) return challengerUser;
+  return opponentUser;
+}
+
+const DUEL_INBOX_KEY = "shc_duel_inbox";
+
+export function readDuelInbox(): DuelRecord[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(DUEL_INBOX_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((row) => (isDuelRecord(row) ? [row] : []));
+  } catch {
+    return [];
+  }
+}
+
+export function mergeDuels(remote: DuelRecord[], local: DuelRecord[]): DuelRecord[] {
+  const seen = new Set<string>();
+  const merged: DuelRecord[] = [];
+  for (const row of [...remote, ...local]) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    merged.push(row);
+  }
+  return merged;
+}
+
+export function outcomeFor(username: string, duel: DuelRecord): DuelOutcome {
+  const you = cleanHandle(username);
+  const challengerScore = duel.challenger_score || 0;
+  const opponentScore = duel.opponent_score ?? 0;
+  if (duel.opponent_score != null && challengerScore === opponentScore) return "draw";
+  const winner = cleanHandle(duel.winner_username || decideWinner(
+    duel.challenger_username,
+    challengerScore,
+    duel.opponent_username,
+    opponentScore,
+  ));
+  return winner === you ? "victory" : "defeat";
+}
+
+export function sidesFor(username: string, duel: DuelRecord): { opponent: string; you: number; them: number } {
+  const you = cleanHandle(username);
+  if (cleanHandle(duel.challenger_username) === you) {
+    return {
+      opponent: duel.opponent_username.replace(/^@/, ""),
+      you: duel.challenger_score || 0,
+      them: duel.opponent_score ?? 0,
+    };
+  }
+  return {
+    opponent: duel.challenger_username.replace(/^@/, ""),
+    you: duel.opponent_score ?? 0,
+    them: duel.challenger_score || 0,
+  };
+}
+
+export function pickRematchSlug(playedIds: string[]): string {
+  return playedIds.find((id) => id.trim().length > 0) ?? "";
+}
+
+export function rematchLink(username: string, score: number, slug: string): string {
+  const params = new URLSearchParams({
+    duel: cleanHandle(username),
+    pts: String(Math.max(0, score || 0)),
+  });
+  if (slug.trim()) params.set("match", slug.trim());
+  return `/?${params.toString()}`;
+}
+
+export function formatAgo(iso: string, now: Date): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const seconds = Math.max(0, Math.round((now.getTime() - then) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return `${days}d ago`;
+}
+
+function isDuelRecord(value: unknown): value is DuelRecord {
+  if (!value || typeof value !== "object") return false;
+  const row = value as DuelRecord;
+  return validHandle(row.id) && validChallengeId(row.challenge_id) && validHandle(row.challenger_username);
 }
 
 export function todayChallengeId(now = new Date()): string {
@@ -79,8 +203,8 @@ export function groupDuels(rows: DuelRow[], myUsername: string): DuelGroups {
       completed.push(row);
       continue;
     }
-    if (cleanHandle(row.opponent_username).toLowerCase() === me) incoming.push(row);
-    else if (cleanHandle(row.challenger_username).toLowerCase() === me) sent.push(row);
+    if (cleanHandle(row.opponent_username ?? "").toLowerCase() === me) incoming.push(row);
+    else if (cleanHandle(row.challenger_username ?? "").toLowerCase() === me) sent.push(row);
   }
   return { incoming, sent, completed };
 }
@@ -151,7 +275,7 @@ export async function completePendingDuel(
     const winner =
       finalScore >= (pendingDuel.challenger_score || 0)
         ? handle
-        : cleanHandle(pendingDuel.challenger_username);
+        : cleanHandle(pendingDuel.challenger_username ?? "");
     const { error: updateError } = await client
       .from("duels")
       .update({

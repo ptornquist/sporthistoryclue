@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { fixtureSubtitle } from "@/lib/case-files";
 
 interface FixturePreviewProps {
@@ -8,7 +9,9 @@ interface FixturePreviewProps {
   context: string;
   solvedScore: number | null;
   matchup: string | null;
-  onDeduce: () => void;
+  onDeduce?: () => void;
+  href?: string;
+  onChallenge?: () => void;
   density?: "compact" | "row";
 }
 
@@ -19,6 +22,8 @@ export function FixturePreview({
   solvedScore,
   matchup,
   onDeduce,
+  href,
+  onChallenge,
   density = "compact",
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
@@ -50,13 +55,13 @@ export function FixturePreview({
     return (
       <div
         className="flex w-full max-w-full flex-col gap-2 rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 transition-all group hover:bg-zinc-100/80 sm:flex-row sm:items-center sm:justify-between"
-        onClick={solved ? onDeduce : undefined}
+        onClick={solved && onDeduce ? onDeduce : undefined}
         onKeyDown={
           solved
             ? (event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  onDeduce();
+                  onDeduce?.();
                 }
               }
             : undefined
@@ -65,15 +70,31 @@ export function FixturePreview({
         tabIndex={solved ? 0 : undefined}
       >
         {body}
-        {solved ? null : (
+        {solved ? null : href ? (
+          <Link
+            href={href}
+            className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
+          >
+            DEDUCE →
+          </Link>
+        ) : (
           <button
             type="button"
-            onClick={onDeduce}
+            onClick={() => onDeduce?.()}
             className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
           >
             DEDUCE →
           </button>
         )}
+        {onChallenge ? (
+          <button
+            type="button"
+            onClick={onChallenge}
+            className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wider text-zinc-800"
+          >
+            Challenge
+          </button>
+        ) : null}
       </div>
     );
   }
