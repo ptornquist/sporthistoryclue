@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/Header';
 import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import AuthGateModal from '@/components/AuthGateModal';
 import { FixturePreview } from '@/components/game/FixturePreview';
@@ -106,48 +106,7 @@ export default function CampaignsPage() {
         featureName="Storylines"
       />
 
-      {/* Header */}
-      <header className="sticky top-0 z-20 w-full max-w-full overflow-x-hidden border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3.5">
-          <div className="flex min-w-0 items-center gap-2">
-            <Link href="/" className="shrink-0 text-lg font-black uppercase tracking-tighter md:text-xl">
-              Sports<span className="text-blue-600">History</span>Clue
-            </Link>
-            <span className="hidden text-[10px] font-mono font-bold uppercase rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700 sm:inline-block">
-              Storylines
-            </span>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-4">
-            <Link href="/storylines" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Storylines
-            </Link>
-            <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Daily Drop
-            </Link>
-            <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              By Sport
-            </Link>
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Standings
-            </Link>
-          </nav>
-        </div>
-        <div className="flex md:hidden items-center gap-2 overflow-x-auto no-scrollbar py-2 px-4 border-b border-zinc-100">
-          <Link href="/storylines" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-800">
-            Storylines
-          </Link>
-          <Link href="/" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-700">
-            Daily Drop
-          </Link>
-          <Link href="/disciplines" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-700">
-            By Sport
-          </Link>
-          <Link href="/leaderboard" className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-700">
-            Standings
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Container */}
       <div className="w-full max-w-3xl mx-auto px-4 py-6 overflow-x-hidden">
