@@ -51,5 +51,9 @@ describe("career stats shop access", () => {
     expect(html.indexOf("Scout Accolades")).toBeLessThan(html.indexOf("Find Scouts"));
     expect(html).toContain("You haven&#x27;t followed any scouts yet.");
     expect(html).toContain("My Network");
+    expect(html).toContain("LOCKED HANDLE");
+    expect(html).toContain('accept="image/*"');
+    expect(html).toContain(">Change<");
+    expect(html).not.toContain("Change handle");
   });
 });
