@@ -18,7 +18,7 @@ import { ClueStack } from '@/components/game/ClueStack';
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
-import { findFixtureSolve } from '@/lib/fixture-solves';
+import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve } from '@/lib/fixture-solves';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
@@ -187,14 +187,17 @@ export function DailyDropArena() {
         whistled.current = false;
         setActiveMatch(match || null);
         setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
-        if (isSupabaseConfigured) {
-          const solvedRecord = await findFixtureSolve(fixture.id);
-          if (solvedRecord) {
-            setIsSolved(true);
-            setGameWon(true);
-            setEarnedScore(solvedRecord.score_awarded);
-            setScore(solvedRecord.score_awarded);
-          }
+        const dropDate = fixture.date_key || 'today';
+        const localKey = 'shc_solved_' + dropDate;
+        const isLocallySolved = localStorage.getItem(localKey);
+        const localScore = readLocalDropSolve(localStorage, dropDate);
+        const solvedRecord = isSupabaseConfigured ? await findFixtureSolve(fixture.id) : null;
+        if (isLocallySolved || solvedRecord) {
+          const awarded = localScore ?? solvedRecord?.score_awarded ?? 0;
+          setIsSolved(true);
+          setGameWon(true);
+          setEarnedScore(awarded);
+          setScore(awarded);
         }
         setChallenge(fixture);
       } catch {
@@ -270,10 +273,13 @@ export function DailyDropArena() {
         }
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
+        const dropDate = challenge.date_key || 'today';
+        const currentScore = score;
+        lockDropLocally(dropDate, currentScore, localStorage);
         setGameWon(true);
         setIsSolved(true);
-        setEarnedScore(score);
-        rememberSolvedCase(challenge.id, score);
+        setEarnedScore(currentScore);
+        rememberSolvedCase(challenge.id, currentScore);
         const newStreak = streak + 1;
         setStreak(newStreak);
         localStorage.setItem('shc_streak', newStreak.toString());
@@ -282,17 +288,7 @@ export function DailyDropArena() {
           try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user?.id) {
-              const { data, error } = await supabaseClient.rpc('record_fixture_win', {
-                p_challenge_id: challenge.id,
-                p_score: score,
-              });
-              if (error) {
-                console.error('Score save error:', error);
-              } else if (data?.already_solved) {
-                console.log('Fixture was already solved.');
-              } else {
-                setIsSolved(true);
-              }
+              await persistFixtureScore({ id: challenge.id, date: dropDate }, currentScore);
               const { error: streakError } = await supabaseClient
                 .from('profiles')
                 .update({ streak: newStreak })

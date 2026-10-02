@@ -125,7 +125,27 @@ create policy "user_fixture_solves_select_own"
   to authenticated
   using (auth.uid() = user_id);
 
-revoke update (career_score, fixtures_cleared) on public.profiles from anon, authenticated;
+alter table public.user_fixture_solves add column if not exists fixture_date text;
+
+create unique index if not exists user_fixture_solves_user_day
+  on public.user_fixture_solves (user_id, fixture_date);
+
+drop policy if exists "user_fixture_solves_insert_own" on public.user_fixture_solves;
+create policy "user_fixture_solves_insert_own"
+  on public.user_fixture_solves
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+drop policy if exists "user_fixture_solves_update_own" on public.user_fixture_solves;
+create policy "user_fixture_solves_update_own"
+  on public.user_fixture_solves
+  for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+grant update (career_score, fixtures_cleared) on public.profiles to authenticated;
 
 alter table public.profiles enable row level security;
 

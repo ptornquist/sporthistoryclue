@@ -12,7 +12,7 @@ export interface CareerStanding {
 
 interface StandingsClient {
   from: (table: "profiles") => {
-    select: (columns: "*") => {
+    select: (columns: string) => {
       order: (
         column: "career_score",
         options: { ascending: boolean },
@@ -31,7 +31,7 @@ export async function fetchCareerStandings(
 ): Promise<CareerStanding[]> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, username, career_score, fixtures_cleared")
     .order("career_score", { ascending: false });
 
   if (error) console.error("Failed to load standings:", error);

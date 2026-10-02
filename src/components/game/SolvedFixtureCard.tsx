@@ -12,6 +12,9 @@ export function SolvedFixtureCard({ sport, year, score, cells, streak, onShare }
 
   return (
     <div className="rounded-2xl border-2 border-zinc-950 bg-white p-6 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <p className="mb-3 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-800">
+        Daily Drop Complete ✓
+      </p>
       <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900">Fixture Solved!</h2>
       <p className="mt-2 text-sm font-bold text-zinc-700">{title}</p>
       <p className="mt-3 font-mono text-3xl font-black text-zinc-900">{score.toLocaleString()} PTS</p>

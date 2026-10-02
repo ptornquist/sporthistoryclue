@@ -15,7 +15,7 @@ describe("fetchCareerStandings", () => {
     const rows = await fetchCareerStandings({ from } as never);
 
     expect(from).toHaveBeenCalledWith("profiles");
-    expect(select).toHaveBeenCalledWith("*");
+    expect(select).toHaveBeenCalledWith("id, username, career_score, fixtures_cleared");
     expect(order).toHaveBeenCalledWith("career_score", { ascending: false });
     expect(rows.map((row) => row.id)).toEqual(["a", "b"]);
   });
