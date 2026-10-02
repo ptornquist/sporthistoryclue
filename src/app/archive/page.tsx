@@ -1,19 +1,37 @@
-import Link from "next/link";
 import Header from "@/components/Header";
 import { ArchiveMonth } from "@/components/game/ArchiveMonth";
+import { SportArchive } from "@/components/game/SportArchive";
+import { archiveSportFromParam, loadArchiveIndex } from "@/lib/sport-archive";
 
-export default function ArchivePage() {
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+type ArchiveSearchParams = {
+  sport?: string | string[];
+};
+
+function firstParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? "";
+  return value ?? "";
+}
+
+export default async function ArchivePage({
+  searchParams,
+}: {
+  searchParams: Promise<ArchiveSearchParams>;
+}) {
+  const params = await searchParams;
+  const sport = archiveSportFromParam(firstParam(params.sport));
+  const fixtures = loadArchiveIndex(sport);
+
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#fafafa] px-6 py-10 text-zinc-900">
-        <div className="mx-auto mb-8 flex max-w-lg items-center justify-between">
-          <Link href="/" className="text-xs font-black uppercase tracking-wider text-zinc-500">
-            ← Daily Drop
-          </Link>
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Archive</span>
+      <main className="min-h-screen overflow-x-hidden bg-[#fafafa] px-4 py-8 text-zinc-900 sm:px-6 sm:py-10">
+        <SportArchive selected={sport} fixtures={fixtures} />
+        <div className="mx-auto mt-12 w-full max-w-lg border-t border-zinc-200 pt-10">
+          <ArchiveMonth />
         </div>
-        <ArchiveMonth />
       </main>
     </>
   );
