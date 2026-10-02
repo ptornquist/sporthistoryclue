@@ -304,4 +304,108 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function private.handle_new_user();
 
+-- Badges are granted only by purchase_badge, which also spends career points.
+create table if not exists public.user_badges (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  badge_id text not null,
+  created_at timestamptz not null default now(),
+  constraint user_badges_once unique (user_id, badge_id)
+);
+
+create index if not exists user_badges_user_idx
+  on public.user_badges (user_id);
+
+alter table public.user_badges enable row level security;
+
+drop policy if exists "user_badges_select_own" on public.user_badges;
+create policy "user_badges_select_own"
+  on public.user_badges
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+revoke insert, update, delete on public.user_badges from anon, authenticated;
+grant select on public.user_badges to authenticated;
+
+create or replace function private.purchase_badge(p_badge_id text, p_cost integer)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  catalog_cost integer;
+  current_score integer;
+  next_score integer;
+begin
+  if uid is null then
+    return jsonb_build_object('success', false, 'error', 'Not authenticated');
+  end if;
+
+  catalog_cost := case p_badge_id
+    when 'rookie_pin' then 500
+    when 'archive_lantern' then 1500
+    when 'gold_whistle' then 3000
+    when 'hof_sash' then 7500
+    when 'chief_intel' then 12000
+    else null
+  end;
+
+  if catalog_cost is null or p_cost is distinct from catalog_cost then
+    return jsonb_build_object('success', false, 'error', 'Unknown badge');
+  end if;
+
+  select career_score into current_score
+  from public.profiles
+  where id = uid
+  for update;
+
+  if exists (
+    select 1 from public.user_badges
+    where user_id = uid and badge_id = p_badge_id
+  ) then
+    return jsonb_build_object('success', false, 'error', 'Already owned');
+  end if;
+
+  if current_score is null then
+    return jsonb_build_object('success', false, 'error', 'Scout profile missing');
+  end if;
+  if current_score < catalog_cost then
+    return jsonb_build_object('success', false, 'error', 'Not enough points');
+  end if;
+
+  next_score := current_score - catalog_cost;
+
+  update public.profiles
+  set career_score = next_score,
+      updated_at = now()
+  where id = uid;
+
+  insert into public.user_badges (user_id, badge_id)
+  values (uid, p_badge_id);
+
+  return jsonb_build_object('success', true, 'new_score', next_score);
+exception
+  when unique_violation then
+    return jsonb_build_object('success', false, 'error', 'Already owned');
+end;
+$$;
+
+revoke all on function private.purchase_badge(text, integer) from public, anon;
+grant execute on function private.purchase_badge(text, integer) to authenticated;
+
+create or replace function public.purchase_badge(p_badge_id text, p_cost integer)
+returns jsonb
+language sql
+security invoker
+set search_path = public
+as $$
+  select private.purchase_badge(p_badge_id, p_cost);
+$$;
+
+revoke all on function public.purchase_badge(text, integer) from public, anon;
+grant execute on function public.purchase_badge(text, integer) to authenticated;
+
 -- After this file, run supabase/seed.sql to load catalog answer sheets.

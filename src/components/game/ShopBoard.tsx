@@ -1,11 +1,24 @@
-import { formatShopBalance, SHOP_ITEMS, type ShopItem } from "@/lib/shop-catalog";
+import { formatShopBalance } from "@/lib/shop-catalog";
+
+export interface ShopBadge {
+  id: string;
+  name: string;
+  cost: number;
+  icon: string;
+  bg: string;
+  desc: string;
+}
 
 export function ShopBoard({
   balance,
-  items = SHOP_ITEMS,
+  badges,
+  ownedIds = new Set<string>(),
+  onPurchase,
 }: {
   balance: number | null;
-  items?: ShopItem[];
+  badges: ShopBadge[];
+  ownedIds?: ReadonlySet<string>;
+  onPurchase?: (badgeId: string, cost: number) => void;
 }) {
   return (
     <section>
@@ -20,21 +33,40 @@ export function ShopBoard({
       </div>
 
       <h2 className="mb-4 mt-10 text-xl font-black uppercase tracking-tight">Unlockable badges</h2>
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {items.map((item) => {
-          const inReach = balance != null && balance >= item.cost;
+      <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {badges.map((badge) => {
+          const owned = ownedIds.has(badge.id);
+          const affordable = balance != null && balance >= badge.cost;
+          const price = `${badge.cost.toLocaleString("en-US")} PTS`;
           return (
-            <li key={item.id} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-black uppercase tracking-wide text-zinc-900">{item.name}</p>
-                <span className="shrink-0 font-mono text-xs font-black text-blue-600">
-                  {item.cost.toLocaleString("en-US")} PTS
-                </span>
+            <li key={badge.id} className={`flex flex-col gap-4 rounded-2xl border-2 p-5 sm:flex-row sm:items-center ${badge.bg}`}>
+              <span className="text-3xl p-3 rounded-2xl bg-zinc-50 border-2 border-zinc-200" aria-hidden="true">
+                {badge.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black tracking-wide">{badge.name}</p>
+                <p className="mt-1 text-xs font-medium">{badge.desc}</p>
+                <p className="mt-2 font-mono text-xs font-black">{price}</p>
               </div>
-              <p className="mt-2 text-xs font-medium text-zinc-500">{item.detail}</p>
-              <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-zinc-400">
-                {inReach ? "In reach" : "Unlockable"}
-              </p>
+              <div className="shrink-0">
+                {owned ? (
+                  <span className="px-3 py-1.5 bg-emerald-100 border-2 border-emerald-600 text-emerald-900 rounded-xl font-black text-xs">
+                    ✓ OWNED
+                  </span>
+                ) : affordable ? (
+                  <button
+                    type="button"
+                    onClick={() => onPurchase?.(badge.id, badge.cost)}
+                    className="px-4 py-2 bg-zinc-950 hover:bg-zinc-800 text-white border-2 border-zinc-950 rounded-xl font-black text-xs uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-y-0.5"
+                  >
+                    UNLOCK FOR {price}
+                  </button>
+                ) : (
+                  <span className="px-3 py-1.5 bg-zinc-100 border border-zinc-200 text-zinc-400 rounded-xl font-bold text-xs uppercase">
+                    NEEDS {price}
+                  </span>
+                )}
+              </div>
             </li>
           );
         })}
