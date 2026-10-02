@@ -9,6 +9,7 @@ import { BadgeHandleFlair, ScoutAccolades } from '@/components/game/ScoutAccolad
 import { HeadToHeadDuels } from '@/components/game/HeadToHeadDuels';
 import { loadMyDuels, sendDuelChallenge, type DuelRow } from '@/lib/duels';
 import FindScouts from '@/components/game/FindScouts';
+import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import {
   followScout,
   getFollowingIds,
@@ -289,7 +290,10 @@ export default function ProfilePage() {
                         </span>
                       )}
                       <div className="min-w-0">
-                        <span className="font-black text-xs text-zinc-900 block truncate">@{handle}</span>
+                        <ScoutHandleLink
+                          username={scout.username}
+                          className="font-black text-xs text-zinc-900 block truncate hover:underline"
+                        />
                         <span className="text-[10px] font-mono text-blue-600 font-bold block">
                           {streak} day streak
                         </span>

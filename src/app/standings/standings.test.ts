@@ -15,6 +15,8 @@ describe("StandingsBoard", () => {
     );
     expect(html).toContain("@ada");
     expect(html).toContain("@beau");
+    expect(html).toContain('href="/scout/ada"');
+    expect(html).toContain('href="/scout/beau"');
     expect(html).toContain("<table");
     expect(html).toContain("Leader");
     expect(html).not.toContain("No career scores yet");

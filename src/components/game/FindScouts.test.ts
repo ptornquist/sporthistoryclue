@@ -35,6 +35,8 @@ describe("Find Scouts", () => {
     );
     expect(hit).toContain("Searching scouts...");
     expect(hit).toContain("@ptornquist");
+    expect(hit).toContain('href="/scout/ptornquist"');
+    expect(hit).toContain("hover:underline");
     expect(hit).toContain("7,500 PTS · 4 matches");
     expect(hit).toContain(">Follow<");
   });

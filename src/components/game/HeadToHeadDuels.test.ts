@@ -24,11 +24,16 @@ describe("HeadToHeadDuels", () => {
       }),
     );
     expect(html).toContain("Head-to-Head Duels (3)");
-    expect(html).toContain("@ada challenged you on 2026-10-02!");
+    expect(html).toContain("@ada");
+    expect(html).toContain('href="/scout/ada"');
+    expect(html).toContain("challenged you on 2026-10-02!");
     expect(html).toContain("Accept &amp; Play");
     expect(html).toContain('href="/?date=2026-10-02"');
-    expect(html).toContain("You challenged @cy · Waiting for result...");
-    expect(html).toContain("👑 @beau");
+    expect(html).toContain("You challenged ");
+    expect(html).toContain('href="/scout/cy"');
+    expect(html).toContain("Waiting for result...");
+    expect(html).toContain("👑 ");
+    expect(html).toContain('href="/scout/beau"');
     expect(html).toContain("2,500 PTS");
   });
 });

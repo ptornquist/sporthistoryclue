@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchCareerStandings, type CareerStanding } from '@/lib/career-standings';
 import FindScouts from '@/components/game/FindScouts';
+import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { getFollowingIds } from '@/lib/supabase/network';
 import { sendDuelChallenge } from '@/lib/duels';
@@ -39,7 +40,13 @@ export function StandingsBoard({
           >
             <span className="text-2xl">{medals[index]}</span>
             <p className="mt-1 text-[11px] font-mono font-bold uppercase text-zinc-400">{labels[index]}</p>
-            <p className="truncate text-sm font-black text-zinc-900">@{row?.username || '—'}</p>
+            <p className="truncate text-sm font-black text-zinc-900">
+              {row?.username ? (
+                <ScoutHandleLink username={row.username} className="hover:underline" />
+              ) : (
+                '—'
+              )}
+            </p>
             <p className="mt-1 font-mono text-xs font-bold text-blue-600">
               {(row?.career_score || 0).toLocaleString()} PTS
             </p>
@@ -62,7 +69,7 @@ export function StandingsBoard({
                 <td className="px-4 py-3 font-mono text-xs font-bold text-zinc-400">#{index + 1}</td>
                 <td className="px-4 py-3 text-sm font-black text-zinc-900">
                   <div className="flex items-center justify-between gap-2">
-                    <span>@{row.username || 'scout'}</span>
+                    <ScoutHandleLink username={row.username} className="hover:underline" />
                     {onChallenge && (row.username || '').replace(/^@/, '').toLowerCase() !== (currentUsername || '').replace(/^@/, '').toLowerCase() && (
                       <button
                         type="button"

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { followScout, searchScouts, unfollowScout, type ScoutProfile } from '@/lib/supabase/network';
 
 interface FindScoutsProps {
@@ -51,7 +52,10 @@ export function ScoutSearchResults({
                   className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 bg-zinc-50"
                 >
                   <div>
-                    <span className="font-black text-sm text-zinc-900">@{handle}</span>
+                    <ScoutHandleLink
+                      username={scout.username}
+                      className="font-black text-sm text-zinc-900 hover:underline"
+                    />
                     <span className="ml-2 text-xs font-semibold text-zinc-500">
                       {(scout.career_score || 0).toLocaleString()} PTS · {scout.fixtures_cleared || 0} matches
                     </span>

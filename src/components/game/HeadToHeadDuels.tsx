@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ScoutHandleLink } from "@/components/game/ScoutHandleLink";
 import { groupDuels, type DuelRow } from "@/lib/duels";
 
 export function HeadToHeadDuels({
@@ -25,7 +26,7 @@ export function HeadToHeadDuels({
             {groups.incoming.map((duel) => (
               <li key={duel.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                 <p className="text-sm font-bold text-zinc-900">
-                  @{duel.challenger_username?.replace(/^@/, "")} challenged you on {duel.challenge_id}!
+                  <ScoutHandleLink username={duel.challenger_username} className="hover:underline" /> challenged you on {duel.challenge_id}!
                 </p>
                 <Link
                   href={`/?date=${encodeURIComponent(duel.challenge_id || "")}`}
@@ -47,7 +48,7 @@ export function HeadToHeadDuels({
           <ul className="mt-2 flex flex-col gap-2">
             {groups.sent.map((duel) => (
               <li key={duel.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm font-bold text-zinc-900">
-                You challenged @{duel.opponent_username?.replace(/^@/, "")} · Waiting for result...
+                You challenged <ScoutHandleLink username={duel.opponent_username} className="hover:underline" /> · Waiting for result...
               </li>
             ))}
           </ul>
@@ -66,9 +67,11 @@ export function HeadToHeadDuels({
               const winner = duel.winner_username?.replace(/^@/, "").toLowerCase();
               return (
                 <li key={duel.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm font-bold text-zinc-900">
-                  {winner === challenger.toLowerCase() ? "👑 " : ""}@{challenger} {(duel.challenger_score || 0).toLocaleString()} PTS
+                  {winner === challenger.toLowerCase() ? "👑 " : ""}
+                  <ScoutHandleLink username={challenger} className="hover:underline" /> {(duel.challenger_score || 0).toLocaleString()} PTS
                   {" vs "}
-                  {winner === opponent.toLowerCase() ? "👑 " : ""}@{opponent} {(duel.opponent_score || 0).toLocaleString()} PTS
+                  {winner === opponent.toLowerCase() ? "👑 " : ""}
+                  <ScoutHandleLink username={opponent} className="hover:underline" /> {(duel.opponent_score || 0).toLocaleString()} PTS
                 </li>
               );
             })}

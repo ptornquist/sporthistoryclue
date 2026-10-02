@@ -328,8 +328,16 @@ create policy "user_badges_select_own"
   to authenticated
   using (auth.uid() = user_id);
 
+-- Honours on a public scout page are visible to guests and other scouts.
+drop policy if exists "user_badges_select_public" on public.user_badges;
+create policy "user_badges_select_public"
+  on public.user_badges
+  for select
+  to anon, authenticated
+  using (true);
+
 revoke insert, update, delete on public.user_badges from anon, authenticated;
-grant select on public.user_badges to authenticated;
+grant select on public.user_badges to anon, authenticated;
 
 create or replace function private.purchase_badge(p_badge_id text, p_cost integer)
 returns jsonb
