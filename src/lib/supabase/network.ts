@@ -11,29 +11,29 @@ export interface ScoutProfile {
 }
 
 export async function followScout(currentUserId: string, targetUserId: string) {
-  const { error } = await supabaseClient.from('scout_connections').insert({
-    user_id: currentUserId,
-    connected_user_id: targetUserId,
+  const { error } = await supabaseClient.from('scout_follows').insert({
+    follower_id: currentUserId,
+    following_id: targetUserId,
   });
-  if (error) throw error;
+  if (error && error.code !== '23505') throw error;
 }
 
 export async function unfollowScout(currentUserId: string, targetUserId: string) {
   const { error } = await supabaseClient
-    .from('scout_connections')
+    .from('scout_follows')
     .delete()
-    .eq('user_id', currentUserId)
-    .eq('connected_user_id', targetUserId);
+    .eq('follower_id', currentUserId)
+    .eq('following_id', targetUserId);
   if (error) throw error;
 }
 
 export async function getFollowingIds(currentUserId: string): Promise<string[]> {
   const { data, error } = await supabaseClient
-    .from('scout_connections')
-    .select('connected_user_id')
-    .eq('user_id', currentUserId);
+    .from('scout_follows')
+    .select('following_id')
+    .eq('follower_id', currentUserId);
   if (error) throw error;
-  return (data ?? []).map((row) => row.connected_user_id as string);
+  return (data ?? []).map((row) => row.following_id as string);
 }
 
 interface ScoutSearchClient {

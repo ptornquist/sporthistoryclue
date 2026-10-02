@@ -77,4 +77,35 @@ describe("public scout profiles", () => {
     expect(guest.showActions).toBe(true);
     expect(guest.viewerId).toBeNull();
   });
+
+  it("reads scout_follows when viewing another scout", async () => {
+    const tables: string[] = [];
+    const supabase = {
+      auth: { getUser: async () => ({ data: { user: { id: "me" } } }) },
+      from(table: string) {
+        tables.push(table);
+        return {
+          select() {
+            const chain = {
+              eq() {
+                return chain;
+              },
+              maybeSingle: async () => ({
+                data: table === "profiles"
+                  ? { username: "beau", career_score: 20 }
+                  : { following_id: "them" },
+                error: null,
+              }),
+            };
+            return chain;
+          },
+        };
+      },
+    };
+
+    const state = await loadScoutActions(supabase, "them", "ada");
+    expect(tables).toContain("scout_follows");
+    expect(state.following).toBe(true);
+    expect(state.showActions).toBe(true);
+  });
 });
