@@ -2,11 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabaseClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
+import { fetchCareerStandings } from '@/lib/career-standings';
+import { resolveUnlockedBadges, type UnlockedAccolade } from '@/lib/scout-badges';
+import { BadgeHandleFlair, ScoutAccolades } from '@/components/game/ScoutAccolades';
+import { HeadToHeadDuels } from '@/components/game/HeadToHeadDuels';
+import { loadMyDuels, sendDuelChallenge, type DuelRow } from '@/lib/duels';
+import FindScouts from '@/components/game/FindScouts';
+import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import {
   followScout,
   getFollowingIds,
-  searchScouts,
   unfollowScout,
   type ScoutProfile,
 } from '@/lib/supabase/network';
@@ -38,16 +44,17 @@ export default function ProfilePage() {
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
-  const [totalScore, setTotalScore] = useState(0);
+  const [careerScore, setCareerScore] = useState<number | null>(null);
+  const [fixturesCleared, setFixturesCleared] = useState<number | null>(null);
+  const [badges, setBadges] = useState<UnlockedAccolade[]>([]);
+  const [duels, setDuels] = useState<DuelRow[]>([]);
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
-  const [scoutQuery, setScoutQuery] = useState('');
-  const [scoutHits, setScoutHits] = useState<ScoutProfile[]>([]);
-  const [searchingScouts, setSearchingScouts] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadData = async () => {
+    if (!isSupabaseConfigured) return;
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
       window.location.href = '/login';
@@ -55,15 +62,22 @@ export default function ProfilePage() {
     }
     setUser(user);
 
-    const { data: prof } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
+    const standings = await fetchCareerStandings();
+    const prof = standings.find((row) => row.id === user.id);
     if (prof) {
-      setProfile(prof);
+      setProfile({
+        id: prof.id,
+        username: prof.username || '',
+        display_name: prof.display_name || prof.username || '',
+        avatar_url: prof.avatar_url,
+        streak: prof.streak,
+      });
       setUsernameInput(prof.username || '');
+      setCareerScore(prof.career_score || 0);
+      setFixturesCleared(prof.fixtures_cleared || 0);
+    } else {
+      setCareerScore(0);
+      setFixturesCleared(0);
     }
 
     const { data: matchHistory } = await supabaseClient
@@ -74,9 +88,17 @@ export default function ProfilePage() {
 
     if (matchHistory) {
       setMatches(matchHistory as any);
-      const sum = matchHistory.reduce((acc, curr) => acc + (curr.score || 0), 0);
-      setTotalScore(sum);
     }
+
+    const supabase = supabaseClient;
+    const { data: badgeData } = await supabase
+      .from('user_badges')
+      .select('badge_id, unlocked_at')
+      .eq('user_id', user.id);
+    setBadges(resolveUnlockedBadges(badgeData));
+
+    const handle = (prof?.username || '').replace(/^@/, '');
+    if (handle) setDuels(await loadMyDuels(handle));
 
     const ids = await getFollowingIds(user.id);
     setFollowingIds(ids);
@@ -94,25 +116,6 @@ export default function ProfilePage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    const needle = scoutQuery.trim();
-    if (!user || needle.length < 1) {
-      setScoutHits([]);
-      return;
-    }
-    const timer = window.setTimeout(async () => {
-      setSearchingScouts(true);
-      try {
-        setScoutHits(await searchScouts(needle, user.id));
-      } catch {
-        setScoutHits([]);
-      } finally {
-        setSearchingScouts(false);
-      }
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [scoutQuery, user]);
 
   const handleUpdateUsername = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +135,17 @@ export default function ProfilePage() {
       setTimeout(() => setActionMessage(null), 3000);
     }
     setSavingUsername(false);
+  };
+
+  const handleChallenge = async (opponentUsername: string) => {
+    const { data, error } = await sendDuelChallenge(opponentUsername, careerScore || 0);
+    if (data?.success) {
+      alert(`Challenge sent to @${opponentUsername.replace(/^@/, '')}! ⚔️`);
+      const handle = (profile?.username || '').replace(/^@/, '');
+      if (handle) setDuels(await loadMyDuels(handle));
+    } else {
+      alert(data?.error || error?.message || 'Could not send challenge');
+    }
   };
 
   const toggleFollow = async (targetId: string) => {
@@ -161,8 +175,11 @@ export default function ProfilePage() {
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
               Arena
             </Link>
-            <Link href="/leaderboard" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
+            <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black">
               Standings
+            </Link>
+            <Link href="/shop" className="font-bold text-sm tracking-wide uppercase hover:text-blue-600 transition-colors">
+              🛍️ SHOP
             </Link>
             <button
               onClick={async () => {
@@ -190,8 +207,9 @@ export default function ProfilePage() {
             <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
               Scout Handle
             </span>
-            <h1 className="text-3xl font-black tracking-tight text-zinc-900 uppercase mt-1">
-              @{profile?.username || 'scout'}
+            <h1 className="text-3xl font-black tracking-tight text-zinc-900 uppercase mt-1 flex flex-wrap items-center gap-2">
+              <span>@{profile?.username || 'scout'}</span>
+              <BadgeHandleFlair badges={badges} />
             </h1>
             <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
 
@@ -217,69 +235,37 @@ export default function ProfilePage() {
             <div>
               <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Career Score</span>
               <span className="text-3xl font-black font-mono text-blue-600">
-                {totalScore.toLocaleString()}
+                {careerScore == null ? '—' : careerScore.toLocaleString()}
               </span>
+              <div className="mt-3">
+                <Link
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                  href="/shop"
+                >
+                  🛍️ Spend Points in Shop
+                </Link>
+              </div>
             </div>
             <div>
               <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Fixtures Cleared</span>
               <span className="text-3xl font-black font-mono text-zinc-900">
-                {matches.length}
+                {fixturesCleared == null ? '—' : fixturesCleared.toLocaleString()}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Social / Friends Section */}
-        <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
-          <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">Find Scouts</h2>
-          <p className="text-xs text-zinc-500 font-medium mt-0.5 mb-4">
-            Search registered scouts by username.
-          </p>
-          <input
-            type="text"
-            value={scoutQuery}
-            onChange={(event) => setScoutQuery(event.target.value)}
-            placeholder="Find Scouts by @username"
-            aria-label="Find Scouts"
-            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-blue-600"
-          />
-          {searchingScouts && (
-            <p className="text-[11px] font-bold text-zinc-400 mt-3">Searching…</p>
-          )}
-          {scoutHits.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {scoutHits.map((scout) => {
-                const handle = scout.username || 'scout';
-                const following = followingIds.includes(scout.id);
-                return (
-                  <div key={scout.id} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {scout.avatar_url ? (
-                        <img src={scout.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-200" />
-                      ) : (
-                        <span className="w-9 h-9 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
-                          {handle.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                      <span className="font-black text-xs text-zinc-900 truncate">@{handle}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleFollow(scout.id)}
-                      className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
-                        following
-                          ? 'bg-white text-zinc-700 border-zinc-200'
-                          : 'bg-blue-600 text-white border-blue-600'
-                      }`}
-                    >
-                      {following ? 'Unfollow' : 'Follow'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <ScoutAccolades badges={badges} />
+
+        <HeadToHeadDuels duels={duels} myUsername={profile?.username || ''} />
+
+        <FindScouts
+          currentUserId={user?.id ?? null}
+          currentUsername={profile?.username}
+          followingIds={followingIds}
+          onToggleFollow={toggleFollow}
+          onChallenge={handleChallenge}
+        />
 
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
           <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900 mb-4">My Network</h2>
@@ -304,7 +290,10 @@ export default function ProfilePage() {
                         </span>
                       )}
                       <div className="min-w-0">
-                        <span className="font-black text-xs text-zinc-900 block truncate">@{handle}</span>
+                        <ScoutHandleLink
+                          username={scout.username}
+                          className="font-black text-xs text-zinc-900 block truncate hover:underline"
+                        />
                         <span className="text-[10px] font-mono text-blue-600 font-bold block">
                           {streak} day streak
                         </span>

@@ -1,9 +1,10 @@
-import { gradeOption, loadDailyFixture, parseDateKey } from "@/lib/daily-drop";
+import { findCase } from "@/lib/case-files";
+import { gradeOption, loadDailyFixture, loadMatchFixture, parseDateKey } from "@/lib/daily-drop";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  let body: { id?: unknown; date_key?: unknown; option?: unknown; reveal?: unknown };
+  let body: { id?: unknown; date_key?: unknown; option?: unknown; reveal?: unknown; match?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -16,8 +17,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "A date and option are required." }, { status: 400 });
   }
 
-  const fixture = await loadDailyFixture(dateKey);
-  if (typeof body.id === "string" && body.id !== fixture.id) {
+  const match = typeof body.match === "string" ? body.match.trim() : "";
+  const fixture = match ? await loadMatchFixture(match) : await loadDailyFixture(dateKey);
+  if (!fixture) {
+    return Response.json({ error: "That drop could not be verified." }, { status: 404 });
+  }
+  if (typeof body.id === "string" && body.id !== fixture.id && !sameCase(body.id, fixture.id)) {
     return Response.json({ error: "That drop could not be verified." }, { status: 404 });
   }
 
@@ -31,4 +36,10 @@ export async function POST(request: Request) {
     subject: fixture.subject,
     year: fixture.year,
   });
+}
+
+function sameCase(left: string, right: string): boolean {
+  const leftCase = findCase(left);
+  const rightCase = findCase(right);
+  return Boolean(leftCase && rightCase && leftCase.slug === rightCase.slug);
 }
