@@ -40,7 +40,9 @@ describe("career stats shop access", () => {
     const html = renderToStaticMarkup(createElement(ProfilePage));
     expect(html).toContain('href="/shop"');
     expect(html).toContain(">Shop<");
-    expect(html).toContain("SPORTSHISTORYCLUE");
+    expect(html).toContain(">SPORTS<");
+    expect(html).toContain("text-blue-600\">HISTORY");
+    expect(html).toContain(">CLUE<");
     expect(html).toContain("👤 Profile");
     expect(html).toContain("🛍️ Spend Points in Shop");
     expect(html).toContain("shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]");
