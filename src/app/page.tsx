@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import Header from '@/components/Header';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
 import { FirstVisitBriefing } from '@/components/HowToPlayModal';
 import { findCase } from '@/lib/case-files';
@@ -106,6 +107,7 @@ export default async function Page({
 
   return (
     <>
+      <Header />
       <FirstVisitBriefing />
       <Suspense
         fallback={

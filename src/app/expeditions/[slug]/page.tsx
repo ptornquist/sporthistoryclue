@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Header from "@/components/Header";
 import { ExpeditionDesk } from "@/components/game/ExpeditionDesk";
 import {
   eventDictionary,
@@ -40,7 +41,9 @@ export default async function ExpeditionPage({ params, searchParams }: PageProps
   const next = puzzles[currentIndex + 1];
 
   return (
-    <ExpeditionDesk
+    <>
+      <Header />
+      <ExpeditionDesk
       expedition={expedition}
       puzzles={puzzles}
       current={current}
@@ -52,6 +55,7 @@ export default async function ExpeditionPage({ params, searchParams }: PageProps
           : "/expeditions"
       }
       nextLabel={next ? "Next plate" : "Back to expeditions"}
-    />
+      />
+    </>
   );
 }

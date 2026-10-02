@@ -11,7 +11,6 @@ import {
   toggleSoundMute,
   triggerHaptic,
 } from '@/lib/audio';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { ClueStack } from '@/components/game/ClueStack';
@@ -399,11 +398,8 @@ export function DailyDropArena(props: {
 
   if (loading || !challenge) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex flex-col font-sans">
-        <Header />
-        <div className="flex flex-1 items-center justify-center font-mono text-xs uppercase text-zinc-400">
-          {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
-        </div>
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
+        {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
       </main>
     );
   }
@@ -445,8 +441,6 @@ export function DailyDropArena(props: {
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
       <div>
-        <Header />
-
         {/* Duel Banner */}
         {isDuelActive && !gameWon && !gameOver && (
           <div className="bg-blue-600 text-white px-4 py-2.5 text-center text-xs font-bold tracking-wide">

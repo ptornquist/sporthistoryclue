@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import Header from '@/components/Header';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { supabaseClient } from '@/lib/supabase/client';
 import { findFixtureSolve, recordFixtureWin } from '@/lib/fixture-solves';
@@ -120,29 +121,35 @@ function PlayContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
-        Loading Arena Dossier...
-      </main>
+      <>
+        <Header />
+        <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
+          Loading Arena Dossier...
+        </main>
+      </>
     );
   }
 
   if (!challenge) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 text-center">
+      <>
+        <Header />
+        <main className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 text-center">
         <span className="text-4xl mb-4">🏟️</span>
         <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mb-2">No Matches in Archive</h2>
         <p className="text-zinc-500 text-xs mb-6">Add questions to your Supabase challenges table to play.</p>
         <Link href="/" className="text-xs font-black uppercase text-blue-600 tracking-wider hover:underline">
           ← Back to Arena
         </Link>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Header */}
-      <header className="bg-white border-b border-zinc-200 px-6 py-4">
+      <Header />
+      <div className="bg-white border-b border-zinc-200 px-6 py-4">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <Link href="/" className="text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-black">
             ← Exit Match
@@ -172,7 +179,7 @@ function PlayContent() {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Deduction Arena */}
       <div className="max-w-3xl w-full mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
@@ -277,9 +284,12 @@ export default function PlayArenaPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
-          Loading Arena Dossier...
-        </main>
+        <>
+          <Header />
+          <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
+            Loading Arena Dossier...
+          </main>
+        </>
       }
     >
       <PlayContent />

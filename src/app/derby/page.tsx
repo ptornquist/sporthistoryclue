@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SupportersTable } from "@/components/derby/SupportersTable";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
@@ -65,7 +65,7 @@ export default function DerbyPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <Navbar />
+      <Header />
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

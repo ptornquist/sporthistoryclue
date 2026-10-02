@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import SubjectAutocomplete from '@/components/SubjectAutocomplete';
 import { supabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import Header from '@/components/Header';
 
 interface Challenge {
   id: string;
@@ -141,22 +142,28 @@ export default function DailyDropPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-zinc-900 flex items-center justify-center font-bold uppercase tracking-widest text-xs">
-        Loading Scouting Report...
-      </div>
+      <>
+        <Header />
+        <div className="min-h-screen bg-white text-zinc-900 flex items-center justify-center font-bold uppercase tracking-widest text-xs">
+          Loading Scouting Report...
+        </div>
+      </>
     );
   }
 
   if (!challenge) {
     return (
-      <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-6 text-center font-sans">
+      <>
+        <Header />
+        <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-6 text-center font-sans">
         <div className="text-4xl mb-4">📋</div>
         <h1 className="text-3xl font-black mb-2 tracking-tight">NO MATCH SCHEDULED</h1>
         <p className="text-zinc-500 mb-8 max-w-sm text-sm">Today’s historical fixture has not dropped yet.</p>
         <Link href="/" className="text-xs font-black tracking-wider uppercase text-blue-600 hover:underline">
           ← Back to Arena
         </Link>
-      </main>
+        </main>
+      </>
     );
   }
 
@@ -164,10 +171,10 @@ export default function DailyDropPage() {
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      
+      <Header />
       {/* Top Match Bar */}
       <div>
-        <header className="bg-white border-b border-zinc-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
+        <div className="bg-white border-b border-zinc-200 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-black transition-colors">
               ← Exit
@@ -212,7 +219,7 @@ export default function DailyDropPage() {
               })}
             </div>
           </div>
-        </header>
+        </div>
 
         {/* Central Pure Clue Area */}
         <div className="max-w-3xl mx-auto px-6 py-10">
