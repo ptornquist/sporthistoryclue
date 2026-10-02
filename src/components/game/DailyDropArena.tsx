@@ -14,6 +14,7 @@ import {
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { ClueStack } from '@/components/game/ClueStack';
+import { DailySportPills, sportIdForCategory, sportMatchSlug, type DailySportId } from '@/components/game/DailySportPills';
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
@@ -87,6 +88,9 @@ export function DailyDropArena(props: {
   const [activeMatch, setActiveMatch] = useState<string | null>(null);
   const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
   const [pinnedDrop, setPinnedDrop] = useState<string | null>(null);
+  const [sportMatch, setSportMatch] = useState<string | null>(null);
+  const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const challengeRef = useRef<DailyFixture | null>(initialFixture);
   const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
   const [score, setScore] = useState(10000);
@@ -105,6 +109,10 @@ export function DailyDropArena(props: {
   const [authGateOpen, setAuthGateOpen] = useState(false);
   const [soundMuted, setSoundMuted] = useState(true);
   const whistled = useRef(false);
+
+  useEffect(() => {
+    challengeRef.current = challenge;
+  }, [challenge]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -165,8 +173,9 @@ export function DailyDropArena(props: {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchChallenge = async () => {
-      setLoading(true);
+      if (!challengeRef.current) setLoading(true);
       setSolution(null);
       setCurrentClueIdx(0);
       setScore(10000);
@@ -180,14 +189,15 @@ export function DailyDropArena(props: {
         const today = utcDateKey();
         const urlDate = params.get('date');
         const urlMatch = params.get('match')?.trim() || '';
-        const activeDate = pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
-        const match = pinnedDrop || activeDate ? '' : urlMatch;
+        const activeDate = sportMatch ? null : pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
+        const match = sportMatch || (pinnedDrop || activeDate ? '' : urlMatch);
         const query = match
           ? `?match=${encodeURIComponent(match)}`
           : activeDate && activeDate !== today
             ? `?date=${encodeURIComponent(activeDate)}`
             : '';
         const response = await fetch(`/api/daily${query}`);
+        if (cancelled) return;
         if (response.status === 401) {
           setAuthGateOpen(true);
           throw new Error('Daily drop unavailable');
@@ -196,14 +206,16 @@ export function DailyDropArena(props: {
           throw new Error('Daily drop unavailable');
         }
         const fixture = (await response.json()) as DailyFixture;
+        if (cancelled) return;
         whistled.current = false;
         setActiveMatch(match || null);
         setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
-        const dropDate = fixture.date_key || 'today';
-        const localKey = 'shc_solved_' + dropDate;
-        const isLocallySolved = localStorage.getItem(localKey);
-        const localScore = readLocalDropSolve(localStorage, dropDate);
+        setSelectedSport(sportIdForCategory(fixture.category));
+        const solveStamp = match || fixture.date_key || 'today';
+        const isLocallySolved = localStorage.getItem('shc_solved_' + solveStamp);
+        const localScore = readLocalDropSolve(localStorage, solveStamp);
         const solvedRecord = isSupabaseConfigured ? await findFixtureSolve(fixture.id) : null;
+        if (cancelled) return;
         if (isLocallySolved || solvedRecord) {
           const awarded = localScore ?? solvedRecord?.score_awarded ?? 0;
           setIsSolved(true);
@@ -213,15 +225,19 @@ export function DailyDropArena(props: {
         }
         setChallenge(fixture);
       } catch {
+        if (cancelled) return;
         showToast('Could not load this drop.');
         setChallenge(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchChallenge();
-  }, [pinnedDrop]);
+    return () => {
+      cancelled = true;
+    };
+  }, [pinnedDrop, sportMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -259,7 +275,24 @@ export function DailyDropArena(props: {
     else params.set('date', dateKey);
     const query = params.toString();
     window.history.replaceState(null, '', query ? `/?${query}` : '/');
+    setSportMatch(null);
     setPinnedDrop(dateKey);
+  };
+
+  const handleSelectSport = (sportId: DailySportId) => {
+    const slug = sportMatchSlug(sportId);
+    if (!slug) {
+      showToast('No fixture is filed for that sport yet.');
+      return;
+    }
+    setSelectedSport(sportId);
+    const params = new URLSearchParams(window.location.search);
+    params.delete('date');
+    params.set('match', slug);
+    const query = params.toString();
+    window.history.replaceState(null, '', query ? `/?${query}` : '/');
+    setPinnedDrop(null);
+    setSportMatch(slug);
   };
 
   const handleGuess = async (option: string) => {
@@ -286,8 +319,9 @@ export function DailyDropArena(props: {
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
         const dropDate = challenge.date_key || 'today';
+        const solveStamp = activeMatch || dropDate;
         const currentScore = score;
-        lockDropLocally(dropDate, currentScore, localStorage);
+        lockDropLocally(solveStamp, currentScore, localStorage);
         setGameWon(true);
         setIsSolved(true);
         setEarnedScore(currentScore);
@@ -300,7 +334,7 @@ export function DailyDropArena(props: {
           try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user?.id) {
-              await persistFixtureScore({ id: challenge.id, date: dropDate }, currentScore);
+              await persistFixtureScore({ id: challenge.id, date: solveStamp }, currentScore);
               const { data: prof } = await supabaseClient
                 .from('profiles')
                 .select('username')
@@ -309,7 +343,7 @@ export function DailyDropArena(props: {
               const challengeId = /^\d{4}-\d{2}-\d{2}$/.test(dropDate)
                 ? dropDate
                 : new Date().toISOString().split('T')[0];
-              if (prof?.username) {
+              if (prof?.username && !activeMatch) {
                 await completePendingDuel(prof.username, challengeId, currentScore);
               }
               const { error: streakError } = await supabaseClient
@@ -484,6 +518,10 @@ export function DailyDropArena(props: {
                 {score.toLocaleString()} <span className="text-xs text-zinc-400 font-sans">PTS</span>
               </span>
             </div>
+          </div>
+
+          <div onPointerDown={(event) => event.stopPropagation()}>
+            <DailySportPills selectedSport={selectedSport} onSelect={handleSelectSport} />
           </div>
 
           <div className="mb-6">
