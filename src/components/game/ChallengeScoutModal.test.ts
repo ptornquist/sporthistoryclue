@@ -27,5 +27,25 @@ describe("ChallengeScoutModal", () => {
     expect(html).toContain("@ada");
     expect(html).toContain("@beau");
     expect(html).toContain("Utmana");
+    expect(html).toContain('z-[80]');
+  });
+
+  it("stays renderable when the scout list or score is missing", () => {
+    const html = renderToStaticMarkup(
+      createElement(ChallengeScoutModal, {
+        fixtureId: "  ",
+        score: Number.NaN,
+        source: "active",
+        loading: false,
+        signedIn: true,
+        notice: null,
+        onClose: () => undefined,
+        onChallenge: () => undefined,
+        scouts: [{ id: "x", username: "  ", career_score: 0 }, { id: "y", username: null, career_score: 0 }],
+      }),
+    );
+    expect(html).toContain("Kopiera utmaningslänk");
+    expect(html).toContain("Inga scouter att utmana ännu.");
+    expect(html).toContain("på 0");
   });
 });
