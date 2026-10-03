@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { supabaseClient } from '@/lib/supabase/client';
+import { creditCareerSolve } from '@/lib/career-ledger';
 import { findFixtureSolve, recordFixtureWin } from '@/lib/fixture-solves';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 
@@ -102,8 +103,11 @@ function PlayContent() {
   };
 
   const saveScore = async (finalScore: number) => {
+    if (!challenge) return;
+    creditCareerSolve(challenge.id, finalScore, localStorage);
+
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user?.id || !challenge) return;
+    if (!user?.id) return;
 
     const saved = await recordFixtureWin(challenge.id, finalScore);
     if (saved && !saved.already_solved) {

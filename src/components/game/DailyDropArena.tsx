@@ -19,7 +19,8 @@ import { DAILY_SPORTS, DailySportPills, sportIdForCategory, sportMatchSlug, type
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
-import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve } from '@/lib/fixture-solves';
+import { creditCareerSolve } from '@/lib/career-ledger';
+import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve, recordFixtureWin } from '@/lib/fixture-solves';
 import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
@@ -324,8 +325,10 @@ export function DailyDropArena(props: {
         triggerHaptic([50, 50, 100]);
         const dropDate = challenge.date_key || 'today';
         const solveStamp = activeMatch || dropDate;
+        const careerFixtureId = activeMatch || dropDate;
         const currentScore = score;
         lockDropLocally(solveStamp, currentScore, localStorage);
+        creditCareerSolve(careerFixtureId, currentScore, localStorage);
         setGameWon(true);
         setIsSolved(true);
         setEarnedScore(currentScore);
@@ -338,7 +341,10 @@ export function DailyDropArena(props: {
           try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user?.id) {
-              await persistFixtureScore({ id: challenge.id, date: solveStamp }, currentScore);
+              const saved = await recordFixtureWin(careerFixtureId, currentScore);
+              if (!saved) {
+                await persistFixtureScore({ id: careerFixtureId, date: solveStamp }, currentScore);
+              }
               const { data: prof } = await supabaseClient
                 .from('profiles')
                 .select('username')
