@@ -12,14 +12,15 @@ import FindScouts from '@/components/game/FindScouts';
 import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { type ScoutProfile } from '@/lib/supabase/network';
-import { isSwedishClub, SWEDISH_CLUBS } from '@/lib/swedish-clubs';
+import { FOOTBALL_CLUBS, HOCKEY_CLUBS, isFootballClub, isHockeyClub } from '@/lib/swedish-clubs';
 
 interface Profile {
   id: string;
   username: string;
   display_name: string;
   avatar_url?: string | null;
-  favorite_club?: string | null;
+  favorite_hockey_club?: string | null;
+  favorite_football_club?: string | null;
   streak?: number | null;
   total_score?: number | null;
 }
@@ -61,7 +62,7 @@ export default function ProfilePage() {
     const prof = standings.find((row) => row.id === user.id);
     const { data: avatarRow } = await supabaseClient
       .from('profiles')
-      .select('avatar_url, favorite_club')
+      .select('avatar_url, favorite_hockey_club, favorite_football_club')
       .eq('id', user.id)
       .maybeSingle();
     if (prof) {
@@ -70,7 +71,8 @@ export default function ProfilePage() {
         username: prof.username || '',
         display_name: prof.display_name || prof.username || '',
         avatar_url: avatarRow?.avatar_url ?? prof.avatar_url ?? null,
-        favorite_club: avatarRow?.favorite_club ?? null,
+        favorite_hockey_club: avatarRow?.favorite_hockey_club ?? null,
+        favorite_football_club: avatarRow?.favorite_football_club ?? null,
         streak: prof.streak,
       });
       setCareerScore(prof.career_score || 0);
@@ -179,22 +181,30 @@ export default function ProfilePage() {
     }
   };
 
-  const handleClubChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleClubChange = async (
+    sport: 'hockey' | 'football',
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     if (!user) return;
     const nextClub = event.target.value;
-    const favorite_club = nextClub === '' ? null : nextClub;
-    if (favorite_club && !isSwedishClub(favorite_club)) return;
+    const club = nextClub === '' ? null : nextClub;
+    if (sport === 'hockey' && club && !isHockeyClub(club)) return;
+    if (sport === 'football' && club && !isFootballClub(club)) return;
+
+    const patch = sport === 'hockey'
+      ? { favorite_hockey_club: club, updated_at: new Date().toISOString() }
+      : { favorite_football_club: club, updated_at: new Date().toISOString() };
 
     const { error } = await supabaseClient
       .from('profiles')
-      .update({ favorite_club, updated_at: new Date().toISOString() })
+      .update(patch)
       .eq('id', user.id);
 
     if (error) {
       alert(error.message || 'Kunde inte spara klubben');
       return;
     }
-    setProfile((prev) => (prev ? { ...prev, favorite_club } : prev));
+    setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
   };
 
   const handleChallenge = async (opponentUsername: string) => {
@@ -266,19 +276,36 @@ export default function ProfilePage() {
                 <BadgeHandleFlair badges={badges} />
               </div>
               <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
-              <label className="mt-3 block max-w-xs">
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">Din klubb</span>
-                <select
-                  value={profile?.favorite_club ?? ''}
-                  onChange={handleClubChange}
-                  className="mt-1 w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-900"
-                >
-                  <option value="">Välj klubb</option>
-                  {SWEDISH_CLUBS.map((club) => (
-                    <option key={club} value={club}>{club}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="mt-3 flex max-w-xl flex-col gap-3 sm:flex-row">
+                <label className="block min-w-0 flex-1">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">Ishockeyklubb (SHL)</span>
+                  <select
+                    aria-label="Ishockeyklubb (SHL)"
+                    value={profile?.favorite_hockey_club ?? ''}
+                    onChange={(event) => handleClubChange('hockey', event)}
+                    className="mt-1 w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-900"
+                  >
+                    <option value="">Välj klubb</option>
+                    {HOCKEY_CLUBS.map((club) => (
+                      <option key={club} value={club}>{club}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block min-w-0 flex-1">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">Fotbollsklubb (Allsvenskan)</span>
+                  <select
+                    aria-label="Fotbollsklubb (Allsvenskan)"
+                    value={profile?.favorite_football_club ?? ''}
+                    onChange={(event) => handleClubChange('football', event)}
+                    className="mt-1 w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-900"
+                  >
+                    <option value="">Välj klubb</option>
+                    {FOOTBALL_CLUBS.map((club) => (
+                      <option key={club} value={club}>{club}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <button
                 type="button"
                 onClick={async () => {
