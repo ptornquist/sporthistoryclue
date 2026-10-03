@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCareerStats } from './CareerStatsProvider';
 import { HowToPlayModal } from './HowToPlayModal';
 
 const NAV_LINKS = [
@@ -29,6 +30,27 @@ export function MobileNavDropdown({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
+function formatCareerStat(value: number | null): string {
+  return value == null ? '—' : value.toLocaleString('en-US');
+}
+
+export function CareerStatChip() {
+  const { careerScore, fixturesCleared } = useCareerStats();
+  const points = formatCareerStat(careerScore);
+  const matches = formatCareerStat(fixturesCleared);
+  return (
+    <Link
+      href="/profile"
+      className="flex items-center gap-1.5 rounded-full border-2 border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-mono font-bold leading-none"
+      aria-label={`Karriärpoäng ${points}, avklarade matcher ${matches}`}
+    >
+      <span className="text-blue-600">{points}</span>
+      <span className="text-zinc-300" aria-hidden="true">·</span>
+      <span className="text-zinc-700">{matches}</span>
+    </Link>
+  );
+}
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [howToOpen, setHowToOpen] = useState(false);
@@ -50,6 +72,7 @@ export default function Header() {
         </nav>
       </div>
       <div className="flex items-center gap-2 md:gap-3 shrink-0">
+        <CareerStatChip />
         <button
           type="button"
           onClick={() => setHowToOpen(true)}

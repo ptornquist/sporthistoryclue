@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { fetchCareerStandings, type CareerStanding } from '@/lib/career-standings';
+import { fetchCareerStandings, placeOwnStanding, type CareerStanding } from '@/lib/career-standings';
+import { CAREER_UPDATED_EVENT } from '@/lib/career-ledger';
 import Header from '@/components/Header';
+import { useCareerStats } from '@/components/CareerStatsProvider';
 import FindScouts from '@/components/game/FindScouts';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
@@ -13,10 +15,12 @@ import { FOOTBALL_CLUBS, HOCKEY_CLUBS, rankLeague, type ClubChampionshipRow } fr
 export function StandingsBoard({
   rows,
   currentUsername,
+  currentUserId,
   onChallenge,
 }: {
   rows: CareerStanding[];
   currentUsername?: string | null;
+  currentUserId?: string | null;
   onChallenge?: (username: string) => void;
 }) {
   if (rows.length === 0) {
@@ -25,31 +29,33 @@ export function StandingsBoard({
     );
   }
 
-  const podium = [rows[1], rows[0], rows[2]];
-  const medals = ['🥈', '👑', '🥉'];
-  const labels = ['Plats #2', 'Ledare', 'Plats #3'];
+  const podium = [
+    rows[1] ? { row: rows[1], medal: '🥈', label: 'Plats #2', featured: false } : null,
+    rows[0] ? { row: rows[0], medal: '👑', label: 'Ledare', featured: true } : null,
+    rows[2] ? { row: rows[2], medal: '🥉', label: 'Plats #3', featured: false } : null,
+  ].filter((slot) => slot !== null);
 
   return (
     <>
-      <div className="mb-8 grid grid-cols-3 items-end gap-3">
-        {podium.map((row, index) => (
+      <div className={`mb-8 grid items-end gap-3 ${podium.length >= 3 ? 'grid-cols-3' : 'mx-auto max-w-md grid-cols-1'}`}>
+        {podium.map((slot) => (
           <div
-            key={labels[index]}
+            key={slot.row.id}
             className={`rounded-2xl border bg-white p-4 text-center ${
-              index === 1 ? 'border-2 border-blue-600 py-6' : 'border-zinc-200'
+              slot.featured ? 'border-2 border-blue-600 py-6' : 'border-zinc-200'
             }`}
           >
-            <span className="text-2xl">{medals[index]}</span>
-            <p className="mt-1 text-[11px] font-mono font-bold uppercase text-zinc-400">{labels[index]}</p>
+            <span className="text-2xl">{slot.medal}</span>
+            <p className="mt-1 text-[11px] font-mono font-bold uppercase text-zinc-400">{slot.label}</p>
             <p className="truncate text-sm font-black text-zinc-900">
-              {row?.username ? (
-                <ScoutHandleLink username={row.username} className="hover:underline" />
+              {slot.row.username ? (
+                <ScoutHandleLink username={slot.row.username} className="hover:underline" />
               ) : (
                 '—'
               )}
             </p>
             <p className="mt-1 font-mono text-xs font-bold text-blue-600">
-              {(row?.career_score || 0).toLocaleString()} poäng
+              {(slot.row.career_score || 0).toLocaleString()} poäng
             </p>
           </div>
         ))}
@@ -71,7 +77,7 @@ export function StandingsBoard({
                 <td className="px-4 py-3 text-sm font-black text-zinc-900">
                   <div className="flex items-center justify-between gap-2">
                     <ScoutHandleLink username={row.username} className="hover:underline" />
-                    {onChallenge && (row.username || '').replace(/^@/, '').toLowerCase() !== (currentUsername || '').replace(/^@/, '').toLowerCase() && (
+                    {onChallenge && row.id !== currentUserId && (row.username || '').replace(/^@/, '').toLowerCase() !== (currentUsername || '').replace(/^@/, '').toLowerCase() && (
                       <button
                         type="button"
                         onClick={() => onChallenge(row.username || '')}
@@ -157,11 +163,11 @@ export function ClubChampionshipBoard({
 }
 
 export default function StandingsPage() {
+  const career = useCareerStats();
   const [rows, setRows] = useState<CareerStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [myUsername, setMyUsername] = useState<string | null>(null);
-  const [myScore, setMyScore] = useState(0);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [view, setView] = useState<'scouts' | 'hockey' | 'football'>('scouts');
   const [leagueRows, setLeagueRows] = useState<ClubChampionshipRow[]>([]);
@@ -169,30 +175,34 @@ export default function StandingsPage() {
 
   useEffect(() => {
     let active = true;
-    const standingsPromise = isSupabaseConfigured ? fetchCareerStandings() : Promise.resolve([]);
-    standingsPromise
-      .then((standings) => {
-        if (active) setRows(standings);
-      })
-      .catch(() => {
-        if (active) setRows([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const loadBoard = () => {
+      const standingsPromise = isSupabaseConfigured ? fetchCareerStandings() : Promise.resolve([]);
+      standingsPromise
+        .then((standings) => {
+          if (active) setRows(standings);
+        })
+        .catch(() => {
+          if (active) setRows([]);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    };
+    const timer = window.setTimeout(loadBoard, 0);
+    window.addEventListener(CAREER_UPDATED_EVENT, loadBoard);
+    window.addEventListener('focus', loadBoard);
     if (isSupabaseConfigured) {
       supabaseClient.auth.getUser().then(({ data: { user } }) => {
         if (!active || !user) return;
         setUserId(user.id);
         supabaseClient
           .from('profiles')
-          .select('username, career_score')
+          .select('username')
           .eq('id', user.id)
           .maybeSingle()
           .then(({ data }) => {
             if (!active || !data) return;
             setMyUsername(data.username || null);
-            setMyScore(data.career_score || 0);
           }, () => undefined);
         getFollowingIds(user.id).then((ids) => {
           if (active) setFollowingIds(ids);
@@ -203,6 +213,9 @@ export default function StandingsPage() {
     }
     return () => {
       active = false;
+      window.clearTimeout(timer);
+      window.removeEventListener(CAREER_UPDATED_EVENT, loadBoard);
+      window.removeEventListener('focus', loadBoard);
     };
   }, []);
 
@@ -261,8 +274,21 @@ export default function StandingsPage() {
     };
   }, [view]);
 
+  const boardRows = placeOwnStanding(
+    rows,
+    career.careerScore == null || career.fixturesCleared == null
+      ? null
+      : {
+          userId: career.userId || userId,
+          username: career.username || myUsername,
+          careerScore: career.careerScore,
+          fixturesCleared: career.fixturesCleared,
+        },
+  );
+  const challengeScore = career.careerScore ?? 0;
+
   const handleChallenge = async (opponentUsername: string) => {
-    const { data, error } = await sendDuelChallenge(opponentUsername, myScore);
+    const { data, error } = await sendDuelChallenge(opponentUsername, challengeScore);
     if (data?.success) {
       alert(`Utmaning skickad till @${opponentUsername.replace(/^@/, '')}! ⚔️`);
     } else {
@@ -346,7 +372,12 @@ export default function StandingsPage() {
             loading ? (
               <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Laddar tabellen...</p>
             ) : (
-              <StandingsBoard rows={rows} currentUsername={myUsername} onChallenge={handleChallenge} />
+              <StandingsBoard
+                rows={boardRows}
+                currentUsername={career.username || myUsername}
+                currentUserId={career.userId || userId || 'local-scout'}
+                onChallenge={handleChallenge}
+              />
             )
           ) : clubsLoading ? (
             <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">

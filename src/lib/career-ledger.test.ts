@@ -72,6 +72,17 @@ describe("career ledger", () => {
     ).toEqual({ careerScore: 60000, fixturesCleared: 9 });
   });
 
+  it("keeps points and completed matches from the same snapshot", () => {
+    expect(
+      reconcileCareerTotals(
+        { careerScore: 25000, fixturesCleared: 3 },
+        { careerScore: 10000, fixturesCleared: 4 },
+        [],
+        null,
+      ),
+    ).toEqual({ careerScore: 25000, fixturesCleared: 3 });
+  });
+
   it("keeps a legacy local total when individual scores were not stored", () => {
     expect(
       reconcileCareerTotals(
