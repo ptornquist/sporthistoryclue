@@ -631,7 +631,7 @@ export function DailyDropArena(props: {
           )}
 
           {(isSolved || gameWon || gameOver) && (
-            <div className="space-y-4">
+            <div className="space-y-4 pb-40">
               {isDuelActive && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
                   <span className="mb-2 block text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
@@ -668,7 +668,7 @@ export function DailyDropArena(props: {
                   score={earnedScore ?? score}
                   cells={gridCells}
                   streak={streak}
-                  fixtureId={props.specificMatch || challenge.id}
+                  fixtureId={props.specificMatch || activeMatch || challenge.id || challenge.date_key || "daily"}
                   onShare={handleShareResult}
                 />
               ) : (
