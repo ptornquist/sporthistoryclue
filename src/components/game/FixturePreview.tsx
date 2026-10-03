@@ -14,6 +14,7 @@ interface FixturePreviewProps {
   onChallenge?: () => void;
   density?: "compact" | "row";
   clueCount?: boolean;
+  mysteryLabel?: string | null;
 }
 
 export function FixturePreview({
@@ -27,9 +28,11 @@ export function FixturePreview({
   onChallenge,
   density = "compact",
   clueCount = true,
+  mysteryLabel = null,
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
   const reveal = solved && matchup ? matchup : null;
+  const placeholder = !solved && mysteryLabel ? mysteryLabel : null;
   const subtitle = fixtureSubtitle(year, context, { clueCount });
 
   const body = (
@@ -49,6 +52,8 @@ export function FixturePreview({
       ) : null}
       {reveal ? (
         <span className="mt-1 block text-[11px] font-semibold text-zinc-700">{reveal}</span>
+      ) : placeholder ? (
+        <span className="mt-1 block text-[11px] italic text-zinc-400">{placeholder}</span>
       ) : null}
     </div>
   );

@@ -191,6 +191,21 @@ export function fixtureSubtitle(year: number, context: string, options?: { clueC
   return `${base} · 6 ledtrådar`;
 }
 
+/** Sport-shaped stand-in shown on campaign cards until that fixture is solved. */
+export function mysteryFixtureLabel(sport: CaseFile["sport"] | string | undefined | null): string {
+  switch (sport) {
+    case "ice_hockey":
+      return "Klassisk ishockeyduell";
+    case "boxing":
+      return "Historisk titelmatch";
+    case "athletics":
+    case "gymnastics":
+      return "Historiskt mästerskapsögonblick";
+    default:
+      return "Historisk mästerskapsfinal";
+  }
+}
+
 export function isSpoilerHeading(title: string | undefined | null): boolean {
   const value = title?.trim() ?? "";
   if (!value) return true;
