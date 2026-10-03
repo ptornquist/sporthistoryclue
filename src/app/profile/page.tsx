@@ -13,6 +13,8 @@ import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { type ScoutProfile } from '@/lib/supabase/network';
 import { FOOTBALL_CLUBS, HOCKEY_CLUBS, isFootballClub, isHockeyClub } from '@/lib/swedish-clubs';
+import { CAREER_UPDATED_EVENT, mergeCareerTotals, readCareerLedger } from '@/lib/career-ledger';
+import { loadCareerStats } from '@/lib/career-score';
 
 interface Profile {
   id: string;
@@ -50,6 +52,9 @@ export default function ProfilePage() {
   const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   const loadData = async () => {
+    const localCareer = readCareerLedger(localStorage);
+    setCareerScore(localCareer.careerScore);
+    setFixturesCleared(localCareer.fixturesCleared);
     if (!isSupabaseConfigured) return;
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
@@ -65,6 +70,11 @@ export default function ProfilePage() {
       .select('avatar_url, favorite_hockey_club, favorite_football_club')
       .eq('id', user.id)
       .maybeSingle();
+    const remoteCareer = await loadCareerStats(user.id);
+    const totals = mergeCareerTotals(remoteCareer, localCareer);
+    setCareerScore(totals.careerScore);
+    setFixturesCleared(totals.fixturesCleared);
+
     if (prof) {
       setProfile({
         id: prof.id,
@@ -75,11 +85,6 @@ export default function ProfilePage() {
         favorite_football_club: avatarRow?.favorite_football_club ?? null,
         streak: prof.streak,
       });
-      setCareerScore(prof.career_score || 0);
-      setFixturesCleared(prof.fixtures_cleared || 0);
-    } else {
-      setCareerScore(0);
-      setFixturesCleared(0);
     }
 
     const { data: matchHistory } = await supabaseClient
@@ -140,7 +145,17 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    loadData();
+    const refresh = () => {
+      void loadData();
+    };
+    const timer = window.setTimeout(refresh, 0);
+    window.addEventListener(CAREER_UPDATED_EVENT, refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(CAREER_UPDATED_EVENT, refresh);
+      window.removeEventListener('focus', refresh);
+    };
   }, []);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
