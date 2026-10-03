@@ -7,19 +7,19 @@ export const HOW_TO_PLAY_EVENT = "shc-open-how-to-play";
 
 const STEPS = [
   {
-    icon: "🎯",
-    title: "10 000 poäng i startpott",
-    body: "Varje daglig match börjar med maxpoäng och den första underrättelsen upplåst gratis.",
+    icon: "🃏",
+    title: "Deducera matchen kort för kort",
+    body: "Lås upp ledtrådarna ett kort i taget och identifiera den historiska matchen.",
   },
   {
-    icon: "🧩",
-    title: "Handla intel för poäng",
-    body: "Behöver du mer? Lås upp laguppställning och taktik, epok, arkivfoto eller klimaxet. Varje upplåst kort drar poäng — ju färre du använder, desto högre blir resultatet.",
+    icon: "📉",
+    title: "Varje extra ledtråd kostar 1 500 poäng",
+    body: "Första kortet är gratis. Varje nästa kort drar −1 500 poäng från startpotten.",
   },
   {
-    icon: "⚽",
-    title: "Satsa på klassikern",
-    body: "Lås in rätt historiska möte bland 4 tänkbara alternativ. Poängen du tar med dig räknas in i karriären och klubbens plats i Klubbligan.",
+    icon: "🏆",
+    title: "Lös matchen och klättra",
+    body: "Rätt svar ger poäng så du klättrar i ligan och kan utmana vänner.",
   },
 ] as const;
 
@@ -37,7 +37,7 @@ export function HowToPlayModal({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
