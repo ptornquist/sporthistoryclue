@@ -14,6 +14,7 @@ interface FixturePreviewProps {
   onChallenge?: () => void;
   density?: "compact" | "row";
   clueCount?: boolean;
+  showYear?: boolean;
   mysteryLabel?: string | null;
 }
 
@@ -28,12 +29,13 @@ export function FixturePreview({
   onChallenge,
   density = "compact",
   clueCount = true,
+  showYear = true,
   mysteryLabel = null,
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
   const reveal = solved && matchup ? matchup : null;
   const placeholder = !solved && mysteryLabel ? mysteryLabel : null;
-  const subtitle = fixtureSubtitle(year, context, { clueCount });
+  const subtitle = fixtureSubtitle(year, context, { clueCount, showYear });
 
   const body = (
     <div className="min-w-0 text-left">

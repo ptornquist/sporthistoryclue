@@ -12,7 +12,6 @@ import { arenaHref, firstOpenMatch } from '@/lib/storylines';
 interface Campaign {
   id: string;
   title: string;
-  era: string;
   description: string;
   icon: string;
   accent: string;
@@ -23,7 +22,6 @@ const CAMPAIGNS: Campaign[] = [
   {
     id: 'shl-klassiker',
     title: 'SHL-KLASSIKER & RIVALER',
-    era: '2013 – 2015',
     icon: '🏒',
     accent: 'text-sky-600',
     description:
@@ -33,7 +31,6 @@ const CAMPAIGNS: Campaign[] = [
   {
     id: 'allsvenska-derbyn',
     title: 'ALLSVENSKA DERBYN & DRAMAT',
-    era: '2007 – 2018',
     icon: '⚽',
     accent: 'text-emerald-600',
     description: 'Känslor, läktarfest och oförglömliga guldstrider i Allsvenskan.',
@@ -89,12 +86,9 @@ export default function CampaignsPage() {
               className="w-full max-w-full bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:border-blue-200 hover:shadow-md transition-all"
             >
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <span className="text-3xl" aria-hidden>
                     {campaign.icon}
-                  </span>
-                  <span className="text-[11px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2.5 py-1 rounded-full">
-                    {campaign.era}
                   </span>
                 </div>
                 <h2 className="w-full max-w-full break-words text-xl font-black uppercase tracking-tight text-zinc-900">
@@ -124,6 +118,7 @@ export default function CampaignsPage() {
                         }
                         href={arenaHref(match.key, campaign.id)}
                         clueCount={false}
+                        showYear={false}
                       />
                     );
                   })}
