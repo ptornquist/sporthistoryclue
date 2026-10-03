@@ -41,6 +41,13 @@ const CAMPAIGNS: Campaign[] = [
   },
 ];
 
+const CATEGORY_HINTS: Record<string, string> = {
+  'slaget-i-sudden': 'Klassisk ishockeymatch',
+  'guldkampen-i-norr': 'Klassisk ishockeymatch',
+  'sondagsmorgonen-stockholms-stad': 'Historisk fotbollsmatch',
+  'guldstriden-sista-omgangen': 'Historisk fotbollsmatch',
+};
+
 const STORYLINES = CAMPAIGNS.map((campaign) => ({
   ...campaign,
   matches: campaign.matchSlugs.flatMap((slug) => {
@@ -111,8 +118,10 @@ export default function CampaignsPage() {
                         year={match.year}
                         context={match.context}
                         solvedScore={record?.score ?? null}
-                        matchup={record?.matchup ?? null}
-                        mysteryLabel={mysteryFixtureLabel(findCase(match.key)?.sport)}
+                        matchup={record?.score != null ? record.matchup : null}
+                        mysteryLabel={
+                          CATEGORY_HINTS[match.key] ?? mysteryFixtureLabel(findCase(match.key)?.sport)
+                        }
                         href={arenaHref(match.key, campaign.id)}
                         clueCount={false}
                       />
