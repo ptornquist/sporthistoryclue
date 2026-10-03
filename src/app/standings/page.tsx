@@ -8,7 +8,7 @@ import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { getFollowingIds } from '@/lib/supabase/network';
 import { sendDuelChallenge } from '@/lib/duels';
-import { rankClubChampionship, type ClubChampionshipRow } from '@/lib/swedish-clubs';
+import { FOOTBALL_CLUBS, HOCKEY_CLUBS, rankLeague, type ClubChampionshipRow } from '@/lib/swedish-clubs';
 
 export function StandingsBoard({
   rows,
@@ -95,9 +95,39 @@ export function StandingsBoard({
   );
 }
 
-export function ClubChampionshipBoard({ rows }: { rows: ClubChampionshipRow[] }) {
+export function ClubLeagueTabs({
+  league,
+  onLeague,
+}: {
+  league: 'hockey' | 'football';
+  onLeague: (league: 'hockey' | 'football') => void;
+}) {
+  const tabClass = (active: boolean) =>
+    `rounded-xl border-2 px-4 py-2 text-xs font-black uppercase ${
+      active ? 'border-blue-600 bg-blue-600 text-white' : 'border-zinc-200 bg-white text-zinc-700'
+    }`;
+
   return (
-    <section aria-label="Klubbligan">
+    <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Klubbliga">
+      <button type="button" role="tab" aria-selected={league === 'hockey'} onClick={() => onLeague('hockey')} className={tabClass(league === 'hockey')}>
+        🏒 Ishockey-ligan
+      </button>
+      <button type="button" role="tab" aria-selected={league === 'football'} onClick={() => onLeague('football')} className={tabClass(league === 'football')}>
+        ⚽ Fotbollsligan
+      </button>
+    </div>
+  );
+}
+
+export function ClubChampionshipBoard({
+  rows,
+  label = 'Klubbligan',
+}: {
+  rows: ClubChampionshipRow[];
+  label?: string;
+}) {
+  return (
+    <section aria-label={label}>
       <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
         <table className="w-full text-left">
           <thead className="bg-zinc-50 text-[10px] font-black uppercase tracking-wider text-zinc-400">
@@ -134,7 +164,9 @@ export default function StandingsPage() {
   const [myScore, setMyScore] = useState(0);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [view, setView] = useState<'scouts' | 'clubs'>('scouts');
-  const [clubRows, setClubRows] = useState<ClubChampionshipRow[]>([]);
+  const [league, setLeague] = useState<'hockey' | 'football'>('hockey');
+  const [hockeyRows, setHockeyRows] = useState<ClubChampionshipRow[]>([]);
+  const [footballRows, setFootballRows] = useState<ClubChampionshipRow[]>([]);
   const [clubsLoading, setClubsLoading] = useState(false);
 
   useEffect(() => {
@@ -183,22 +215,37 @@ export default function StandingsPage() {
       try {
         await Promise.resolve();
         if (!isSupabaseConfigured) {
-          if (active) setClubRows(rankClubChampionship([]));
+          if (active) {
+            setHockeyRows(rankLeague(HOCKEY_CLUBS, []));
+            setFootballRows(rankLeague(FOOTBALL_CLUBS, []));
+          }
           return;
         }
         const { data, error } = await supabaseClient
           .from('profiles')
-          .select('favorite_club, career_score');
+          .select('favorite_hockey_club, favorite_football_club, career_score');
         if (!active) return;
         if (error) {
           console.error('Failed to load Klubbligan:', error);
-          setClubRows([]);
+          setHockeyRows([]);
+          setFootballRows([]);
           return;
         }
-        setClubRows(rankClubChampionship(data ?? []));
+        const scores = data ?? [];
+        setHockeyRows(rankLeague(HOCKEY_CLUBS, scores.map((row) => ({
+          club: row.favorite_hockey_club,
+          career_score: row.career_score,
+        }))));
+        setFootballRows(rankLeague(FOOTBALL_CLUBS, scores.map((row) => ({
+          club: row.favorite_football_club,
+          career_score: row.career_score,
+        }))));
       } catch (error) {
         console.error('Failed to load Klubbligan:', error);
-        if (active) setClubRows([]);
+        if (active) {
+          setHockeyRows([]);
+          setFootballRows([]);
+        }
       } finally {
         if (active) setClubsLoading(false);
       }
@@ -227,7 +274,9 @@ export default function StandingsPage() {
         </h1>
         <p className="mt-1 text-xs font-medium text-zinc-500">
           {view === 'clubs'
-            ? 'Sammanlagda poäng för scouter som valt samma klubb.'
+            ? league === 'hockey'
+              ? 'Sammanlagda karriärpoäng för scouter som valt samma SHL-klubb.'
+              : 'Sammanlagda karriärpoäng för scouter som valt samma Allsvenskan-klubb.'
             : 'Rankad efter karriärpoäng från varje avklarad match.'}
         </p>
         <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Standings view">
@@ -271,12 +320,16 @@ export default function StandingsPage() {
             />
           </div>
         ) : null}
+        {view === 'clubs' ? <ClubLeagueTabs league={league} onLeague={setLeague} /> : null}
         <div className="mt-8">
           {view === 'clubs' ? (
             clubsLoading ? (
               <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Laddar Klubbligan...</p>
             ) : (
-              <ClubChampionshipBoard rows={clubRows} />
+              <ClubChampionshipBoard
+                rows={league === 'hockey' ? hockeyRows : footballRows}
+                label={league === 'hockey' ? 'Ishockey-ligan' : 'Fotbollsligan'}
+              />
             )
           ) : loading ? (
             <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Laddar tabellen...</p>

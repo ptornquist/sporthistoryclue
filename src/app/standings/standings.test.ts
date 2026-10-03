@@ -26,7 +26,7 @@ vi.mock("@/lib/supabase/network", () => ({
   getFollowingIds: async () => [],
 }));
 
-import { ClubChampionshipBoard, StandingsBoard } from "./page";
+import { ClubChampionshipBoard, ClubLeagueTabs, StandingsBoard } from "./page";
 
 describe("StandingsBoard", () => {
   it("shows podium cards and the full table when profiles exist, including zero scores", () => {
@@ -53,6 +53,13 @@ describe("StandingsBoard", () => {
     expect(page).toContain("GLOBALA SCOUTER");
     expect(page).toContain("KLUBBLIGAN");
     expect(page).toContain('href="/archive"');
+
+    const tabs = renderToStaticMarkup(
+      createElement(ClubLeagueTabs, { league: "hockey", onLeague: () => undefined }),
+    );
+    expect(tabs).toContain("🏒 Ishockey-ligan");
+    expect(tabs).toContain("⚽ Fotbollsligan");
+    expect(tabs).toContain('aria-selected="true"');
 
     const board = renderToStaticMarkup(
       createElement(ClubChampionshipBoard, {
