@@ -23,6 +23,7 @@ describe("storyline routing", () => {
       "OLYMPIC ERA",
       "CLASSIC ERA",
       "RIVALRY ERA",
+      "LANDSLAGSERAN",
     ]);
     for (const storyline of STORYLINES) {
       expect(storyline.era).not.toMatch(/\d/);
@@ -35,5 +36,14 @@ describe("storyline routing", () => {
   it("walks to the next fixture in the storyline", () => {
     expect(nextStorylineMatch("cold-war-on-ice", "miracle-on-ice-1980")?.key).toBe("summit-series-1972");
     expect(nextStorylineMatch("cold-war-on-ice", "summit-series-1972")).toBeNull();
+    expect(nextStorylineMatch("svenska-underverk", "pasadena-bronze-1994")?.key).toBe("turin-gold-2006");
+    expect(nextStorylineMatch("svenska-underverk", "turin-gold-2006")).toBeNull();
+    expect(storylineById("svenska-underverk")?.matches.map((match) => match.title)).toEqual([
+      "Bronshjältarna från Pasadena",
+      "Guldfeber i Turin",
+    ]);
+    expect(arenaHref("pasadena-bronze-1994", "svenska-underverk")).toBe(
+      "/play/pasadena-bronze-1994?campaign=svenska-underverk",
+    );
   });
 });

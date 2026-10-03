@@ -33,6 +33,13 @@ describe("storylines layout", () => {
     expect(html).toContain("Starta kampanj");
     expect(html).toContain('href="/play/miracle-on-ice-1980?campaign=cold-war-on-ice"');
     expect(html).toContain('href="/play/pele-sweden-1958?campaign=world-cup-epics"');
+    expect(html).toContain("Svenska Underverk &amp; Dramatik");
+    expect(html).toContain("Magiska landslagsögonblick och dramatiska triumfer som fyllde Sverige med idrottsglädje.");
+    expect(html).toContain("1994 – 2006");
+    expect(html).toContain("Bronshjältarna från Pasadena");
+    expect(html).toContain("Guldfeber i Turin");
+    expect(html).toContain('href="/play/pasadena-bronze-1994?campaign=svenska-underverk"');
+    expect(html).toContain('href="/play/turin-gold-2006?campaign=svenska-underverk"');
     expect(html).not.toContain('href="/?match=');
     expect(html).not.toMatch(/w-\[\d+px\]/);
   });
