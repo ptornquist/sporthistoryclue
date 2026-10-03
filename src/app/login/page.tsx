@@ -52,7 +52,7 @@ function AuthContent() {
             });
             localStorage.setItem('shc_handle', username.trim());
           }
-          setSuccessMsg('Account created! Logging you in...');
+          setSuccessMsg('Konto skapat! Loggar in...');
           const next = safeReturnPath(searchParams.get('next')) ?? '/';
           setTimeout(() => router.push(next), 1200);
         }
@@ -66,7 +66,7 @@ function AuthContent() {
         router.push(safeReturnPath(searchParams.get('next')) ?? '/');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred during authentication.');
+      setErrorMsg(err.message || 'Något gick fel vid inloggningen.');
     } finally {
       setLoading(false);
     }
@@ -79,12 +79,12 @@ function AuthContent() {
           Sports<span className="text-blue-600">History</span>Clue
         </Link>
         <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mt-3">
-          {mode === 'login' ? 'Scout Login' : 'Join the League'}
+          {mode === 'login' ? 'Scoutinloggning' : 'Gå med i ligan'}
         </h1>
         <p className="text-xs text-zinc-500 mt-1">
           {mode === 'login'
-            ? 'Access your match history and track daily solve streaks.'
-            : 'Compete on daily leaderboards and challenge friends.'}
+            ? 'Se din matchhistorik och följ den dagliga sviten.'
+            : 'Tävla i tabellen och utmana vänner.'}
         </p>
       </div>
 
@@ -97,7 +97,7 @@ function AuthContent() {
             mode === 'login' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
           }`}
         >
-          Log In
+          Logga in
         </button>
         <button
           type="button"
@@ -106,7 +106,7 @@ function AuthContent() {
             mode === 'signup' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
           }`}
         >
-          Join Free
+          Gå med gratis
         </button>
       </div>
 
@@ -126,14 +126,14 @@ function AuthContent() {
         {mode === 'signup' && (
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-              Scout Handle / Name
+              Scoutnamn
             </label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. PeterT, PuckScout"
+              placeholder="t.ex. PeterT, PuckScout"
               className="w-full px-4 py-2.5 rounded-xl text-zinc-900 font-medium bg-white border border-zinc-300 !border-zinc-300 focus:border-blue-600 focus:!border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none placeholder:text-zinc-400 [&:-webkit-autofill]:[text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_white_inset]"
             />
           </div>
@@ -141,7 +141,7 @@ function AuthContent() {
 
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-            Email
+            E-post
           </label>
           <input
             type="email"
@@ -155,7 +155,7 @@ function AuthContent() {
 
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-            Password
+            Lösenord
           </label>
           <input
             type="password"
@@ -173,13 +173,13 @@ function AuthContent() {
           disabled={loading}
           className="w-full mt-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm"
         >
-          {loading ? 'Processing...' : mode === 'login' ? 'Sign In →' : 'Create Free Account →'}
+          {loading ? 'Bearbetar...' : mode === 'login' ? 'Logga in →' : 'Skapa gratis konto →'}
         </button>
       </form>
 
       <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
         <Link href="/" className="text-xs text-zinc-400 hover:text-black font-medium">
-          ← Back to Daily Match
+          ← Tillbaka till Dagens Drop
         </Link>
       </div>
     </div>
@@ -191,7 +191,7 @@ export default function LoginPage() {
     <>
       <Header />
       <main className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 selection:bg-blue-600 selection:text-white">
-        <Suspense fallback={<div className="text-xs font-mono text-zinc-400">Loading...</div>}>
+        <Suspense fallback={<div className="text-xs font-mono text-zinc-400">Laddar...</div>}>
           <AuthContent />
         </Suspense>
       </main>

@@ -7,8 +7,8 @@ export interface PurchaseBadgeResult {
 }
 
 export function formatShopBalance(score: number | null): string {
-  if (score == null) return "— PTS";
-  return `${score.toLocaleString("en-US")} PTS`;
+  if (score == null) return "— poäng";
+  return `${score.toLocaleString("en-US")} poäng`;
 }
 
 interface ShopClient {

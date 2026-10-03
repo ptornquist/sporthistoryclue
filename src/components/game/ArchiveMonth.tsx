@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { isDateKey, shiftUtcDateKey, utcDateKey } from "@/lib/drop-dates";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS = ["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"];
 
 export function ArchiveMonth({ now = new Date() }: { now?: Date }) {
   const today = utcDateKey(now);
@@ -9,7 +9,7 @@ export function ArchiveMonth({ now = new Date() }: { now?: Date }) {
   const [yearText, monthText] = today.split("-");
   const year = Number(yearText);
   const monthIndex = Number(monthText) - 1;
-  const monthLabel = new Date(Date.UTC(year, monthIndex, 1)).toLocaleString("en-US", {
+  const monthLabel = new Date(Date.UTC(year, monthIndex, 1)).toLocaleString("sv-SE", {
     month: "long",
     year: "numeric",
     timeZone: "UTC",
@@ -27,7 +27,7 @@ export function ArchiveMonth({ now = new Date() }: { now?: Date }) {
   return (
     <section className="mx-auto w-full max-w-lg">
       <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-900">{monthLabel}</h1>
-      <p className="mt-1 text-sm text-zinc-500">Open a day from this month. Today and yesterday are live.</p>
+      <p className="mt-1 text-sm text-zinc-500">Öppna en dag den här månaden. Idag och igår är spelbara.</p>
       <div className="mt-6 grid grid-cols-7 gap-2 text-center text-[10px] font-black uppercase tracking-wide text-zinc-400">
         {WEEKDAYS.map((day) => (
           <span key={day}>{day}</span>

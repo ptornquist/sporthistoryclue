@@ -8,18 +8,18 @@ export const HOW_TO_PLAY_EVENT = "shc-open-how-to-play";
 const STEPS = [
   {
     icon: "🎯",
-    title: "10,000 PTS Starting Pot",
-    body: "Every daily fixture begins with a maximum score and your opening intel briefing unlocked for free.",
+    title: "10 000 poäng i startpott",
+    body: "Varje daglig match börjar med maxpoäng och den första underrättelsen upplåst gratis.",
   },
   {
     icon: "🧩",
-    title: "Spend Points on Intel",
-    body: "Need more intel? Unlock Lineup & Tactics, Era Context, Archive Photos, or The Climax. Every unlocked tile deducts points—the fewer you use, the higher your score.",
+    title: "Handla intel för poäng",
+    body: "Behöver du mer? Lås upp laguppställning och taktik, epok, arkivfoto eller klimaxet. Varje upplåst kort drar poäng — ju färre du använder, desto högre blir resultatet.",
   },
   {
     icon: "⚽",
-    title: "Back Your Badge",
-    body: "Lock in the correct historical clash from 4 plausible contenders. All points you earn feed straight into your club's rank on the Premier League Supporters Derby table.",
+    title: "Satsa på klassikern",
+    body: "Lås in rätt historiska möte bland 4 tänkbara alternativ. Poängen du tar med dig räknas in i karriären och klubbens plats i Klubbligan.",
   },
 ] as const;
 
@@ -50,14 +50,14 @@ export function HowToPlayModal({ open, onClose }: { open: boolean; onClose: () =
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close how to play"
+          aria-label="Stäng så spelar du"
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"
         >
           ✕
         </button>
-        <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Scout Briefing</p>
+        <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Scoutbriefing</p>
         <h2 id="how-to-play-title" className="mt-1 text-2xl font-black uppercase tracking-tight">
-          How to Play
+          Så spelar du
         </h2>
         <div className="mt-5 space-y-3">
           {STEPS.map((step) => (
@@ -75,7 +75,7 @@ export function HowToPlayModal({ open, onClose }: { open: boolean; onClose: () =
           onClick={onClose}
           className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl text-sm tracking-wider uppercase shadow-md transition-all"
         >
-          Enter the Stadium →
+          Gå in i arenan →
         </button>
       </div>
     </div>

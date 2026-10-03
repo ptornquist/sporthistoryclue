@@ -23,42 +23,42 @@ interface Campaign {
 const CAMPAIGNS: Campaign[] = [
   {
     id: 'cold-war-on-ice',
-    title: 'The Cold War on Ice',
+    title: 'Kalla kriget på isen',
     era: '1972 – 1980',
     icon: '🏒',
     accent: 'text-sky-600',
     description:
-      'High-stakes geopolitical drama played out across the rinks of Moscow, Lake Placid, and Prague.',
+      'Geopolitisk dramatik på isen i Moskva, Lake Placid och Prag.',
     matchSlugs: ['miracle-on-ice-1980', 'summit-series-1972'],
   },
   {
     id: 'olympic-miracles',
-    title: 'Olympic Miracles',
+    title: 'Olympiska mirakel',
     era: '1976 – 2008',
     icon: '🥇',
     accent: 'text-amber-600',
     description:
-      'Generational athletes redefining greatness under the global Olympic spotlight.',
+      'Generationens idrottare som skrev om storhet under OS-strålkastarna.',
     matchSlugs: ['comaneci-1976', 'dream-team-1992', 'bolt-beijing-2008'],
   },
   {
     id: 'world-cup-epics',
-    title: 'World Cup Epics',
+    title: 'VM-epos',
     era: '1958 – 1986',
     icon: '⚽',
     accent: 'text-emerald-600',
     description:
-      'Controversy, boy prodigies, and legendary goals that defined global football.',
+      'Kontroverser, underbarn och legendariska mål som formade världsfotbollen.',
     matchSlugs: ['pele-sweden-1958', 'hand-of-god-1986'],
   },
   {
     id: 'rivalries-of-the-century',
-    title: 'Rivalries of the Century',
+    title: 'Århundradets rivaliteter',
     era: '1974 – 1980',
     icon: '🥊',
     accent: 'text-rose-600',
     description:
-      'Clashes of opposite personalities, styles, and philosophies under immense pressure.',
+      'Krockar mellan motsatta personligheter, stilar och filosofier under enorm press.',
     matchSlugs: ['rumble-in-the-jungle-1974', 'wimbledon-epic-1980'],
   },
 ];
@@ -103,7 +103,7 @@ export default function CampaignsPage() {
       <AuthGateModal
         isOpen={showAuthGate}
         onClose={() => setShowAuthGate(false)}
-        featureName="Storylines"
+        featureName="Kampanjer"
       />
 
       <Header />
@@ -112,13 +112,13 @@ export default function CampaignsPage() {
       <div className="w-full max-w-3xl mx-auto px-4 py-6 overflow-x-hidden">
         <div className="mb-8">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-1">
-            Historical Storylines
+            Historiska kampanjer
           </span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-            Storylines &amp; Eras
+            Kampanjer &amp; epoker
           </h1>
           <p className="text-zinc-500 text-sm mt-1 max-w-xl">
-            Play through curated thematic collections of the most iconic clashes in sports history.
+            Spela tematiska samlingar av idrottshistoriens största klassiker.
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export default function CampaignsPage() {
                 {/* Fixture links inside campaign */}
                 <div className="mt-5 space-y-2">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block">
-                    Fixtures in this storyline
+                    Matcher i den här kampanjen
                   </span>
                   {campaign.matches.map((match) => {
                     const record = solved[match.key];
@@ -169,15 +169,15 @@ export default function CampaignsPage() {
 
               <div className="mt-6 flex w-full max-w-full flex-col justify-between gap-2 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center">
                 <span className="text-[11px] font-mono font-bold text-zinc-400">
-                  {campaign.matches.length} Historical{' '}
-                  {campaign.matches.length === 1 ? 'Match' : 'Matches'}
+                  {campaign.matches.length}{' '}
+                  {campaign.matches.length === 1 ? 'historisk match' : 'historiska matcher'}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleStartMatch(campaign.matches[0].key)}
                   className="w-full max-w-full px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors sm:w-auto"
                 >
-                  Start Campaign
+                  Starta kampanj
                 </button>
               </div>
             </article>

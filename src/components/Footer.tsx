@@ -52,7 +52,7 @@ export default function Footer() {
           <span className="font-black uppercase tracking-tight text-zinc-900">
             Sports<span className="text-blue-600">History</span>Clue
           </span>
-          <span> · Daily global sports deduction puzzles · Released at 00:00 UTC</span>
+          <span> · Dagliga deduktionspussel om idrottshistoria · Släpps 00:00 UTC</span>
         </p>
 
         {/* Contact + Social Channels */}
@@ -65,7 +65,7 @@ export default function Footer() {
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <path d="m3 7 9 6 9-6" />
             </svg>
-            Contact Scout HQ
+            Kontakta Scout-HQ
           </a>
 
           <div className="flex items-center gap-2.5">

@@ -9,11 +9,11 @@ describe("daily sport pills", () => {
       createElement(DailySportPills, { selectedSport: "football", onSelect: vi.fn() }),
     );
     expect(html).toContain("flex items-center gap-2 overflow-x-auto no-scrollbar py-2 mb-4 w-full");
-    expect(html).toContain("Ice Hockey");
-    expect(html).toContain("Football");
-    expect(html).toContain("Boxing");
+    expect(html).toContain("Ishockey");
+    expect(html).toContain("Fotboll");
+    expect(html).toContain("Boxning");
     expect(html).toContain("Tennis");
-    expect(html).toContain("Athletics");
+    expect(html).toContain("Friidrott");
     expect(html).toContain("bg-blue-600 border-blue-600 text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]");
     expect(html).toContain("⚽");
   });

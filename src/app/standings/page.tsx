@@ -21,13 +21,13 @@ export function StandingsBoard({
 }) {
   if (rows.length === 0) {
     return (
-      <p className="mt-8 text-center text-sm text-zinc-500">No scouts on the board yet.</p>
+      <p className="mt-8 text-center text-sm text-zinc-500">Inga scouter på tavlan ännu.</p>
     );
   }
 
   const podium = [rows[1], rows[0], rows[2]];
   const medals = ['🥈', '👑', '🥉'];
-  const labels = ['Rank #2', 'Leader', 'Rank #3'];
+  const labels = ['Plats #2', 'Ledare', 'Plats #3'];
 
   return (
     <>
@@ -49,7 +49,7 @@ export function StandingsBoard({
               )}
             </p>
             <p className="mt-1 font-mono text-xs font-bold text-blue-600">
-              {(row?.career_score || 0).toLocaleString()} PTS
+              {(row?.career_score || 0).toLocaleString()} poäng
             </p>
           </div>
         ))}
@@ -58,10 +58,10 @@ export function StandingsBoard({
         <table className="w-full text-left">
           <thead className="bg-zinc-50 text-[10px] font-black uppercase tracking-wider text-zinc-400">
             <tr>
-              <th className="px-4 py-3">Rank</th>
+              <th className="px-4 py-3">Placering</th>
               <th className="px-4 py-3">Scout</th>
-              <th className="px-4 py-3">Cleared</th>
-              <th className="px-4 py-3 text-right">Career score</th>
+              <th className="px-4 py-3">Avklarade</th>
+              <th className="px-4 py-3 text-right">Karriärpoäng</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
@@ -77,7 +77,7 @@ export function StandingsBoard({
                         onClick={() => onChallenge(row.username || '')}
                         className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-zinc-950 font-black text-xs uppercase rounded-xl border-2 border-zinc-950 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
                       >
-                        ⚔️ Challenge
+                        ⚔️ Utmana
                       </button>
                     )}
                   </div>
@@ -212,9 +212,9 @@ export default function StandingsPage() {
   const handleChallenge = async (opponentUsername: string) => {
     const { data, error } = await sendDuelChallenge(opponentUsername, myScore);
     if (data?.success) {
-      alert(`Challenge sent to @${opponentUsername.replace(/^@/, '')}! ⚔️`);
+      alert(`Utmaning skickad till @${opponentUsername.replace(/^@/, '')}! ⚔️`);
     } else {
-      alert(data?.error || error?.message || 'Could not send challenge');
+      alert(data?.error || error?.message || 'Kunde inte skicka utmaningen');
     }
   };
 
@@ -223,12 +223,12 @@ export default function StandingsPage() {
       <Header />
       <div className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="text-3xl font-black uppercase tracking-tight">
-          {view === 'clubs' ? 'Klubbligan' : 'Global Standings'}
+          {view === 'clubs' ? 'Klubbligan' : 'Global Tabell'}
         </h1>
         <p className="mt-1 text-xs font-medium text-zinc-500">
           {view === 'clubs'
             ? 'Sammanlagda poäng för scouter som valt samma klubb.'
-            : 'Ranked by career score across every cleared fixture.'}
+            : 'Rankad efter karriärpoäng från varje avklarad match.'}
         </p>
         <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Standings view">
           <button
@@ -242,7 +242,7 @@ export default function StandingsPage() {
                 : 'border-zinc-200 bg-white text-zinc-700'
             }`}
           >
-            GLOBAL SCOUTS
+            GLOBALA SCOUTER
           </button>
           <button
             type="button"
@@ -258,7 +258,7 @@ export default function StandingsPage() {
                 : 'border-zinc-200 bg-white text-zinc-700'
             }`}
           >
-            🏆 CLUB CHAMPIONSHIP
+            🏆 KLUBBLIGAN
           </button>
         </div>
         {view === 'scouts' ? (
@@ -279,7 +279,7 @@ export default function StandingsPage() {
               <ClubChampionshipBoard rows={clubRows} />
             )
           ) : loading ? (
-            <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Loading rankings...</p>
+            <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Laddar tabellen...</p>
           ) : (
             <StandingsBoard rows={rows} currentUsername={myUsername} onChallenge={handleChallenge} />
           )}

@@ -11,9 +11,9 @@ describe("resolveUnlockedBadges", () => {
 
     expect(badges.map((badge) => badge.id)).toEqual(["rookie_pin", "chief_intel"]);
     expect(badges[0]).toMatchObject({
-      name: "ROOKIE PIN",
+      name: "NYBÖRJARNÅL",
       icon: "📌",
-      desc: "Cleared opening fixtures",
+      desc: "Avklarade de första matcherna",
     });
     expect(badges[1]?.icon).toBe("👑");
   });

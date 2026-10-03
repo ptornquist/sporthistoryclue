@@ -17,10 +17,10 @@ export function SportArchive({
 
   return (
     <section className="mx-auto w-full max-w-3xl">
-      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Browse by sport</span>
-      <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Sports Archive</h1>
+      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Välj sport</span>
+      <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Arkiv</h1>
       <p className="mt-1 max-w-xl text-sm text-zinc-500">
-        Choose a discipline and open a historical fixture in the solver.
+        Välj en gren och öppna en klassiker i lösaren.
       </p>
 
       <div className="mt-6 flex items-center gap-2 overflow-x-auto no-scrollbar py-1" role="tablist" aria-label="Sport categories">
@@ -47,14 +47,14 @@ export function SportArchive({
 
       <div className="mt-6 rounded-3xl border-2 border-zinc-200 bg-white p-5 shadow-sm">
         <div className="mb-5 flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
-          <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">{sport.name} Fixtures</h2>
+          <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">{sport.name}</h2>
           <span className="shrink-0 rounded-full bg-zinc-900 px-3 py-1 text-xs font-mono font-black text-white">
-            {fixtures.length} {fixtures.length === 1 ? "match" : "matches"}
+            {fixtures.length} {fixtures.length === 1 ? "match" : "matcher"}
           </span>
         </div>
 
         {fixtures.length === 0 ? (
-          <p className="py-8 text-center text-xs font-medium text-zinc-400">No fixtures are filed for this sport yet.</p>
+          <p className="py-8 text-center text-xs font-medium text-zinc-400">Inga matcher är registrerade för den här sporten ännu.</p>
         ) : (
           <ul className="space-y-3">
             {fixtures.map((fixture) => (
@@ -68,14 +68,14 @@ export function SportArchive({
                     {fixture.year} · {fixture.context}
                   </p>
                   <p className="mt-1.5 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                    Difficulty {fixture.difficulty} · {fixture.clueCount} Clues
+                    Svårighet {fixture.difficulty} · {fixture.clueCount} ledtrådar
                   </p>
                 </div>
                 <Link
                   href={deduceHref(fixture.id)}
                   className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-center text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
                 >
-                  DEDUCE →
+                  DEDUCERA →
                 </Link>
               </li>
             ))}

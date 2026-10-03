@@ -42,7 +42,7 @@ export function FixturePreview({
       <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">{subtitle}</span>
       {solved ? (
         <span className="mt-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-          ✓ SOLVED · {solvedScore} PTS
+          ✓ AVKLARAD · {solvedScore} POÄNG
         </span>
       ) : null}
       {reveal ? (
@@ -75,7 +75,7 @@ export function FixturePreview({
             href={href}
             className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
           >
-            DEDUCE →
+            DEDUCERA →
           </Link>
         ) : (
           <button
@@ -83,7 +83,7 @@ export function FixturePreview({
             onClick={() => onDeduce?.()}
             className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
           >
-            DEDUCE →
+            DEDUCERA →
           </button>
         )}
         {onChallenge ? (
@@ -92,7 +92,7 @@ export function FixturePreview({
             onClick={onChallenge}
             className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wider text-zinc-800"
           >
-            Challenge
+            Utmana
           </button>
         ) : null}
       </div>
@@ -107,7 +107,7 @@ export function FixturePreview({
     >
       {body}
       {solved ? null : (
-        <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCE →</span>
+        <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCERA →</span>
       )}
     </button>
   );

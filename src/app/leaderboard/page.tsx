@@ -130,9 +130,9 @@ export default function LeaderboardPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-black tracking-tight uppercase">Global Standings</h1>
+            <h1 className="text-3xl font-black tracking-tight uppercase">Global Tabell</h1>
             <p className="text-zinc-500 text-xs font-medium mt-1">
-              Ranked by total historical deduction points across all fixtures.
+              Rankad efter sammanlagda poäng från alla avklarade matcher.
             </p>
           </div>
 
@@ -143,7 +143,7 @@ export default function LeaderboardPage() {
                 tab === 'global' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'
               }`}
             >
-              Global Standings
+              Global Tabell
             </button>
             <button
               onClick={() => setTab('network')}
@@ -151,14 +151,14 @@ export default function LeaderboardPage() {
                 tab === 'network' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'
               }`}
             >
-              My Network ({networkIds.length})
+              Mitt Nätverk ({networkIds.length})
             </button>
           </div>
         </div>
 
         <section className="bg-white border border-zinc-200 rounded-3xl p-5 mb-8 shadow-sm">
           <h2 className="text-sm font-black uppercase tracking-tight text-zinc-900 mb-3">
-            Find Scouts
+            Sök scouter
           </h2>
           <FindScouts currentUserId={currentUser?.id ?? null} framed={false} />
         </section>
@@ -167,7 +167,7 @@ export default function LeaderboardPage() {
           <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
             <div className="bg-white border border-zinc-200 rounded-2xl p-5 text-center flex flex-col justify-end items-center">
               <span className="text-2xl mb-1">🥈</span>
-              <span className="text-[11px] font-mono font-bold text-zinc-400 uppercase">Rank #2</span>
+              <span className="text-[11px] font-mono font-bold text-zinc-400 uppercase">Plats #2</span>
               <span className="font-black text-sm md:text-base text-zinc-900 truncate max-w-full">
                 @{displayedLeaders[1]?.username}
               </span>
@@ -177,13 +177,13 @@ export default function LeaderboardPage() {
                 </span>
               )}
               <span className="text-xs font-mono font-bold text-blue-600 mt-1">
-                {displayedLeaders[1]?.total_score.toLocaleString()} PTS
+                {displayedLeaders[1]?.total_score.toLocaleString()} poäng
               </span>
             </div>
 
             <div className="bg-white border-2 border-blue-600 rounded-2xl p-6 text-center flex flex-col justify-end items-center shadow-sm">
               <span className="text-3xl mb-1">👑</span>
-              <span className="text-[11px] font-mono font-bold text-blue-600 uppercase">Leader</span>
+              <span className="text-[11px] font-mono font-bold text-blue-600 uppercase">Ledare</span>
               <span className="font-black text-base md:text-lg text-zinc-900 truncate max-w-full">
                 @{displayedLeaders[0]?.username}
               </span>
@@ -193,13 +193,13 @@ export default function LeaderboardPage() {
                 </span>
               )}
               <span className="text-sm font-mono font-black text-blue-600 mt-1">
-                {displayedLeaders[0]?.total_score.toLocaleString()} PTS
+                {displayedLeaders[0]?.total_score.toLocaleString()} poäng
               </span>
             </div>
 
             <div className="bg-white border-2 border-zinc-200 rounded-2xl p-5 text-center flex flex-col justify-end items-center">
               <span className="text-2xl mb-1">🥉</span>
-              <span className="text-[11px] font-mono font-bold text-zinc-400 uppercase">Rank #3</span>
+              <span className="text-[11px] font-mono font-bold text-zinc-400 uppercase">Plats #3</span>
               <span className="font-black text-sm md:text-base text-zinc-900 truncate max-w-full">
                 @{displayedLeaders[2]?.username}
               </span>
@@ -209,7 +209,7 @@ export default function LeaderboardPage() {
                 </span>
               )}
               <span className="text-xs font-mono font-bold text-blue-600 mt-1">
-                {displayedLeaders[2]?.total_score.toLocaleString()} PTS
+                {displayedLeaders[2]?.total_score.toLocaleString()} poäng
               </span>
             </div>
           </div>
@@ -218,17 +218,17 @@ export default function LeaderboardPage() {
         <div className="bg-white border border-zinc-200 rounded-3xl overflow-hidden shadow-sm">
           {loading ? (
             <div className="p-12 text-center text-xs font-bold uppercase tracking-widest text-zinc-400">
-              Loading rankings...
+              Laddar tabellen...
             </div>
           ) : tab === 'network' && networkIds.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-zinc-500 text-sm">
-                You haven&apos;t followed any scouts yet. Search and connect with fellow scouts to see their scores here.
+                Du har inte följt några scouter ännu. Sök och följ andra scouter för att se deras poäng här.
               </p>
             </div>
           ) : displayedLeaders.length === 0 ? (
             <div className="p-12 text-center">
-              <p className="text-zinc-500 text-sm">No records found for this category yet.</p>
+              <p className="text-zinc-500 text-sm">Inga resultat i den här kategorin ännu.</p>
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
@@ -258,12 +258,12 @@ export default function LeaderboardPage() {
                           )}
                           {isMe && (
                             <span className="px-2 py-0.5 bg-blue-600 text-white text-[9px] font-black uppercase rounded">
-                              YOU
+                              DU
                             </span>
                           )}
                         </div>
                         <span className="text-[11px] font-medium text-zinc-400">
-                          {entry.matches_cleared} {entry.matches_cleared === 1 ? 'match' : 'matches'} cleared
+                          {entry.matches_cleared} {entry.matches_cleared === 1 ? 'match' : 'matcher'} avklarade
                         </span>
                       </div>
                     </div>
@@ -279,14 +279,14 @@ export default function LeaderboardPage() {
                               : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
                           }`}
                         >
-                          {networkIds.includes(entry.id) ? 'Following' : 'Follow'}
+                          {networkIds.includes(entry.id) ? 'Följer' : 'Följ'}
                         </button>
                       )}
                       <div className="text-right">
                         <span className="font-mono font-black text-base text-zinc-900">
                           {entry.total_score.toLocaleString()}
                         </span>
-                        <span className="text-[11px] font-bold text-zinc-400 ml-1">PTS</span>
+                        <span className="text-[11px] font-bold text-zinc-400 ml-1">poäng</span>
                       </div>
                     </div>
                   </div>

@@ -65,7 +65,7 @@ describe("club hub markup", () => {
         userScore: 8500,
       }),
     );
-    expect(html).toContain("Share with your Club");
+    expect(html).toContain("Dela med klubben");
     expect(html).toContain("pts=8500");
   });
 });

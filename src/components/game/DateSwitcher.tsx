@@ -18,18 +18,18 @@ export function DateSwitcher({ todayKey, activeKey, onYesterday, onToday, onForw
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       <button type="button" onClick={onYesterday} className={pill}>
-        &lt; Yesterday
+        &lt; Igår
       </button>
       <button type="button" onClick={onToday} className={pill}>
-        Today
+        Idag
       </button>
       {viewingYesterday && (
-        <button type="button" onClick={onForward} className={pill} aria-label="Step forward to today">
+        <button type="button" onClick={onForward} className={pill} aria-label="Gå fram till idag">
           &gt;
         </button>
       )}
       <Link href="/archive" className={pill}>
-        📅 Calendar
+        📅 Kalender
       </Link>
     </div>
   );

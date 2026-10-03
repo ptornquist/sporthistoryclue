@@ -12,19 +12,19 @@ const owned = resolveUnlockedBadges([
 describe("ScoutAccolades", () => {
   it("shows the empty shop prompt when the scout has no badges", () => {
     const html = renderToStaticMarkup(createElement(ScoutAccolades, { badges: [] }));
-    expect(html).toContain("Scout Accolades (0)");
-    expect(html).toContain("No badges unlocked yet. Spend career points in the shop!");
+    expect(html).toContain("Scoututmärkelser (0)");
+    expect(html).toContain("Inga utmärkelser upplåsta ännu. Handla med karriärpoäng i shopen!");
     expect(html).toContain('href="/shop"');
-    expect(html).toContain("+ Get More");
+    expect(html).toContain("+ Hämta fler");
   });
 
   it("renders each unlocked badge and the handle flair", () => {
     const card = renderToStaticMarkup(createElement(ScoutAccolades, { badges: owned }));
-    expect(card).toContain("Scout Accolades (2)");
-    expect(card).toContain("ROOKIE PIN");
-    expect(card).toContain("Cleared opening fixtures");
-    expect(card).toContain("HALL OF FAME SASH");
-    expect(card).toContain("Standings veteran");
+    expect(card).toContain("Scoututmärkelser (2)");
+    expect(card).toContain("NYBÖRJARNÅL");
+    expect(card).toContain("Avklarade de första matcherna");
+    expect(card).toContain("HALL OF FAME-SKÄRP");
+    expect(card).toContain("Veteran i tabellen");
     expect(card).toContain("bg-amber-100 border-amber-300 text-amber-900");
 
     const flair = renderToStaticMarkup(createElement(BadgeHandleFlair, { badges: owned }));

@@ -34,7 +34,7 @@ describe("mystery case files", () => {
     expect(perfectTen?.title).toBe("The 1.00 Scoreboard Anomaly");
     expect(bolt?.title).toBe("The Golden Spikes");
     expect(fixtureSubtitle(1994, "Olympic Final Shootout")).toBe(
-      "1994 · Olympic Final Shootout · 6 Clues",
+      "1994 · Olympic Final Shootout · 6 ledtrådar",
     );
   });
 

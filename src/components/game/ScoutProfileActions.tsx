@@ -24,22 +24,22 @@ export function ScoutProfileActions({
 
   const challenge = async () => {
     if (!viewerId) {
-      alert("Sign in to challenge this scout.");
+      alert("Logga in för att utmana den här scouten.");
       return;
     }
     setBusy(true);
     const { data, error } = await sendDuelChallenge(handle, viewerScore);
     setBusy(false);
     if (data?.success) {
-      alert(`Challenge sent to @${handle}! ⚔️`);
+      alert(`Utmaning skickad till @${handle}! ⚔️`);
     } else {
-      alert(data?.error || error?.message || "Could not send challenge");
+      alert(data?.error || error?.message || "Kunde inte skicka utmaningen");
     }
   };
 
   const toggleFollow = async () => {
     if (!viewerId) {
-      alert("Sign in to follow this scout.");
+      alert("Logga in för att följa den här scouten.");
       return;
     }
     setBusy(true);
@@ -52,7 +52,7 @@ export function ScoutProfileActions({
         setFollowing(true);
       }
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Could not update your network");
+      alert(error instanceof Error ? error.message : "Kunde inte uppdatera nätverket");
     } finally {
       setBusy(false);
     }
@@ -66,7 +66,7 @@ export function ScoutProfileActions({
         onClick={challenge}
         className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-zinc-950 font-black text-xs uppercase rounded-xl border-2 border-zinc-950 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all disabled:opacity-60"
       >
-        ⚔️ Challenge Scout
+        ⚔️ Utmana scout
       </button>
       <button
         type="button"
@@ -74,7 +74,7 @@ export function ScoutProfileActions({
         onClick={toggleFollow}
         className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-black uppercase border-2 border-zinc-950"
       >
-        {following ? "Following" : "Follow / Network"}
+        {following ? "Följer" : "Följ i nätverket"}
       </button>
     </div>
   );

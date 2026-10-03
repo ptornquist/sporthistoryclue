@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 const DISMISS_KEY = "shc_pwa_dismissed";
 
 const MANUAL_INSTALL_HINT =
-  "Tap the 3 dots menu in your browser, then tap 'Install app' or 'Add to Home screen'";
+  "Tryck på menyn med tre prickar i webbläsaren och välj sedan Installera app eller Lägg till på hemskärmen";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -69,14 +69,14 @@ export function InstallAppBannerCard({
           className="h-12 w-12 shrink-0 rounded-xl"
         />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black text-zinc-900">Install SportsHistoryClue</p>
+          <p className="text-sm font-black text-zinc-900">Installera SportsHistoryClue</p>
           {platform === "ios" ? (
             <div className="mt-2 space-y-2 text-sm leading-relaxed text-zinc-600">
-              <p>To install this app on your iPhone/iPad:</p>
+              <p>Så installerar du appen på iPhone eller iPad:</p>
               <p>
-                1. Tap the Share button in Safari toolbar <span aria-hidden>⎋</span>
+                1. Tryck på Dela-knappen i Safaris verktygsfält <span aria-hidden>⎋</span>
               </p>
-              <p>2. Scroll down and tap &apos;Add to Home Screen&apos; (+)</p>
+              <p>2. Skrolla ner och tryck på Lägg till på hemskärmen (+)</p>
             </div>
           ) : (
             <>
@@ -85,7 +85,7 @@ export function InstallAppBannerCard({
                 onClick={onInstall}
                 className="mt-3 min-h-[48px] w-full touch-manipulation rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 active:scale-[0.98]"
               >
-                Install App
+                Installera appen
               </button>
               {manualHint ? (
                 <p className="mt-3 text-xs leading-relaxed text-zinc-500">{MANUAL_INSTALL_HINT}</p>

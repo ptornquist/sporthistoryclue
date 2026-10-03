@@ -15,18 +15,18 @@ describe("ShopBoard", () => {
       }),
     );
 
-    expect(html).toContain("40,000 PTS");
+    expect(html).toContain("40,000 poäng");
     expect(html).toContain("📌");
-    expect(html).toContain("ROOKIE PIN");
-    expect(html).toContain("ARCHIVE LANTERN");
-    expect(html).toContain("GOLD WHISTLE");
-    expect(html).toContain("HALL OF FAME SASH");
-    expect(html).toContain("CHIEF OF INTEL CREST");
-    expect(html).toContain("✓ OWNED");
-    expect(html).toContain("UNLOCK FOR 35,000 PTS");
-    expect(html).toContain("NEEDS 75,000 PTS");
-    expect(html).toContain("NEEDS 150,000 PTS");
-    expect(html).toContain("NEEDS 300,000 PTS");
-    expect(html).not.toContain("UNLOCK FOR 10,000 PTS");
+    expect(html).toContain("NYBÖRJARNÅL");
+    expect(html).toContain("ARKIVLYKTA");
+    expect(html).toContain("GULDPIPA");
+    expect(html).toContain("HALL OF FAME-SKÄRP");
+    expect(html).toContain("UNDERRÄTTELSEVAPNET");
+    expect(html).toContain("✓ ÄGD");
+    expect(html).toContain("LÅS UPP FÖR 35,000 poäng");
+    expect(html).toContain("KRÄVER 75,000 poäng");
+    expect(html).toContain("KRÄVER 150,000 poäng");
+    expect(html).toContain("KRÄVER 300,000 poäng");
+    expect(html).not.toContain("LÅS UPP FÖR 10,000 poäng");
   });
 });

@@ -1,33 +1,33 @@
 export const ACCOLADE_BADGES = {
   rookie_pin: {
-    name: "ROOKIE PIN",
+    name: "NYBÖRJARNÅL",
     icon: "📌",
     bg: "bg-amber-100 border-amber-300 text-amber-900",
-    desc: "Cleared opening fixtures",
+    desc: "Avklarade de första matcherna",
   },
   archive_lantern: {
-    name: "ARCHIVE LANTERN",
+    name: "ARKIVLYKTA",
     icon: "🏮",
     bg: "bg-orange-100 border-orange-300 text-orange-900",
-    desc: "Archive illumination",
+    desc: "Arkivets ljus",
   },
   gold_whistle: {
-    name: "GOLD WHISTLE",
+    name: "GULDPIPA",
     icon: "🪙",
     bg: "bg-yellow-100 border-yellow-300 text-yellow-900",
-    desc: "Reads the climax",
+    desc: "Läser klimaxet",
   },
   hof_sash: {
-    name: "HALL OF FAME SASH",
+    name: "HALL OF FAME-SKÄRP",
     icon: "🎖️",
     bg: "bg-purple-100 border-purple-300 text-purple-900",
-    desc: "Standings veteran",
+    desc: "Veteran i tabellen",
   },
   chief_intel: {
-    name: "CHIEF OF INTEL CREST",
+    name: "UNDERRÄTTELSEVAPNET",
     icon: "👑",
     bg: "bg-emerald-100 border-emerald-300 text-emerald-950",
-    desc: "Top tier scout",
+    desc: "Scout i toppklass",
   },
 } as const;
 
