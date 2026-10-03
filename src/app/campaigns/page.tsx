@@ -68,10 +68,10 @@ export default function CampaignsPage() {
       <div className="w-full max-w-3xl mx-auto px-4 py-6 overflow-x-hidden">
         <div className="mb-8">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-1">
-            Historiska kampanjer
+            Historiska utmaningar
           </span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-            Kampanjer &amp; epoker
+            Utmaningar &amp; epoker
           </h1>
           <p className="text-zinc-500 text-sm mt-1 max-w-xl">
             Spela tematiska samlingar av idrottshistoriens största klassiker.
@@ -101,7 +101,7 @@ export default function CampaignsPage() {
                 {/* Fixture links inside campaign */}
                 <div className="mt-5 space-y-2">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block">
-                    Matcher i den här kampanjen
+                    Matcher i den här utmaningen
                   </span>
                   {campaign.matches.map((match) => {
                     const record = solved[match.key];
@@ -137,7 +137,7 @@ export default function CampaignsPage() {
                   )}
                   className="w-full max-w-full px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors sm:w-auto text-center"
                 >
-                  Starta kampanj
+                  Starta utmaning
                 </Link>
               </div>
             </article>

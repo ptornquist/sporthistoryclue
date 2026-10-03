@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STORYLINES, arenaHref, firstOpenMatch, nextStorylineMatch, storylineById } from "./storylines";
+import { STORYLINES, arenaHref, campaignHeadline, firstOpenMatch, nextStorylineMatch, storylineById } from "./storylines";
 
 describe("storyline routing", () => {
   it("points each fixture at that match and campaign", () => {
@@ -51,5 +51,7 @@ describe("storyline routing", () => {
       "2007 · Guldstrid",
     ]);
     expect(arenaHref("slaget-i-sudden", "shl-klassiker")).toBe("/play/slaget-i-sudden?campaign=shl-klassiker");
+    expect(campaignHeadline(null)).toBe("Historisk match");
+    expect(campaignHeadline("shl-klassiker")).toBe("SHL-KLASSIKER & RIVALER");
   });
 });

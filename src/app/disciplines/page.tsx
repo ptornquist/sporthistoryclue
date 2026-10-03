@@ -124,7 +124,7 @@ export default function DisciplinesPage() {
             Välj sport
           </span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-            Arkiv
+            Historik
           </h1>
           <p className="text-zinc-500 text-sm mt-1 max-w-xl">
             Välj en gren och deducera klassiker från den sporten.
