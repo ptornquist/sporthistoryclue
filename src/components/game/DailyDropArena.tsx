@@ -14,7 +14,7 @@ import {
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { ClueStack } from '@/components/game/ClueStack';
-import { DailySportPills, sportIdForCategory, sportMatchSlug, type DailySportId } from '@/components/game/DailySportPills';
+import { DAILY_SPORTS, DailySportPills, sportIdForCategory, sportMatchSlug, type DailySportId } from '@/components/game/DailySportPills';
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
@@ -457,6 +457,8 @@ export function DailyDropArena(props: {
   const todayKey = utcDateKey();
   const yesterdayKey = shiftUtcDateKey(todayKey, -1);
   const playerHandle = playerName.replace(/^@/, '') || 'Scout';
+  const sportId = sportIdForCategory(challenge.category);
+  const sportLabel = DAILY_SPORTS.find((sport) => sport.id === sportId)?.name ?? challenge.category;
   const resultUrl = `https://sportshistoryclue.com/?duel=${encodeURIComponent(playerHandle)}&pts=${userFinalScore}`;
   const resultText = [
     'SportsHistoryClue 🏆',
@@ -494,7 +496,7 @@ export function DailyDropArena(props: {
           <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-6">
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
-                {challenge.category}
+                {sportLabel}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
                 Dagens Drop
@@ -608,7 +610,7 @@ export function DailyDropArena(props: {
 
               {isSolved || gameWon ? (
                 <SolvedFixtureCard
-                  sport={challenge.category}
+                  sport={sportLabel}
                   year={solution?.year ?? null}
                   score={earnedScore ?? score}
                   cells={gridCells}
@@ -619,7 +621,7 @@ export function DailyDropArena(props: {
                 <div className="rounded-2xl border-2 border-zinc-950 bg-white p-6 text-center">
                   <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900">Matchen är över</h2>
                   <p className="mt-2 text-sm font-bold text-zinc-700">
-                    {solution ? `${challenge.category} (${solution.year})` : challenge.category}
+                    {solution ? `${sportLabel} (${solution.year})` : sportLabel}
                   </p>
                   <p className="mt-3 text-lg tracking-widest" aria-label="Score grid">{gridLine}</p>
                 </div>
