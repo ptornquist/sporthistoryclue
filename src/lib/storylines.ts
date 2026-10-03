@@ -47,6 +47,15 @@ const DEFINITIONS: Array<Omit<Storyline, "matches"> & { matchSlugs: string[] }> 
     description: "Clashes of opposite personalities, styles, and philosophies under immense pressure.",
     matchSlugs: ["rumble-in-the-jungle-1974", "wimbledon-epic-1980"],
   },
+  {
+    id: "svenska-underverk",
+    title: "Svenska Underverk & Dramatik",
+    era: "LANDSLAGSERAN",
+    icon: "🇸🇪",
+    accent: "text-blue-600",
+    description: "Magiska landslagsögonblick och dramatiska triumfer som fyllde Sverige med idrottsglädje.",
+    matchSlugs: ["pasadena-bronze-1994", "turin-gold-2006"],
+  },
 ];
 
 export const STORYLINES: Storyline[] = DEFINITIONS.map((campaign) => ({
@@ -92,6 +101,7 @@ const CAMPAIGN_HEADLINES: Record<string, string> = {
   "olympic-miracles": "Olympiska mirakel",
   "world-cup-epics": "VM-epos",
   "rivalries-of-the-century": "Århundradets rivaliteter",
+  "svenska-underverk": "Svenska Underverk & Dramatik",
 };
 
 export function campaignHeadline(campaignId: string | null | undefined): string {

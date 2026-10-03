@@ -80,6 +80,24 @@ const RECAPS: Record<string, HistoricalRecap> = {
     story:
       "Kinshasa satte upp en titelmatch i tungvikt som ett nationellt skådespel, med en diktators stadion full före gryningen. George Foreman var mästaren och slagskytten. Muhammad Ali lutade sig mot repen, lät kraften ta slut och avslutade natten i åttonde ronden. Nedslagningen gav Ali titeln tillbaka och gav rope-a-dope dess namn.",
   },
+  "pasadena-bronze-1994": {
+    year: 1994,
+    venue: "Rose Bowl, Pasadena",
+    finalScore: "Sverige 4–0 Bulgarien",
+    decisivePlay: "Kennet Andersson gör två mål i bronsmatchen",
+    videoUrl: null,
+    story:
+      "VM-bronsmatchen i Pasadena spelades i stekande sol, långt från det svenska sommargräset. Bulgarien hade skrällt sig fram till medaljmatch. Sverige svarade med 4–0. Tomas Brolin, Håkan Mild och Kennet Andersson, två gånger, gjorde målen. Bronshjältarna sjöng sig hem med medaljerna.",
+  },
+  "turin-gold-2006": {
+    year: 2006,
+    venue: "Palasport Olimpico, Turin",
+    finalScore: "Sverige 3–2 Finland",
+    decisivePlay: "Nicklas Lidströms slagskott, nio sekunder in på tredje perioden",
+    videoUrl: null,
+    story:
+      "OS-finalen i Turin stod 2–2 när den sista perioden började. Mats Sundin vann tekningen, Peter Forsberg drog in pucken och lade tillbaka, och Nicklas Lidström sköt ett slagskott från blålinjen högt upp i krysset. 3–2 efter nio sekunder. Tre Kronor höll ledningen mot Finland och tog guldet.",
+  },
   "wimbledon-epic-1980": {
     year: 1980,
     venue: "Centre Court, All England Club",

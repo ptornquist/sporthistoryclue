@@ -15,6 +15,7 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Miraklet på isen",
   ],
   football: [
+    "Sverige mot Bulgarien (1994)",
     "Argentina mot England (1986)",
     "Brasilien mot Italien (1970)",
     "Brasilien mot Sverige (1958)",

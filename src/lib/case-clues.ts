@@ -40,6 +40,20 @@ const CASE_CLUES: Record<string, readonly string[]> = {
     "Ett beskuret arkivfoto från en sprintfinal.",
     "Det avgörande ögonblicket är klockan som sjunker även när segern redan ser klar ut.",
   ],
+  "pasadena-bronze-1994": [
+    "En medaljmatch i stekande sol. Gräset ligger långt hemifrån, och sången på läktaren hör inte hemma i den här delstaten.",
+    "Ett lag som skulle störa på kontringen får aldrig sista avslutet. Varje anfall slutar i samma tysta bur.",
+    "Målskyttet kommer från oväntade håll. En kant, en mitt, och sedan samma långa anfallare en gång till.",
+    "Ett beskuret arkivfoto från en bronsmatch i en skålformad arena, utan namn i bildtexten.",
+    "Bronshjältarna från Pasadena. VM 1994, bronsmatchen mot Bulgarien, slutar 4–0 och Sverige sjunger sig hem med medaljerna.",
+  ],
+  "turin-gold-2006": [
+    "En OS-final på is. Hallen är nybyggd, och två lag som kan varandras skridskoskär möts om den tyngsta medaljen.",
+    "Ett lag tar ledningen. Det andra svarar. När den sista perioden börjar är ställningen inte längre den som öppnade matchen.",
+    "En back kliver upp mot blålinjen nästan innan bänken hunnit sätta sig. Skottet går högt, och ribban sjunger.",
+    "Ett beskuret arkivfoto från en OS-final i ishockey, utan namn i bildtexten.",
+    "Guldfeber i Turin. OS-finalen 2006, Tre Kronor mot Finland, slutar 3–2 efter Nicklas Lidströms ikoniska slagskott direkt i början av tredje perioden.",
+  ],
   "pele-sweden-1958": [
     "VM-final. Arenakortet är värdens egen stadion, och nummer 10 är fortfarande tonåring.",
     "En sommar då ett ungt lag gjorde turneringen till en annan sport.",

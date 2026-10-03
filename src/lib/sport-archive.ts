@@ -39,6 +39,15 @@ export const ARCHIVE_FIXTURES: ArchiveSportFixture[] = [
     clueCount: 5,
   },
   {
+    id: "turin-gold-2006",
+    sport: "ice_hockey",
+    title: "Guldfeber i Turin",
+    year: 2006,
+    context: "OS-final",
+    difficulty: 2,
+    clueCount: 5,
+  },
+  {
     id: "montevideo-1930",
     sport: "football",
     title: "Natten på Centenario",
@@ -81,6 +90,15 @@ export const ARCHIVE_FIXTURES: ArchiveSportFixture[] = [
     year: 1986,
     context: "VM-kvartsfinal",
     difficulty: 1,
+    clueCount: 5,
+  },
+  {
+    id: "pasadena-bronze-1994",
+    sport: "football",
+    title: "Bronshjältarna från Pasadena",
+    year: 1994,
+    context: "VM-bronsmatch",
+    difficulty: 2,
     clueCount: 5,
   },
   {

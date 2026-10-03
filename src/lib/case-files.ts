@@ -96,6 +96,22 @@ export const CASE_FILES: CaseFile[] = [
     context: "Wimbledonfinalen, herrar",
     sport: "tennis",
   },
+  {
+    slug: "pasadena-bronze-1994",
+    ids: ["pasadena-bronze-1994"],
+    title: "Bronshjältarna från Pasadena",
+    year: 1994,
+    context: "VM-bronsmatch",
+    sport: "football",
+  },
+  {
+    slug: "turin-gold-2006",
+    ids: ["turin-gold-2006"],
+    title: "Guldfeber i Turin",
+    year: 2006,
+    context: "OS-final",
+    sport: "ice_hockey",
+  },
 ];
 
 export const SPORT_NAME: Record<CaseFile["sport"], string> = {

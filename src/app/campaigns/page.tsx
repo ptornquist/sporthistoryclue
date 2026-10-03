@@ -60,6 +60,16 @@ const CAMPAIGNS: Campaign[] = [
       'Krockar mellan motsatta personligheter, stilar och filosofier under enorm press.',
     matchSlugs: ['rumble-in-the-jungle-1974', 'wimbledon-epic-1980'],
   },
+  {
+    id: 'svenska-underverk',
+    title: 'Svenska Underverk & Dramatik',
+    era: '1994 – 2006',
+    icon: '🇸🇪',
+    accent: 'text-blue-600',
+    description:
+      'Magiska landslagsögonblick och dramatiska triumfer som fyllde Sverige med idrottsglädje.',
+    matchSlugs: ['pasadena-bronze-1994', 'turin-gold-2006'],
+  },
 ];
 
 const STORYLINES = CAMPAIGNS.map((campaign) => ({
