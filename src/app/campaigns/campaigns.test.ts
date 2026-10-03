@@ -20,8 +20,8 @@ describe("storylines layout", () => {
     expect(html).toContain(">BETA<");
     expect(html).toContain("hidden md:flex items-center gap-6 text-xs font-black uppercase tracking-wider text-zinc-700");
     expect(html).toContain("Dagens Drop");
-    expect(html).toContain("Kampanjer");
-    expect(html).toContain("Arkiv");
+    expect(html).toContain("Utmaningar");
+    expect(html).toContain("Historik");
     expect(html).toContain("Tabell");
     expect(html).toContain("Shop");
     expect(html).toContain("👤 Profil");
@@ -30,7 +30,9 @@ describe("storylines layout", () => {
     expect(html).toContain("flex w-full max-w-full flex-col justify-between gap-2");
     expect(html).toContain("sm:flex-row sm:items-center");
     expect(html).toContain("DEDUCERA →");
-    expect(html).toContain("Starta kampanj");
+    expect(html).toContain("Starta utmaning");
+    expect(html).toContain("Utmaningar &amp; epoker");
+    expect(html).toContain("Historiska utmaningar");
     expect(html).toContain("SHL-KLASSIKER &amp; RIVALER");
     expect(html).toContain("Avgörande ögonblick, nagelbitare och klassiska rivaliteter från den svenska hockeyscenen.");
     expect(html).toContain("ALLSVENSKA DERBYN &amp; DRAMAT");

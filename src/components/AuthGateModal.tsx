@@ -62,7 +62,7 @@ export default function AuthGateModal({
           id="auth-gate-title"
           className="text-2xl font-black uppercase tracking-tight text-zinc-900 mt-1"
         >
-          Lås upp arkivet
+          Lås upp historiken
         </h3>
 
         <p className="text-xs text-zinc-600 leading-relaxed mt-2 mb-5">
@@ -77,13 +77,13 @@ export default function AuthGateModal({
           </span>
           <ul className="text-xs text-zinc-600 font-medium space-y-1">
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">✦</span> Kampanjer
+              <span className="text-blue-600 font-bold">✦</span> Utmaningar
             </li>
             <li className="flex items-center gap-2">
               <span className="text-blue-600 font-bold">✦</span> Per sport
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">✦</span> Spela en till match (obegränsat arkiv)
+              <span className="text-blue-600 font-bold">✦</span> Spela en till match (obegränsad historik)
             </li>
           </ul>
         </div>

@@ -25,7 +25,7 @@ export function SportArchive({
   return (
     <section className="mx-auto w-full max-w-3xl">
       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Välj sport</span>
-      <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Arkiv</h1>
+      <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Historik</h1>
       <p className="mt-1 max-w-xl text-sm text-zinc-500">
         Välj en gren och öppna en klassiker i lösaren.
       </p>

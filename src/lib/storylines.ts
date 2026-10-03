@@ -76,8 +76,8 @@ const CAMPAIGN_HEADLINES: Record<string, string> = {
 };
 
 export function campaignHeadline(campaignId: string | null | undefined): string {
-  if (!campaignId) return "Arkivmatch";
-  return CAMPAIGN_HEADLINES[campaignId] ?? "Arkivmatch";
+  if (!campaignId) return "Historisk match";
+  return CAMPAIGN_HEADLINES[campaignId] ?? "Historisk match";
 }
 
 export function arenaHref(matchId: string, campaignId?: string): string {

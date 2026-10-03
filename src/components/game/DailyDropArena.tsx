@@ -509,7 +509,7 @@ export function DailyDropArena(props: {
           <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-6">
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
-                {playingFixture ? (storyline ? 'Kampanj' : 'Arkiv') : sportLabel}
+                {playingFixture ? (storyline ? 'Utmaning' : 'Historik') : sportLabel}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
                 {playingFixture ? campaignHeadline(props.campaignId) : 'Dagens Drop'}
@@ -554,7 +554,7 @@ export function DailyDropArena(props: {
           {storyline ? (
             <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-4">
               <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
-                Matcher i kampanjen
+                Matcher i utmaningen
               </p>
               <ol className="mt-2 space-y-1">
                 {storyline.matches.map((match, index) => {
@@ -580,7 +580,7 @@ export function DailyDropArena(props: {
                 </Link>
               ) : isSolved || gameWon ? (
                 <p className="mt-3 text-xs font-bold uppercase tracking-wider text-emerald-700">
-                  Kampanjen är avklarad
+                  Utmaningen är avklarad
                 </p>
               ) : (
                 <p className="mt-3 text-xs font-bold uppercase tracking-wider text-zinc-500">
@@ -700,7 +700,7 @@ export function DailyDropArena(props: {
                 </Link>
               ) : storyline && (isSolved || gameWon) ? (
                 <p className="text-center text-xs font-bold uppercase tracking-wider text-emerald-700">
-                  Kampanjen är avklarad
+                  Utmaningen är avklarad
                 </p>
               ) : null}
             </div>

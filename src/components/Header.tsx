@@ -6,8 +6,8 @@ import { HowToPlayModal } from './HowToPlayModal';
 
 const NAV_LINKS = [
   { name: '🎯 Dagens Drop', href: '/' },
-  { name: '📖 Kampanjer', href: '/campaigns' },
-  { name: '🏅 Arkiv', href: '/archive' },
+  { name: '📖 Utmaningar', href: '/campaigns' },
+  { name: '🏅 Historik', href: '/archive' },
   { name: '🏆 Tabell', href: '/standings' },
   { name: '🛍️ Shop', href: '/shop' },
 ] as const;
