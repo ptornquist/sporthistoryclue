@@ -148,6 +148,53 @@ create policy "user_fixture_solves_update_own"
 grant update (career_score, fixtures_cleared) on public.profiles to authenticated;
 grant update (avatar_url, updated_at) on public.profiles to authenticated;
 
+alter table public.profiles add column if not exists favorite_club text;
+
+alter table public.profiles drop constraint if exists profiles_favorite_club_check;
+alter table public.profiles
+  add constraint profiles_favorite_club_check
+  check (
+    favorite_club is null
+    or favorite_club in (
+      'arsenal',
+      'aston-villa',
+      'bournemouth',
+      'brentford',
+      'brighton',
+      'chelsea',
+      'coventry',
+      'crystal-palace',
+      'everton',
+      'fulham',
+      'hull',
+      'ipswich',
+      'leeds',
+      'liverpool',
+      'manchester-city',
+      'manchester-united',
+      'newcastle',
+      'nottingham-forest',
+      'sunderland',
+      'tottenham',
+      'AIK',
+      'Djurgården',
+      'Hammarby',
+      'Leksand',
+      'Färjestad',
+      'Frölunda',
+      'Brynäs',
+      'Malmö FF',
+      'IFK Göteborg',
+      'AIK Fotboll',
+      'IF Elfsborg',
+      'MODO Hockey',
+      'HV71',
+      'Linköping HC'
+    )
+  );
+
+grant update (favorite_club) on public.profiles to authenticated;
+
 alter table public.profiles enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
@@ -643,6 +690,7 @@ grant execute on function public.create_user_duel(text, text, integer) to authen
 -- Private scout clubs: supabase/migrations/20260926200000_private_scout_clubs.sql
 -- Club owner inserts: supabase/migrations/20260926210000_club_owner_insert.sql
 -- Supporters Derby allegiance: supabase/migrations/20260927070133_favorite_club.sql
+-- Swedish Klubbligan clubs: supabase/migrations/20261003074900_swedish_favorite_clubs.sql
 -- Daily archive completions: supabase/migrations/20260927105320_user_daily_completions.sql
 -- Public avatars bucket: supabase/migrations/20260927131442_avatars_bucket.sql
 -- Derby club table: supabase/migrations/20260927185517_derby_clubs.sql
