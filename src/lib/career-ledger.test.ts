@@ -6,6 +6,8 @@ import {
   creditCareerSolve,
   mergeCareerTotals,
   readCareerLedger,
+  readCareerSolves,
+  reconcileCareerTotals,
 } from "./career-ledger";
 
 function memoryStorage() {
@@ -33,6 +35,10 @@ describe("career ledger", () => {
     expect(storage.bag.get(CAREER_SCORE_KEY)).toBe("17000");
     expect(storage.bag.get(FIXTURES_CLEARED_KEY)).toBe("2");
     expect(storage.bag.get(CAREER_SOLVED_KEY)).toContain("slaget-i-sudden");
+    expect(readCareerSolves(storage)).toEqual([
+      { id: "2026-10-03", score: 10000 },
+      { id: "slaget-i-sudden", score: 7000 },
+    ]);
   });
 
   it("keeps the higher total when the server and this browser disagree", () => {
@@ -42,5 +48,41 @@ describe("career ledger", () => {
         { careerScore: 10000, fixturesCleared: 4 },
       ),
     ).toEqual({ careerScore: 25000, fixturesCleared: 4 });
+  });
+
+  it("adds a solve the server has not recorded yet", () => {
+    expect(
+      reconcileCareerTotals(
+        { careerScore: 50000, fixturesCleared: 8 },
+        { careerScore: 10000, fixturesCleared: 1 },
+        [{ id: "2026-10-03", score: 10000 }],
+        ["older-fixture"],
+      ),
+    ).toEqual({ careerScore: 60000, fixturesCleared: 9 });
+  });
+
+  it("does not add a solve the server already stored", () => {
+    expect(
+      reconcileCareerTotals(
+        { careerScore: 60000, fixturesCleared: 9 },
+        { careerScore: 10000, fixturesCleared: 1 },
+        [{ id: "2026-10-03", score: 10000 }],
+        ["2026-10-03"],
+      ),
+    ).toEqual({ careerScore: 60000, fixturesCleared: 9 });
+  });
+
+  it("keeps a legacy local total when individual scores were not stored", () => {
+    expect(
+      reconcileCareerTotals(
+        { careerScore: 0, fixturesCleared: 0 },
+        { careerScore: 17000, fixturesCleared: 2 },
+        [
+          { id: "2026-10-03", score: 0 },
+          { id: "slaget-i-sudden", score: 0 },
+        ],
+        [],
+      ),
+    ).toEqual({ careerScore: 17000, fixturesCleared: 2 });
   });
 });

@@ -343,7 +343,7 @@ export function DailyDropArena(props: {
             if (user?.id) {
               const saved = await recordFixtureWin(careerFixtureId, currentScore);
               if (!saved) {
-                await persistFixtureScore({ id: challenge.id || careerFixtureId, date: solveStamp }, currentScore);
+                await persistFixtureScore({ id: careerFixtureId, date: solveStamp }, currentScore);
               }
               const { data: prof } = await supabaseClient
                 .from('profiles')

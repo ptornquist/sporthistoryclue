@@ -103,10 +103,12 @@ function PlayContent() {
   };
 
   const saveScore = async (finalScore: number) => {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user?.id || !challenge) return;
-
+    if (!challenge) return;
     creditCareerSolve(challenge.id, finalScore, localStorage);
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user?.id) return;
+
     const saved = await recordFixtureWin(challenge.id, finalScore);
     if (saved && !saved.already_solved) {
       setGameWon(true);

@@ -5,6 +5,8 @@ import SubjectAutocomplete from '@/components/SubjectAutocomplete';
 import { supabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { creditCareerSolve } from '@/lib/career-ledger';
+import { recordFixtureWin } from '@/lib/fixture-solves';
 
 interface Challenge {
   id: string;
@@ -95,8 +97,10 @@ export default function DailyDropPage() {
     if (isSubjectMatch && isYearMatch) {
       setStatus('won');
       setFeedback(`Match Identified! Solved on Clue ${revealedCount} for ${currentScore.toLocaleString()} PTS.`);
+      creditCareerSolve(challenge.id, currentScore, localStorage);
 
       if (user) {
+        await recordFixtureWin(challenge.id, currentScore);
         await supabaseClient.from('match_history').insert({
           user_id: user.id,
           challenge_id: challenge.id,

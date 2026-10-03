@@ -125,3 +125,24 @@ export async function loadCareerStats(
     fixturesCleared: data?.fixtures_cleared || 0,
   };
 }
+
+/** Challenge ids already stored for this scout. Null when the list could not be read. */
+export async function loadSolvedChallengeIds(userId: string): Promise<string[] | null> {
+  if (!userId) return null;
+  try {
+    const { data, error } = await supabaseClient
+      .from("user_fixture_solves")
+      .select("challenge_id")
+      .eq("user_id", userId);
+    if (error) {
+      console.error("Failed to load career stats:", error);
+      return null;
+    }
+    return (data ?? [])
+      .map((row) => row.challenge_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+  } catch (error) {
+    console.error("Failed to load career stats:", error);
+    return null;
+  }
+}

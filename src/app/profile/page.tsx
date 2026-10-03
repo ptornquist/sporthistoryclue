@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { fetchCareerStandings } from '@/lib/career-standings';
@@ -13,8 +13,9 @@ import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { type ScoutProfile } from '@/lib/supabase/network';
 import { FOOTBALL_CLUBS, HOCKEY_CLUBS, isFootballClub, isHockeyClub } from '@/lib/swedish-clubs';
-import { CAREER_UPDATED_EVENT, mergeCareerTotals, readCareerLedger } from '@/lib/career-ledger';
-import { loadCareerStats } from '@/lib/career-score';
+import { CAREER_UPDATED_EVENT, readCareerLedger, readCareerSolves, reconcileCareerTotals } from '@/lib/career-ledger';
+import { loadCareerStats, loadSolvedChallengeIds } from '@/lib/career-score';
+import { recordFixtureWin } from '@/lib/fixture-solves';
 
 interface Profile {
   id: string;
@@ -50,13 +51,17 @@ export default function ProfilePage() {
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const loadSeq = useRef(0);
 
   const loadData = async () => {
+    const seq = ++loadSeq.current;
     const localCareer = readCareerLedger(localStorage);
+    const localSolves = readCareerSolves(localStorage);
     setCareerScore(localCareer.careerScore);
     setFixturesCleared(localCareer.fixturesCleared);
     if (!isSupabaseConfigured) return;
     const { data: { user } } = await supabaseClient.auth.getUser();
+    if (seq !== loadSeq.current) return;
     if (!user) {
       window.location.href = '/login';
       return;
@@ -70,8 +75,21 @@ export default function ProfilePage() {
       .select('avatar_url, favorite_hockey_club, favorite_football_club')
       .eq('id', user.id)
       .maybeSingle();
-    const remoteCareer = await loadCareerStats(user.id);
-    const totals = mergeCareerTotals(remoteCareer, localCareer);
+    let remoteCareer = await loadCareerStats(user.id);
+    let remoteIds = await loadSolvedChallengeIds(user.id);
+    if (remoteIds) {
+      const known = new Set(remoteIds);
+      const pending = localSolves.filter((solve) => solve.score > 0 && !known.has(solve.id));
+      for (const solve of pending) {
+        await recordFixtureWin(solve.id, solve.score);
+      }
+      if (pending.length > 0) {
+        remoteCareer = await loadCareerStats(user.id);
+        remoteIds = await loadSolvedChallengeIds(user.id);
+      }
+    }
+    if (seq !== loadSeq.current) return;
+    const totals = reconcileCareerTotals(remoteCareer, localCareer, localSolves, remoteIds);
     setCareerScore(totals.careerScore);
     setFixturesCleared(totals.fixturesCleared);
 
@@ -151,10 +169,12 @@ export default function ProfilePage() {
     const timer = window.setTimeout(refresh, 0);
     window.addEventListener(CAREER_UPDATED_EVENT, refresh);
     window.addEventListener('focus', refresh);
+    window.addEventListener('storage', refresh);
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener(CAREER_UPDATED_EVENT, refresh);
       window.removeEventListener('focus', refresh);
+      window.removeEventListener('storage', refresh);
     };
   }, []);
 
@@ -410,7 +430,9 @@ export default function ProfilePage() {
 
           {matches.length === 0 ? (
             <div className="text-center py-8 text-zinc-400 text-xs font-medium">
-              Inga avklarade matcher ännu. Gå till arenan och deducera.
+              {fixturesCleared
+                ? 'Poängen ligger på karriären. En detaljerad spaningslogg visas när matcherna är sparade på kontot.'
+                : 'Inga avklarade matcher ännu. Gå till arenan och deducera.'}
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
