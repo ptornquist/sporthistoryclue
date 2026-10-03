@@ -52,6 +52,13 @@ describe("career stats shop access", () => {
     expect(html).toContain("You haven&#x27;t followed any scouts yet.");
     expect(html).toContain("My Network");
     expect(html).toContain("LOCKED HANDLE");
+    expect(html).toContain("Poäng");
+    expect(html).toContain("Avklarade matcher");
+    expect(html).toContain("Din klubb");
+    expect(html).toContain(">AIK<");
+    expect(html).toContain(">Djurgården<");
+    expect(html).toContain(">AIK Fotboll<");
+    expect(html).toContain(">Linköping HC<");
     expect(html).toContain('accept="image/*"');
     expect(html).toContain(">Change<");
     expect(html).not.toContain("Change handle");

@@ -1,7 +1,32 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { StandingsBoard } from "./page";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/standings",
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  isSupabaseConfigured: false,
+  supabaseClient: {
+    auth: { getUser: async () => ({ data: { user: null } }) },
+    from: () => ({
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => ({ data: null }) }),
+      }),
+    }),
+  },
+}));
+
+vi.mock("@/lib/career-standings", () => ({
+  fetchCareerStandings: async () => [],
+}));
+
+vi.mock("@/lib/supabase/network", () => ({
+  getFollowingIds: async () => [],
+}));
+
+import { ClubChampionshipBoard, StandingsBoard } from "./page";
 
 describe("StandingsBoard", () => {
   it("shows podium cards and the full table when profiles exist, including zero scores", () => {
@@ -20,5 +45,26 @@ describe("StandingsBoard", () => {
     expect(html).toContain("<table");
     expect(html).toContain("Leader");
     expect(html).not.toContain("No career scores yet");
+  });
+
+  it("offers the club championship tab and ranks Klubbligan by poäng", async () => {
+    const { default: StandingsPage } = await import("./page");
+    const page = renderToStaticMarkup(createElement(StandingsPage));
+    expect(page).toContain("GLOBAL SCOUTS");
+    expect(page).toContain("CLUB CHAMPIONSHIP");
+    expect(page).toContain('href="/archive"');
+
+    const board = renderToStaticMarkup(
+      createElement(ClubChampionshipBoard, {
+        rows: [
+          { club: "Djurgården", points: 4000, scouts: 1 },
+          { club: "AIK", points: 1500, scouts: 2 },
+        ],
+      }),
+    );
+    expect(board).toContain("Klubbligan");
+    expect(board).toContain("Poäng");
+    expect(board).toContain("Djurgården");
+    expect(board.indexOf("Djurgården")).toBeLessThan(board.indexOf(">AIK<"));
   });
 });

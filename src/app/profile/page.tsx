@@ -12,12 +12,14 @@ import FindScouts from '@/components/game/FindScouts';
 import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { type ScoutProfile } from '@/lib/supabase/network';
+import { isSwedishClub, SWEDISH_CLUBS } from '@/lib/swedish-clubs';
 
 interface Profile {
   id: string;
   username: string;
   display_name: string;
   avatar_url?: string | null;
+  favorite_club?: string | null;
   streak?: number | null;
   total_score?: number | null;
 }
@@ -59,7 +61,7 @@ export default function ProfilePage() {
     const prof = standings.find((row) => row.id === user.id);
     const { data: avatarRow } = await supabaseClient
       .from('profiles')
-      .select('avatar_url')
+      .select('avatar_url, favorite_club')
       .eq('id', user.id)
       .maybeSingle();
     if (prof) {
@@ -68,6 +70,7 @@ export default function ProfilePage() {
         username: prof.username || '',
         display_name: prof.display_name || prof.username || '',
         avatar_url: avatarRow?.avatar_url ?? prof.avatar_url ?? null,
+        favorite_club: avatarRow?.favorite_club ?? null,
         streak: prof.streak,
       });
       setCareerScore(prof.career_score || 0);
@@ -176,6 +179,24 @@ export default function ProfilePage() {
     }
   };
 
+  const handleClubChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!user) return;
+    const nextClub = event.target.value;
+    const favorite_club = nextClub === '' ? null : nextClub;
+    if (favorite_club && !isSwedishClub(favorite_club)) return;
+
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ favorite_club, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+
+    if (error) {
+      alert(error.message || 'Kunde inte spara klubben');
+      return;
+    }
+    setProfile((prev) => (prev ? { ...prev, favorite_club } : prev));
+  };
+
   const handleChallenge = async (opponentUsername: string) => {
     const { data, error } = await sendDuelChallenge(opponentUsername, careerScore || 0);
     if (data?.success) {
@@ -245,6 +266,19 @@ export default function ProfilePage() {
                 <BadgeHandleFlair badges={badges} />
               </div>
               <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>
+              <label className="mt-3 block max-w-xs">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">Din klubb</span>
+                <select
+                  value={profile?.favorite_club ?? ''}
+                  onChange={handleClubChange}
+                  className="mt-1 w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-900"
+                >
+                  <option value="">Välj klubb</option>
+                  {SWEDISH_CLUBS.map((club) => (
+                    <option key={club} value={club}>{club}</option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
                 onClick={async () => {
@@ -260,7 +294,7 @@ export default function ProfilePage() {
 
           <div className="flex gap-6 border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8 w-full md:w-auto">
             <div>
-              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Career Score</span>
+              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Poäng</span>
               <span className="text-3xl font-black font-mono text-blue-600">
                 {careerScore == null ? '—' : careerScore.toLocaleString()}
               </span>
@@ -274,7 +308,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div>
-              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Fixtures Cleared</span>
+              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Avklarade matcher</span>
               <span className="text-3xl font-black font-mono text-zinc-900">
                 {fixturesCleared == null ? '—' : fixturesCleared.toLocaleString()}
               </span>
