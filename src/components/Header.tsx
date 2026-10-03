@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { HowToPlayModal } from './HowToPlayModal';
 
 const NAV_LINKS = [
   { name: '🎯 Dagens Drop', href: '/' },
@@ -30,8 +31,10 @@ export function MobileNavDropdown({ onNavigate }: { onNavigate: () => void }) {
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [howToOpen, setHowToOpen] = useState(false);
 
   return (
+    <>
     <header className="relative w-full bg-[#fcfbf9] border-b border-zinc-200 py-4 px-3 min-[360px]:px-6 md:px-12 flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center gap-8 min-w-0">
         <Link className="font-black text-sm min-[420px]:text-base md:text-xl tracking-tight text-zinc-950 flex items-center gap-1" href="/">
@@ -46,11 +49,26 @@ export default function Header() {
           ))}
         </nav>
       </div>
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex items-center gap-2 md:gap-3 shrink-0">
+        <button
+          type="button"
+          onClick={() => setHowToOpen(true)}
+          className="hidden md:flex px-3.5 py-1.5 rounded-full bg-white border-2 border-zinc-200 hover:border-zinc-900 text-xs font-black uppercase text-zinc-900 shadow-sm transition-all items-center gap-2"
+        >
+          Hur spelar man
+        </button>
         <Link className="hidden md:flex px-3.5 py-1.5 rounded-full bg-white border-2 border-zinc-200 hover:border-zinc-900 text-xs font-black uppercase text-zinc-900 shadow-sm transition-all items-center gap-2" href="/profile">
           👤 Profil
         </Link>
         <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => setHowToOpen(true)}
+            aria-label="Hur spelar man"
+            className="w-10 h-10 rounded-xl bg-white border-2 border-zinc-200 flex items-center justify-center text-zinc-900 shadow-sm text-base font-black"
+          >
+            ?
+          </button>
           <Link aria-label="Profil" className="w-10 h-10 rounded-xl bg-white border-2 border-zinc-200 flex items-center justify-center text-zinc-900 shadow-sm text-base font-black" href="/profile">
             👤
           </Link>
@@ -67,5 +85,7 @@ export default function Header() {
       </div>
       {mobileOpen ? <MobileNavDropdown onNavigate={() => setMobileOpen(false)} /> : null}
     </header>
+    <HowToPlayModal open={howToOpen} onClose={() => setHowToOpen(false)} />
+    </>
   );
 }
