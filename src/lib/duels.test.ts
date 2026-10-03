@@ -29,6 +29,25 @@ describe("duels", () => {
     expect(groups.completed.map((row) => row.id)).toEqual(["3"]);
   });
 
+  it("keeps a pending duel open when the opponent starts at 0", () => {
+    const groups = groupDuels(
+      [
+        {
+          id: "4",
+          challenger_username: "ada",
+          opponent_username: "beau",
+          challenger_score: 8500,
+          opponent_score: 0,
+          status: "pending",
+          challenge_id: "hand-of-god-1986",
+        },
+      ],
+      "beau",
+    );
+    expect(groups.incoming.map((row) => row.id)).toEqual(["4"]);
+    expect(groups.completed).toEqual([]);
+  });
+
   it("sends today's challenge through create_user_duel", async () => {
     const rpc = vi.fn(async () => ({ data: { success: true, duel_id: "d1" }, error: null }));
     const result = await sendDuelChallenge("@ptornquist", 7500, "2026-10-02", { rpc } as never);
@@ -44,11 +63,11 @@ describe("duels", () => {
     const eq = vi.fn(async () => ({ error: null }));
     const update = vi.fn(() => ({ eq }));
     const maybeSingle = vi.fn(async () => ({
-      data: { id: "d1", challenger_username: "ada", challenger_score: 1000, opponent_score: null },
+      data: { id: "d1", challenger_username: "ada", challenger_score: 1000, opponent_score: 0, status: "pending" },
       error: null,
     }));
-    const is = vi.fn(() => ({ maybeSingle }));
-    const eqRead = vi.fn(() => ({ is }));
+    const or = vi.fn(() => ({ maybeSingle }));
+    const eqRead = vi.fn(() => ({ or }));
     const ilike = vi.fn(() => ({ eq: eqRead }));
     const select = vi.fn(() => ({ ilike }));
     const from = vi.fn((table: string) => (table === "duels" ? { select, update } : {}));
@@ -57,6 +76,7 @@ describe("duels", () => {
 
     expect(ilike).toHaveBeenCalledWith("opponent_username", "beau");
     expect(eqRead).toHaveBeenCalledWith("challenge_id", "2026-10-02");
+    expect(or).toHaveBeenCalledWith("status.eq.pending,opponent_score.is.null");
     expect(update).toHaveBeenCalledWith({
       opponent_score: 2500,
       winner_username: "beau",

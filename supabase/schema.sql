@@ -576,7 +576,7 @@ create table if not exists public.duels (
   fixture_date date not null default current_date,
   challenger_score integer default 0,
   challenged_score integer default null,
-  opponent_score integer default null,
+  opponent_score integer default 0,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'declined', 'completed')),
   winner_id uuid references public.profiles (id) on delete set null,
   winner_username text,
@@ -592,10 +592,13 @@ alter table public.duels add column if not exists opponent_username text;
 alter table public.duels add column if not exists challenge_id text;
 alter table public.duels add column if not exists challenger_score integer default 0;
 alter table public.duels add column if not exists challenged_score integer default null;
-alter table public.duels add column if not exists opponent_score integer default null;
+alter table public.duels add column if not exists opponent_score integer default 0;
+alter table public.duels alter column opponent_score drop not null;
+alter table public.duels alter column opponent_score set default 0;
 alter table public.duels add column if not exists status text not null default 'pending';
 alter table public.duels add column if not exists winner_id uuid references public.profiles (id) on delete set null;
 alter table public.duels add column if not exists winner_username text;
+alter table public.duels alter column winner_username drop not null;
 alter table public.duels add column if not exists created_at timestamptz default now();
 alter table public.duels add column if not exists updated_at timestamptz default now();
 
@@ -706,8 +709,8 @@ begin
     regexp_replace(coalesce(v_opponent_username, v_handle), '^@', ''),
     v_day,
     case when v_day ~ '^\d{4}-\d{2}-\d{2}$' then v_day::date else current_date end,
-    coalesce(v_me_score, greatest(coalesce(p_challenger_score, 0), 0), 0),
-    null,
+    greatest(coalesce(p_challenger_score, v_me_score, 0), 0),
+    0,
     'pending'
   ) returning id into v_duel_id;
 
@@ -742,6 +745,7 @@ grant execute on function public.create_user_duel(text, text, integer) to authen
 -- Community clue totals: supabase/migrations/20260926150000_challenge_stats.sql
 -- Weekly standings columns: supabase/migrations/20260926180000_weekly_standings.sql
 -- Duel inbox: supabase/migrations/20260926190000_duels.sql
+-- Pending duel opponent_score: supabase/migrations/20261003104751_duel_opponent_score.sql
 -- Private scout clubs: supabase/migrations/20260926200000_private_scout_clubs.sql
 -- Club owner inserts: supabase/migrations/20260926210000_club_owner_insert.sql
 -- Supporters Derby allegiance: supabase/migrations/20260927070133_favorite_club.sql

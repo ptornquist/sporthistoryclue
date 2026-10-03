@@ -131,7 +131,7 @@ export function outcomeFor(username: string, duel: DuelRecord): DuelOutcome {
   const you = cleanHandle(username);
   const challengerScore = duel.challenger_score || 0;
   const opponentScore = duel.opponent_score ?? 0;
-  if (duel.opponent_score != null && challengerScore === opponentScore) return "draw";
+  if (!isPendingDuel(duel) && duel.opponent_score != null && challengerScore === opponentScore) return "draw";
   const winner = cleanHandle(duel.winner_username || decideWinner(
     duel.challenger_username,
     challengerScore,
@@ -193,13 +193,19 @@ export function todayChallengeId(now = new Date()): string {
   return now.toISOString().split("T")[0];
 }
 
+export function isPendingDuel(row: { status?: string | null; opponent_score?: number | null }): boolean {
+  if (row.status === "completed" || row.status === "declined") return false;
+  if (row.status === "pending" || row.status === "accepted") return true;
+  return row.opponent_score == null;
+}
+
 export function groupDuels(rows: DuelRow[], myUsername: string): DuelGroups {
   const me = cleanHandle(myUsername).toLowerCase();
   const incoming: DuelRow[] = [];
   const sent: DuelRow[] = [];
   const completed: DuelRow[] = [];
   for (const row of rows) {
-    if (row.opponent_score != null) {
+    if (!isPendingDuel(row)) {
       completed.push(row);
       continue;
     }
@@ -268,7 +274,7 @@ export async function completePendingDuel(
       .select("*")
       .ilike("opponent_username", handle)
       .eq("challenge_id", challengeId)
-      .is("opponent_score", null)
+      .or("status.eq.pending,opponent_score.is.null")
       .maybeSingle();
     if (error || !pendingDuel) return;
 
