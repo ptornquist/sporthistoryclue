@@ -10,21 +10,15 @@ describe("storyline routing", () => {
   });
 
   it("starts a campaign on the first unsolved fixture", () => {
-    const storyline = storylineById("olympic-miracles");
+    const storyline = storylineById("shl-klassiker");
     expect(storyline).toBeTruthy();
-    const next = firstOpenMatch(storyline!.matches, { "comaneci-1976": { score: 8000 } });
-    expect(next?.key).toBe("dream-team-1992");
-    expect(firstOpenMatch(storyline!.matches, {})?.key).toBe("comaneci-1976");
+    const next = firstOpenMatch(storyline!.matches, { "slaget-i-sudden": { score: 8000 } });
+    expect(next?.key).toBe("guldkampen-i-norr");
+    expect(firstOpenMatch(storyline!.matches, {})?.key).toBe("slaget-i-sudden");
   });
 
   it("labels each era without a year range", () => {
-    expect(STORYLINES.map((storyline) => storyline.era)).toEqual([
-      "COLD WAR ERA",
-      "OLYMPIC ERA",
-      "CLASSIC ERA",
-      "RIVALRY ERA",
-      "LANDSLAGSERAN",
-    ]);
+    expect(STORYLINES.map((storyline) => storyline.era)).toEqual(["SHL-ERAN", "ALLSVENSKAN"]);
     for (const storyline of STORYLINES) {
       expect(storyline.era).not.toMatch(/\d/);
       expect(`${storyline.description} ${storyline.matches.map((match) => match.title).join(" ")}`).not.toMatch(
@@ -34,20 +28,20 @@ describe("storyline routing", () => {
   });
 
   it("walks to the next fixture in the storyline", () => {
-    expect(nextStorylineMatch("cold-war-on-ice", "miracle-on-ice-1980")?.key).toBe("summit-series-1972");
-    expect(nextStorylineMatch("cold-war-on-ice", "summit-series-1972")).toBeNull();
-    expect(nextStorylineMatch("svenska-underverk", "pasadena-bronze-1994")?.key).toBe("turin-gold-2006");
-    expect(nextStorylineMatch("svenska-underverk", "turin-gold-2006")).toBeNull();
-    expect(storylineById("svenska-underverk")?.matches.map((match) => match.title)).toEqual([
-      "Sommarnatten i västern",
-      "Vintermorgonen i alperna",
-    ]);
-    expect(storylineById("svenska-underverk")?.matches.map((match) => `${match.year} · ${match.context}`)).toEqual([
-      "1994 · Världsmästerskapet",
-      "2006 · Internationell mästerskapsfinal",
-    ]);
-    expect(arenaHref("pasadena-bronze-1994", "svenska-underverk")).toBe(
-      "/play/pasadena-bronze-1994?campaign=svenska-underverk",
+    expect(nextStorylineMatch("shl-klassiker", "slaget-i-sudden")?.key).toBe("guldkampen-i-norr");
+    expect(nextStorylineMatch("shl-klassiker", "guldkampen-i-norr")).toBeNull();
+    expect(nextStorylineMatch("allsvenska-derbyn", "sondagsmorgonen-stockholms-stad")?.key).toBe(
+      "guldstriden-sista-omgangen",
     );
+    expect(nextStorylineMatch("allsvenska-derbyn", "guldstriden-sista-omgangen")).toBeNull();
+    expect(storylineById("shl-klassiker")?.matches.map((match) => match.title)).toEqual([
+      "Slaget i sudden",
+      "Guldkampen i norr",
+    ]);
+    expect(storylineById("allsvenska-derbyn")?.matches.map((match) => `${match.year} · ${match.context}`)).toEqual([
+      "2018 · Klassiskt derbydrama",
+      "2007 · Mästerskapsavgörande",
+    ]);
+    expect(arenaHref("slaget-i-sudden", "shl-klassiker")).toBe("/play/slaget-i-sudden?campaign=shl-klassiker");
   });
 });

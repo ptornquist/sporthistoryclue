@@ -13,6 +13,8 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Sovjetunionen mot Tjeckoslovakien (1968)",
     "Kanada mot USA (1987)",
     "Miraklet på isen",
+    "Växjö mot Frölunda (2015)",
+    "Skellefteå mot Luleå (2013)",
   ],
   football: [
     "Sverige mot Bulgarien (1994)",
@@ -32,6 +34,8 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Brandi Chastains straff vinner damernas VM",
     "Leicester City vinner Premier League till 5000–1",
     "Messi vinner VM i Lusail",
+    "Hammarby mot Djurgården (2018)",
+    "IFK Göteborg mot Trelleborg (2007)",
   ],
   boxing: [
     "Muhammad Ali mot George Foreman (1974)",

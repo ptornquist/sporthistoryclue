@@ -112,6 +112,38 @@ export const CASE_FILES: CaseFile[] = [
     context: "Internationell mästerskapsfinal",
     sport: "ice_hockey",
   },
+  {
+    slug: "slaget-i-sudden",
+    ids: ["slaget-i-sudden"],
+    title: "Slaget i sudden",
+    year: 2015,
+    context: "Klassisk slutspelsrysare",
+    sport: "ice_hockey",
+  },
+  {
+    slug: "guldkampen-i-norr",
+    ids: ["guldkampen-i-norr"],
+    title: "Guldkampen i norr",
+    year: 2013,
+    context: "Historisk finalduell",
+    sport: "ice_hockey",
+  },
+  {
+    slug: "sondagsmorgonen-stockholms-stad",
+    ids: ["sondagsmorgonen-stockholms-stad"],
+    title: "Söndagsmorgonen på Stockholms stad",
+    year: 2018,
+    context: "Klassiskt derbydrama",
+    sport: "football",
+  },
+  {
+    slug: "guldstriden-sista-omgangen",
+    ids: ["guldstriden-sista-omgangen"],
+    title: "Guldstriden i sista omgången",
+    year: 2007,
+    context: "Mästerskapsavgörande",
+    sport: "football",
+  },
 ];
 
 export const SPORT_NAME: Record<CaseFile["sport"], string> = {
