@@ -115,33 +115,33 @@ export const CASE_FILES: CaseFile[] = [
   {
     slug: "slaget-i-sudden",
     ids: ["slaget-i-sudden"],
-    title: "Slaget i sudden",
+    title: "Mysteriet på isen #1",
     year: 2015,
-    context: "Klassisk slutspelsrysare",
+    context: "Slutspelsdrama",
     sport: "ice_hockey",
   },
   {
     slug: "guldkampen-i-norr",
     ids: ["guldkampen-i-norr"],
-    title: "Guldkampen i norr",
+    title: "Mysteriet på isen #2",
     year: 2013,
-    context: "Historisk finalduell",
+    context: "Finalserie",
     sport: "ice_hockey",
   },
   {
     slug: "sondagsmorgonen-stockholms-stad",
     ids: ["sondagsmorgonen-stockholms-stad"],
-    title: "Söndagsmorgonen på Stockholms stad",
+    title: "Mysteriet på gräset #1",
     year: 2018,
-    context: "Klassiskt derbydrama",
+    context: "Derbyklassiker",
     sport: "football",
   },
   {
     slug: "guldstriden-sista-omgangen",
     ids: ["guldstriden-sista-omgangen"],
-    title: "Guldstriden i sista omgången",
+    title: "Mysteriet på gräset #2",
     year: 2007,
-    context: "Mästerskapsavgörande",
+    context: "Guldstrid",
     sport: "football",
   },
 ];
@@ -210,6 +210,10 @@ const TITLE_RENAMES: Record<string, string> = {
   "the berlin lanes": "Banorna i Berlin",
   "the backward bar": "Ribban baklänges",
   "the london night": "Natten i London",
+  "slaget i sudden": "Mysteriet på isen #1",
+  "guldkampen i norr": "Mysteriet på isen #2",
+  "söndagsmorgonen på stockholms stad": "Mysteriet på gräset #1",
+  "guldstriden i sista omgången": "Mysteriet på gräset #2",
 };
 
 export function publicCaseTitle(title: string | null | undefined): string {
@@ -227,7 +231,9 @@ export function fixtureSubtitle(year: number, context: string, options?: { clueC
 export function mysteryFixtureLabel(sport: CaseFile["sport"] | string | undefined | null): string {
   switch (sport) {
     case "ice_hockey":
-      return "Klassisk ishockeyduell";
+      return "Klassisk ishockeymatch";
+    case "football":
+      return "Historisk fotbollsmatch";
     case "boxing":
       return "Historisk titelmatch";
     case "athletics":

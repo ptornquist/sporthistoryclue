@@ -76,8 +76,16 @@ describe("mystery case files", () => {
   });
 
   it("uses sport-shaped placeholders that do not name the match", () => {
-    expect(mysteryFixtureLabel("ice_hockey")).toBe("Klassisk ishockeyduell");
-    expect(mysteryFixtureLabel("football")).toBe("Historisk mästerskapsfinal");
+    expect(mysteryFixtureLabel("ice_hockey")).toBe("Klassisk ishockeymatch");
+    expect(mysteryFixtureLabel("football")).toBe("Historisk fotbollsmatch");
+    expect(CASE_FILES.find((file) => file.slug === "slaget-i-sudden")?.title).toBe("Mysteriet på isen #1");
+    expect(CASE_FILES.find((file) => file.slug === "guldkampen-i-norr")?.context).toBe("Finalserie");
+    expect(CASE_FILES.find((file) => file.slug === "sondagsmorgonen-stockholms-stad")?.title).toBe(
+      "Mysteriet på gräset #1",
+    );
+    expect(CASE_FILES.find((file) => file.slug === "guldstriden-sista-omgangen")?.context).toBe("Guldstrid");
+    expect(publicCaseTitle("Slaget i sudden")).toBe("Mysteriet på isen #1");
+    expect(publicCaseTitle("Söndagsmorgonen på Stockholms stad")).toBe("Mysteriet på gräset #1");
     expect(mysteryFixtureLabel("basketball")).toBe("Historisk mästerskapsfinal");
     expect(mysteryFixtureLabel("tennis")).toBe("Historisk mästerskapsfinal");
     expect(mysteryFixtureLabel("gymnastics")).toBe("Historiskt mästerskapsögonblick");

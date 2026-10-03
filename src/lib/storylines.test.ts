@@ -35,12 +35,20 @@ describe("storyline routing", () => {
     );
     expect(nextStorylineMatch("allsvenska-derbyn", "guldstriden-sista-omgangen")).toBeNull();
     expect(storylineById("shl-klassiker")?.matches.map((match) => match.title)).toEqual([
-      "Slaget i sudden",
-      "Guldkampen i norr",
+      "Mysteriet på isen #1",
+      "Mysteriet på isen #2",
+    ]);
+    expect(storylineById("shl-klassiker")?.matches.map((match) => `${match.year} · ${match.context}`)).toEqual([
+      "2015 · Slutspelsdrama",
+      "2013 · Finalserie",
+    ]);
+    expect(storylineById("allsvenska-derbyn")?.matches.map((match) => match.title)).toEqual([
+      "Mysteriet på gräset #1",
+      "Mysteriet på gräset #2",
     ]);
     expect(storylineById("allsvenska-derbyn")?.matches.map((match) => `${match.year} · ${match.context}`)).toEqual([
-      "2018 · Klassiskt derbydrama",
-      "2007 · Mästerskapsavgörande",
+      "2018 · Derbyklassiker",
+      "2007 · Guldstrid",
     ]);
     expect(arenaHref("slaget-i-sudden", "shl-klassiker")).toBe("/play/slaget-i-sudden?campaign=shl-klassiker");
   });
