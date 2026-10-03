@@ -98,7 +98,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "De första moderna spelen. Ett maraton som slutar i en hästsko av marmor. Kronprinsen som eskort. En nation bestämmer sig för att det här är återupplivningen den ville ha.",
+        body: "En herde som burit vatten springer in i en hästsko av marmor. En kronprins sluter upp. En nation bestämmer sig för att spelen är tillbaka.",
       },
     ],
   },
@@ -157,7 +157,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Jules Rimets pokal får ett första namn. Celeste, redan olympiska mästare, bekräftar hierarkin vid Río de la Plata.",
+        body: "En ny pokal får sitt första namn vid en flodmynning. Himmelblått firar som om staden aldrig ska sova.",
       },
     ],
   },
@@ -215,7 +215,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "En sprinter född i Alabama och tränad i Ohio samlar en näve guld under Reichssportfelds ljus. Längden avgörs mot Luz Long.",
+        body: "En sprinter från en annan kontinent samlar guld under strålkastare som var tänkta för någon annan. Längden avgörs mot en hoppare från värdnationen som ger råd i gropen.",
       },
     ],
   },
@@ -273,7 +273,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Helmut Rahns andra mål på Wankdorf avslutar de magiska ungrarnas obesegrade svit och blir en västtysk ursprungshistoria.",
+        body: "Ett andra mål i regnet avslutar en obesegrad svit och blir en ursprungshistoria för en delad nation.",
       },
     ],
   },
@@ -306,7 +306,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "Nummer 10 är sjutton. Han gråter i kaptens tröja när det är över. Värdarna slås med 5–2 i sin egen huvudstad.",
+        body: "En tonåring i nummer 10 gråter i en kaptens tröja när det är över. Värdarna har förlorat på egen hemmaplan.",
       },
       {
         kind: "stats",
@@ -332,7 +332,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Garrincha på kanten, Vavá på målprotokollet och en pojke från Bauru som utropar en dynasti på Råsunda.",
+        body: "En kantspelare som går rakt på, ett protokoll som fylls, och en pojke från inlandet som utropar en dynasti på värdarnas nationalarena.",
       },
     ],
   },
@@ -392,7 +392,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Moore lyfter Jules Rimet. Hurst har tre. En nation daterar sin fotbollskalender från en grå julieftermiddag.",
+        body: "Kaptenen lyfter pokalen. En anfallare har tre. En nation daterar sin kalender från en grå julieftermiddag.",
       },
     ],
   },
@@ -449,7 +449,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "En sorts ingenjör från Oregon State, sist i hoppordningen, klarar 2,24 och ger varje framtida höjdhoppare en ny form.",
+        body: "En sorts ingenjör, sist i hoppordningen, klarar en höjd som ger varje framtida hoppare en ny form.",
       },
     ],
   },
@@ -480,7 +480,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "En 55-årig spelare har redan slagit världsettan. I kväll bärs utmanaren in på en bår. Nittio miljoner tittar.",
+        body: "En betydligt äldre spelare har redan slagit den som rankas högst. I kväll bärs utmanaren in på en bår. En hel kontinent tittar.",
       },
       {
         kind: "stats",
@@ -506,7 +506,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Raka set i Astrodome. Griskultingen stannar hos Riggs. Title IX får sitt mest berömda höjdpunktsklipp.",
+        body: "Raka set under ett tak. En symbolisk gris stannar hos förloraren. En lagparagraf får sitt mest berömda klipp.",
       },
     ],
   },
@@ -564,7 +564,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Zaire. Don King. En höger som fäller den obesegrade mästaren. Titeln kommer hem till Louisville Lip.",
+        body: "En natt i en stad vid floden. En promotor som älskar buller. En höger som fäller den obesegrade mästaren när kraften tar slut.",
       },
     ],
   },
@@ -597,13 +597,13 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "Den elektroniska resultattavlan var inte byggd för den här siffran. Den blinkar 1,00. Arenan behöver en sekund för att förstå.",
+        body: "Den elektroniska tavlan var inte byggd för siffran den visar. Arenan behöver en sekund för att förstå.",
       },
       {
         kind: "stats",
         kicker: "Resultatkort",
         stats: [
-          { label: "Poäng", value: "10,00", revealedAtClue: 3 },
+          { label: "Poäng", value: "10,00", revealedAtClue: 5 },
           { label: "Redskap", value: "Barr (första tian)", revealedAtClue: 4 },
           { label: "Ålder", value: "14", revealedAtClue: 5 },
           { label: "Spel", value: "Montréal", revealedAtClue: 6 },
@@ -623,7 +623,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "En rumänsk tonåring, flätor och fattning, kopplar om sporten. Sju tior innan spelen är över.",
+        body: "En tonåring kopplar om en sport med en fattning domarna knappt har sett. Flera tior innan spelen är över.",
       },
     ],
   },
@@ -655,7 +655,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "Amatörer mot en professionell maskin som just slagit NHL:s all-star-lag. En by i Adirondackbergen. En flagga som inte vill ligga still.",
+        body: "Amatörer mot en maskin som tränar året runt. En bergsby. En flagga som inte vill ligga still.",
       },
       {
         kind: "stats",
@@ -681,7 +681,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Herb Brooks collegelag. Mike Eruziones avgörande. En semifinal som Amerika minns som en final.",
+        body: "Ett collegelag. Ett avgörande från en kapten. En semifinal som ett helt land minns som en final.",
       },
     ],
   },
@@ -715,7 +715,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "Fyra minuter efter ett mål domaren inte borde ha godkänt tar samma nummer 10 bollen på egen planhalva och stannar inte.",
+        body: "Hettan ligger kvar på hög höjd. En nummer 10 tar bollen på egen planhalva och bestämmer sig för att ingen ska få stoppa honom.",
       },
       {
         kind: "stats",
@@ -741,7 +741,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Argentina mot England i Mexico City. En omstridd hand, sedan en löpning som Fifa senare döpte till århundradets mål.",
+        body: "En solskenshistoria på hög höjd där teologin mötte fysiken i en ikonisk kvartsfinal. Först ett mål som reglerna inte riktigt rymmer, sedan en löpning som arkivet vägrar glömma.",
       },
     ],
   },
@@ -798,7 +798,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Jordan, Magic och Larry Bird på samma bänk. Ett guld som ser oundvikligt ut från den första dunkningen.",
+        body: "Tre generationers största namn på samma bänk. Ett guld som ser oundvikligt ut från den första dunkningen.",
       },
     ],
   },
@@ -832,7 +832,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "Förlängning. Ett drop goal från höger. Presidenten har redan landslagströjan på sig när han går ut på gräset.",
+        body: "Förlängning. Ett drop goal från höger. En man i landslagströja som inte står i startelvan går ut på gräset.",
       },
       {
         kind: "stats",
@@ -858,7 +858,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "François Pienaar lyfter Webb Ellis Cup. Mannen som räcker över den bär nummer 6. En regnbåge, för en stund, i rugbyfärger.",
+        body: "Kaptenen lyfter pokalen. Mannen som räcker över den bär ett lågt nummer. En regnbåge, för en stund, i rugbyfärger.",
       },
     ],
   },
@@ -918,7 +918,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Fergusons United. Premier League, FA-cupen, Europa — allt på tio dagar. Teddy, sedan Ole, på katalansk tilläggstid.",
+        body: "En trippel på tio dagar. Två inhoppare, båda med ett mål, på bortaplanens tilläggstid.",
       },
     ],
   },
@@ -977,7 +977,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Mia Hamms generation. Kina i den andra tröjan. Ett fotografi som sätter damfotbollen på amerikanska omslag.",
+        body: "En generation som burit landslaget. Motståndarna i den andra tröjan. Ett fotografi som sätter damfotbollen på omslag.",
       },
     ],
   },
@@ -1010,13 +1010,13 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "Han är fri vid 60 meter. Han breder ut armarna. Klockan sjunker ändå. Ett skosnöre är oknutet.",
+        body: "Han är fri långt före bandet. Han breder ut armarna. Klockan sjunker ändå.",
       },
       {
         kind: "stats",
         kicker: "Resultatkort",
         stats: [
-          { label: "Tid", value: "9,69", revealedAtClue: 3 },
+          { label: "Tid", value: "9,69", revealedAtClue: 5 },
           { label: "Gren", value: "100 meter", revealedAtClue: 4 },
           { label: "Vind", value: "0,0 m/s", revealedAtClue: 5 },
           { label: "Stad", value: "Peking", revealedAtClue: 6 },
@@ -1036,7 +1036,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "En jamaican på en och nittiofem som bara skulle vara en 200-meterslöpare. I slutet av veckan har han tre guld och en ny silhuett.",
+        body: "En lång sprinter som skulle vara specialist på den längre banan. I slutet av veckan har silhuetten ritats om.",
       },
     ],
   },
@@ -1094,7 +1094,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Jessica Ennis-Hills sjukamp, Greg Rutherfords hopp, Mo Farahs första olympiska 10 000 meter. Storbritannien kallar natten Super Saturday.",
+        body: "Tre grenar, tre guld, en hemmapublik som hittar ett namn på natten.",
       },
     ],
   },
@@ -1128,13 +1128,13 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "Spelbolagens tavla ser fortfarande ut som ett skämt i april. En anfallare från Algeriet, ett mittfält av brytningar, en tränare som redan var avskriven.",
+        body: "Spelbolagens tavla ser fortfarande ut som ett skämt på våren. En anfallare långt hemifrån, ett mittfält av brytningar, en tränare som redan var avskriven.",
       },
       {
         kind: "stats",
         kicker: "Resultatkort",
         stats: [
-          { label: "Odds före säsongen", value: "5000–1", revealedAtClue: 3 },
+          { label: "Odds före säsongen", value: "5000–1", revealedAtClue: 5 },
           { label: "Poäng", value: "81", revealedAtClue: 5 },
           { label: "Skyttekung", value: "Jamie Vardy (24)", revealedAtClue: 6 },
           { label: "Serie", value: "Premier League", revealedAtClue: 4 },
@@ -1154,7 +1154,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Tottenham kryssar på Chelsea och East Midlands exploderar. Mahrez, Kanté, Vardy — en räv på märket och på varje baksida.",
+        body: "Ett kryss i huvudstaden och en landsända exploderar. En klubb utan pokaler skriver om tabellen.",
       },
     ],
   },
@@ -1187,7 +1187,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Fältnotis",
-        body: "2–0 ser avgjort ut. Sedan ett hattrick av det andra nummer 10. Förlängning. Ett tredje mål var. En straffläggning under en förgylld skål.",
+        body: "En ledning som ser avgjord ut vänds av ett hattrick. Förlängning. Lika igen. En straffläggning under en skål som glänser.",
       },
       {
         kind: "stats",
@@ -1213,7 +1213,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Argentina. Frankrike. Messi och Mbappé. En final som arkivet redan lägger under 'störst', och en första stjärna till kaptenen.",
+        body: "Två nummer 10. En första stjärna till kaptenen. Arkivet lägger redan finalen under stort.",
       },
     ],
   },

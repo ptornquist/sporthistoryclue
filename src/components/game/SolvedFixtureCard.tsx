@@ -1,3 +1,11 @@
+"use client";
+
+import { useState } from "react";
+import { ChallengeScoutModal } from "@/components/game/ChallengeScoutModal";
+import { sendDuelChallenge } from "@/lib/duels";
+import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
+import { loadChallengeScouts, type ScoutProfile } from "@/lib/supabase/network";
+
 interface SolvedFixtureCardProps {
   sport: string;
   year: number | null;
@@ -10,6 +18,49 @@ interface SolvedFixtureCardProps {
 
 export function SolvedFixtureCard({ sport, year, score, cells, streak, fixtureId, onShare }: SolvedFixtureCardProps) {
   const title = year ? `${sport} (${year})` : sport;
+  const [open, setOpen] = useState(false);
+  const [scouts, setScouts] = useState<ScoutProfile[]>([]);
+  const [source, setSource] = useState<"following" | "active">("active");
+  const [loading, setLoading] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const openChallenge = async () => {
+    setOpen(true);
+    setNotice(null);
+    setLoading(true);
+    try {
+      if (!isSupabaseConfigured) {
+        setSignedIn(false);
+        setScouts([]);
+        return;
+      }
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
+        setSignedIn(false);
+        setScouts([]);
+        return;
+      }
+      setSignedIn(true);
+      const loaded = await loadChallengeScouts(user.id);
+      setScouts(loaded.scouts);
+      setSource(loaded.source);
+    } catch {
+      setScouts([]);
+      setNotice("Kunde inte hämta scouter.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const challengeScout = async (username: string) => {
+    const { data, error } = await sendDuelChallenge(username, score, fixtureId);
+    if (data?.success) {
+      setNotice(`Utmaning skickad till @${username.replace(/^@/, "")}!`);
+      return;
+    }
+    setNotice(data?.error || error?.message || "Kunde inte skicka utmaningen");
+  };
 
   return (
     <div className="rounded-2xl border-2 border-zinc-950 bg-white p-6 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -35,16 +86,25 @@ export function SolvedFixtureCard({ sport, year, score, cells, streak, fixtureId
         </button>
         <button
           type="button"
-          onClick={() => {
-            const challengeUrl = `${window.location.origin}?challenge=${fixtureId}&score=${score}`;
-            navigator.clipboard.writeText(challengeUrl);
-            alert('Utmaningslänk kopierad till urklipp! Skicka den till en vän.');
-          }}
+          onClick={() => { void openChallenge(); }}
           className="w-full py-3 bg-blue-600 text-white font-black uppercase rounded-xl hover:bg-blue-700 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
         >
           <span>⚔️</span> Utmana en vän
         </button>
       </div>
+      {open ? (
+        <ChallengeScoutModal
+          fixtureId={fixtureId}
+          score={score}
+          scouts={scouts}
+          source={source}
+          loading={loading}
+          signedIn={signedIn}
+          notice={notice}
+          onClose={() => setOpen(false)}
+          onChallenge={(username) => { void challengeScout(username); }}
+        />
+      ) : null}
     </div>
   );
 }
