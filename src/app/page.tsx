@@ -40,8 +40,8 @@ export async function generateMetadata({
   const pts = firstParam(params.pts);
   const match = firstParam(params.match);
   const title = duel
-    ? `Can you beat @${duel} on SportsHistoryClue?`
-    : 'SportsHistoryClue — The Daily Sports Deduction Puzzle';
+    ? `Kan du slå @${duel} på Dagens Kluring?`
+    : 'SportsHistoryClue | Dagens Kluring';
   const description = 'Crack the mystery historical fixture in 6 clues or fewer.';
   const image = `/api/og?duel=${encodeURIComponent(duel)}&pts=${encodeURIComponent(pts)}&match=${encodeURIComponent(match)}`;
 

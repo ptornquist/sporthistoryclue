@@ -533,7 +533,7 @@ export function DailyDropArena(props: {
                 </p>
               ) : (
                 <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                  DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
+                  KLURING #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
                 </p>
               )}
             </div>
