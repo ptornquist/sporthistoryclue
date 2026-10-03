@@ -98,6 +98,42 @@ const RECAPS: Record<string, HistoricalRecap> = {
     story:
       "OS-finalen i Turin stod 2–2 när den sista perioden började. Mats Sundin vann tekningen, Peter Forsberg drog in pucken och lade tillbaka, och Nicklas Lidström sköt ett slagskott från blålinjen högt upp i krysset. 3–2 efter nio sekunder. Tre Kronor höll ledningen mot Finland och tog guldet.",
   },
+  "slaget-i-sudden": {
+    year: 2015,
+    venue: "Vida Arena, Växjö",
+    finalScore: "Växjö 2–1 Frölunda",
+    decisivePlay: "Tuomas Kiiskinen, fyra minuter in i sjätte perioden",
+    videoUrl: null,
+    story:
+      "SM-semifinalen mellan Växjö och Frölunda den 31 mars 2015 vägrade dö. Nicholas Johnson gav hemmalaget ledningen, Anton Blidh kvitterade, och sedan stod tavlan still genom två hela förlängningar. Efter 104 minuter styrde Tuomas Kiiskinen in 2–1. Det var den fjärde längsta slutspelsmatchen i svensk hockey.",
+  },
+  "guldkampen-i-norr": {
+    year: 2013,
+    venue: "Coop Arena, Luleå",
+    finalScore: "Luleå 0–4 Skellefteå",
+    decisivePlay: "Oscar Möller öppnar, och Skellefteå gör rent hus i finalserien",
+    videoUrl: null,
+    story:
+      "Den 18 april 2013 möttes två norrlandsrivaler i fjärde SM-finalen. Skellefteå ledde redan serien och vann med 4–0 borta mot Luleå. Oscar Möller satte 1–0 efter drygt tre minuter, Erik Forssell gjorde två mål, och Johan Forsberg satte 3–0. Fyra raka finalsegrar gav Skellefteå det första SM-guldet sedan 1978.",
+  },
+  "sondagsmorgonen-stockholms-stad": {
+    year: 2018,
+    venue: "Tele2 Arena, Stockholm",
+    finalScore: "Hammarby 1–3 Djurgården",
+    decisivePlay: "Kerim Mrabti gör 0–1, Aliou Badji sätter 3–1",
+    videoUrl: null,
+    story:
+      "Söndagen den 2 september 2018 försenades Stockholmsderbyt en halvtimme innan Hammarby och Djurgården kunde sparka igång på Tele2 Arena. Djurgården vann med 3–1 efter mål av Kerim Mrabti, Haris Radetinac och Aliou Badji, med Vladimir Rodićs reducering däremellan. Det var Djurgårdens första allsvenska derbyseger mot Hammarby på sju år.",
+  },
+  "guldstriden-sista-omgangen": {
+    year: 2007,
+    venue: "Ullevi, Göteborg",
+    finalScore: "IFK Göteborg 2–0 Trelleborg",
+    decisivePlay: "Thomas Olsson och Pontus Wernbloom före paus",
+    videoUrl: null,
+    story:
+      "Allsvenskans sista omgång 2007 avgjordes den 28 oktober. IFK Göteborg tog emot Trelleborg inför 41 471 på Ullevi och vann med 2–0, efter mål av Thomas Olsson och Pontus Wernbloom redan före paus. Kalmar och Djurgården kunde inte gå förbi. Blåvitt tog SM-guldet med 49 poäng, en poäng före Kalmar.",
+  },
   "wimbledon-epic-1980": {
     year: 1980,
     venue: "Centre Court, All England Club",

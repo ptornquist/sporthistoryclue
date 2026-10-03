@@ -18,6 +18,10 @@ const MATCHUPS: Record<string, string> = {
   "wimbledon-epic-1980": "Björn Borg mot John McEnroe (1980)",
   "pasadena-bronze-1994": "Sverige mot Bulgarien (1994)",
   "turin-gold-2006": "Sverige mot Finland (2006)",
+  "slaget-i-sudden": "Växjö mot Frölunda (2015)",
+  "guldkampen-i-norr": "Skellefteå mot Luleå (2013)",
+  "sondagsmorgonen-stockholms-stad": "Hammarby mot Djurgården (2018)",
+  "guldstriden-sista-omgangen": "IFK Göteborg mot Trelleborg (2007)",
 };
 
 export function solvedMatchup(id: string): string | null {

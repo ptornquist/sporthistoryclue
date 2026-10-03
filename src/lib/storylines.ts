@@ -12,49 +12,23 @@ export interface Storyline {
 
 const DEFINITIONS: Array<Omit<Storyline, "matches"> & { matchSlugs: string[] }> = [
   {
-    id: "cold-war-on-ice",
-    title: "The Cold War on Ice",
-    era: "COLD WAR ERA",
+    id: "shl-klassiker",
+    title: "SHL-KLASSIKER & RIVALER",
+    era: "SHL-ERAN",
     icon: "🏒",
     accent: "text-sky-600",
-    description: "High-stakes geopolitical drama played out across the rinks of two hockey worlds.",
-    matchSlugs: ["miracle-on-ice-1980", "summit-series-1972"],
+    description:
+      "Avgörande ögonblick, nagelbitare och klassiska rivaliteter från den svenska hockeyscenen.",
+    matchSlugs: ["slaget-i-sudden", "guldkampen-i-norr"],
   },
   {
-    id: "olympic-miracles",
-    title: "Olympic Miracles",
-    era: "OLYMPIC ERA",
-    icon: "🥇",
-    accent: "text-amber-600",
-    description: "Generational athletes redefining greatness under the global Olympic spotlight.",
-    matchSlugs: ["comaneci-1976", "dream-team-1992", "bolt-beijing-2008"],
-  },
-  {
-    id: "world-cup-epics",
-    title: "World Cup Epics",
-    era: "CLASSIC ERA",
+    id: "allsvenska-derbyn",
+    title: "ALLSVENSKA DERBYN & DRAMAT",
+    era: "ALLSVENSKAN",
     icon: "⚽",
     accent: "text-emerald-600",
-    description: "Controversy, boy prodigies, and legendary goals that defined global football.",
-    matchSlugs: ["pele-sweden-1958", "hand-of-god-1986"],
-  },
-  {
-    id: "rivalries-of-the-century",
-    title: "Rivalries of the Century",
-    era: "RIVALRY ERA",
-    icon: "🥊",
-    accent: "text-rose-600",
-    description: "Clashes of opposite personalities, styles, and philosophies under immense pressure.",
-    matchSlugs: ["rumble-in-the-jungle-1974", "wimbledon-epic-1980"],
-  },
-  {
-    id: "svenska-underverk",
-    title: "Svenska Underverk & Dramatik",
-    era: "LANDSLAGSERAN",
-    icon: "🇸🇪",
-    accent: "text-blue-600",
-    description: "Magiska landslagsögonblick och dramatiska triumfer som fyllde Sverige med idrottsglädje.",
-    matchSlugs: ["pasadena-bronze-1994", "turin-gold-2006"],
+    description: "Känslor, läktarfest och oförglömliga guldstrider i Allsvenskan.",
+    matchSlugs: ["sondagsmorgonen-stockholms-stad", "guldstriden-sista-omgangen"],
   },
 ];
 
@@ -97,11 +71,8 @@ export function firstOpenMatch(
 }
 
 const CAMPAIGN_HEADLINES: Record<string, string> = {
-  "cold-war-on-ice": "Kalla kriget på isen",
-  "olympic-miracles": "Olympiska mirakel",
-  "world-cup-epics": "VM-epos",
-  "rivalries-of-the-century": "Århundradets rivaliteter",
-  "svenska-underverk": "Svenska Underverk & Dramatik",
+  "shl-klassiker": "SHL-KLASSIKER & RIVALER",
+  "allsvenska-derbyn": "ALLSVENSKA DERBYN & DRAMAT",
 };
 
 export function campaignHeadline(campaignId: string | null | undefined): string {

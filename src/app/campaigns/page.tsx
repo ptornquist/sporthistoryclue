@@ -21,54 +21,23 @@ interface Campaign {
 
 const CAMPAIGNS: Campaign[] = [
   {
-    id: 'cold-war-on-ice',
-    title: 'Kalla kriget på isen',
-    era: '1972 – 1980',
+    id: 'shl-klassiker',
+    title: 'SHL-KLASSIKER & RIVALER',
+    era: '2013 – 2015',
     icon: '🏒',
     accent: 'text-sky-600',
     description:
-      'Geopolitisk dramatik när två hockeyvärldar möttes på isen.',
-    matchSlugs: ['miracle-on-ice-1980', 'summit-series-1972'],
+      'Avgörande ögonblick, nagelbitare och klassiska rivaliteter från den svenska hockeyscenen.',
+    matchSlugs: ['slaget-i-sudden', 'guldkampen-i-norr'],
   },
   {
-    id: 'olympic-miracles',
-    title: 'Olympiska mirakel',
-    era: '1976 – 2008',
-    icon: '🥇',
-    accent: 'text-amber-600',
-    description:
-      'Generationens idrottare som skrev om storhet under OS-strålkastarna.',
-    matchSlugs: ['comaneci-1976', 'dream-team-1992', 'bolt-beijing-2008'],
-  },
-  {
-    id: 'world-cup-epics',
-    title: 'VM-epos',
-    era: '1958 – 1986',
+    id: 'allsvenska-derbyn',
+    title: 'ALLSVENSKA DERBYN & DRAMAT',
+    era: '2007 – 2018',
     icon: '⚽',
     accent: 'text-emerald-600',
-    description:
-      'Kontroverser, underbarn och legendariska mål som formade världsfotbollen.',
-    matchSlugs: ['pele-sweden-1958', 'hand-of-god-1986'],
-  },
-  {
-    id: 'rivalries-of-the-century',
-    title: 'Århundradets rivaliteter',
-    era: '1974 – 1980',
-    icon: '🥊',
-    accent: 'text-rose-600',
-    description:
-      'Krockar mellan motsatta personligheter, stilar och filosofier under enorm press.',
-    matchSlugs: ['rumble-in-the-jungle-1974', 'wimbledon-epic-1980'],
-  },
-  {
-    id: 'svenska-underverk',
-    title: 'Svenska Underverk & Dramatik',
-    era: '1994 – 2006',
-    icon: '🇸🇪',
-    accent: 'text-blue-600',
-    description:
-      'Magiska landslagsögonblick och dramatiska triumfer som fyllde Sverige med idrottsglädje.',
-    matchSlugs: ['pasadena-bronze-1994', 'turin-gold-2006'],
+    description: 'Känslor, läktarfest och oförglömliga guldstrider i Allsvenskan.',
+    matchSlugs: ['sondagsmorgonen-stockholms-stad', 'guldstriden-sista-omgangen'],
   },
 ];
 

@@ -53,6 +53,25 @@ describe("caseClues", () => {
     expect(clues.join(" ")).not.toMatch(/\b(the|and|with|winner|scoreboard|clue)\b/i);
   });
 
+  it("keeps SHL and Allsvenskan campaigns cryptic until the last card", () => {
+    const secret = /Skellefteå|Luleå|Frölunda|Växjö|Hammarby|Djurgården|Trelleborg|Göteborg|Blåvitt|Kiiskinen|Wernbloom|Mrabti|Ullevi|Tele2|Kalmar|2013|2015|2018|2007|4–0|2–1|3–1|2–0|104/;
+    for (const slug of [
+      "slaget-i-sudden",
+      "guldkampen-i-norr",
+      "sondagsmorgonen-stockholms-stad",
+      "guldstriden-sista-omgangen",
+    ]) {
+      const clues = caseClues({ slug, context: "Klassiker", year: 2015 });
+      expect(clues).toHaveLength(5);
+      expect(clues.slice(0, 4).join(" ")).not.toMatch(secret);
+      expect(clues.join(" ")).not.toMatch(/\b(the|and|with|winner|scoreboard|clue)\b/i);
+    }
+    expect(caseClues({ slug: "slaget-i-sudden", context: "Klassiker", year: 2015 })[4]).toMatch(/Växjö/);
+    expect(caseClues({ slug: "guldkampen-i-norr", context: "Klassiker", year: 2013 })[4]).toMatch(/Skellefteå/);
+    expect(caseClues({ slug: "sondagsmorgonen-stockholms-stad", context: "Klassiker", year: 2018 })[4]).toMatch(/Hammarby/);
+    expect(caseClues({ slug: "guldstriden-sista-omgangen", context: "Klassiker", year: 2007 })[4]).toMatch(/Trelleborg/);
+  });
+
   it("keeps the other case ladders in Swedish", () => {
     for (const slug of ["summit-series-1972", "miracle-on-ice-1980", "rumble-in-the-jungle-1974", "bolt-beijing-2008", "pele-sweden-1958"]) {
       const clues = caseClues({ slug, context: "Klassiker", year: 1980 });
