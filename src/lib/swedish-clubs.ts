@@ -1,4 +1,5 @@
 export const HOCKEY_CLUBS = [
+  "AIK Hockey",
   "Djurgården",
   "Färjestad",
   "Frölunda",

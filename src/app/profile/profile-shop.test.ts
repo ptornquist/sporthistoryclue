@@ -56,6 +56,7 @@ describe("career stats shop access", () => {
     expect(html).toContain("Avklarade matcher");
     expect(html).toContain("Ishockeyklubb (SHL)");
     expect(html).toContain("Fotbollsklubb (Allsvenskan)");
+    expect(html).toContain(">AIK Hockey<");
     expect(html).toContain(">Rögle<");
     expect(html).toContain(">Skellefteå AIK<");
     expect(html).toContain(">Växjö Lakers<");

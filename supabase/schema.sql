@@ -204,6 +204,7 @@ alter table public.profiles
   check (
     favorite_hockey_club is null
     or favorite_hockey_club in (
+      'AIK Hockey',
       'Djurgården',
       'Färjestad',
       'Frölunda',
