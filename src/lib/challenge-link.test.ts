@@ -17,9 +17,9 @@ describe("challenge links", () => {
   });
 
   it("names the public fixture on the challenge preview", () => {
-    expect(publicFixtureName("miracle-1980")).toBe("Det frusna miraklet");
-    expect(ogChallengeHeadline("alex", "Det frusna miraklet")).toBe(
-      "CHALLENGE FROM @alex ON 'Det frusna miraklet'",
+    expect(publicFixtureName("miracle-1980")).toBe("Sirenen i kylan");
+    expect(ogChallengeHeadline("alex", "Sirenen i kylan")).toBe(
+      "CHALLENGE FROM @alex ON 'Sirenen i kylan'",
     );
     expect(ogChallengeHeadline("", null)).toBe("Test Your Sports History IQ");
   });

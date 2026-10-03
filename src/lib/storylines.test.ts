@@ -39,8 +39,12 @@ describe("storyline routing", () => {
     expect(nextStorylineMatch("svenska-underverk", "pasadena-bronze-1994")?.key).toBe("turin-gold-2006");
     expect(nextStorylineMatch("svenska-underverk", "turin-gold-2006")).toBeNull();
     expect(storylineById("svenska-underverk")?.matches.map((match) => match.title)).toEqual([
-      "Bronshjältarna från Pasadena",
-      "Guldfeber i Turin",
+      "Sommarnatten i västern",
+      "Vintermorgonen i alperna",
+    ]);
+    expect(storylineById("svenska-underverk")?.matches.map((match) => `${match.year} · ${match.context}`)).toEqual([
+      "1994 · Världsmästerskapet",
+      "2006 · Internationell mästerskapsfinal",
     ]);
     expect(arenaHref("pasadena-bronze-1994", "svenska-underverk")).toBe(
       "/play/pasadena-bronze-1994?campaign=svenska-underverk",

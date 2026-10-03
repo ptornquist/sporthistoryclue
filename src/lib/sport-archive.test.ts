@@ -24,7 +24,7 @@ const ANSWER_LEAKS = [
 describe("sport archive", () => {
   it("lists every discipline with difficulty, clue count, and a solver link", () => {
     const football = loadArchiveIndex("football");
-    expect(football.map((fixture) => fixture.title)).toContain("Genombrottet i Solna");
+    expect(football.map((fixture) => fixture.title)).toContain("Genombrottet på värdarnas plan");
     expect(football.every((fixture) => fixture.clueCount > 0 && fixture.difficulty >= 1)).toBe(true);
     expect(deduceHref("pele-sweden-1958")).toBe("/play/pele-sweden-1958");
 

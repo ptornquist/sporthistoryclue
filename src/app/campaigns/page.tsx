@@ -27,7 +27,7 @@ const CAMPAIGNS: Campaign[] = [
     icon: '🏒',
     accent: 'text-sky-600',
     description:
-      'Geopolitisk dramatik på isen i Moskva, Lake Placid och Prag.',
+      'Geopolitisk dramatik när två hockeyvärldar möttes på isen.',
     matchSlugs: ['miracle-on-ice-1980', 'summit-series-1972'],
   },
   {
@@ -144,6 +144,7 @@ export default function CampaignsPage() {
                         solvedScore={record?.score ?? null}
                         matchup={record?.matchup ?? null}
                         href={arenaHref(match.key, campaign.id)}
+                        clueCount={false}
                       />
                     );
                   })}

@@ -31,8 +31,10 @@ describe("mystery case files", () => {
   it("uses thematic titles and a clue-count subtitle", () => {
     const perfectTen = CASE_FILES.find((file) => file.slug === "comaneci-1976");
     const bolt = CASE_FILES.find((file) => file.slug === "bolt-beijing-2008");
-    expect(perfectTen?.title).toBe("1,00-poängsanomalin");
-    expect(bolt?.title).toBe("Guldspikarna");
+    expect(perfectTen?.title).toBe("Siffran som inte fick plats");
+    expect(bolt?.title).toBe("Spikarna före bandet");
+    expect(CASE_FILES.find((file) => file.slug === "pasadena-bronze-1994")?.title).toBe("Sommarnatten i västern");
+    expect(CASE_FILES.find((file) => file.slug === "turin-gold-2006")?.context).toBe("Internationell mästerskapsfinal");
     expect(fixtureSubtitle(1994, "Olympic Final Shootout")).toBe(
       "1994 · Olympic Final Shootout · 6 ledtrådar",
     );
@@ -52,13 +54,14 @@ describe("mystery case files", () => {
     expect(isSpoilerHeading("Nadia Comăneci scores the first perfect 10")).toBe(true);
     expect(isSpoilerHeading("Usain Bolt 100m World Record")).toBe(true);
     expect(isSpoilerHeading("Sweden vs Canada 1994")).toBe(true);
-    expect(isSpoilerHeading("Guldspikarna")).toBe(false);
+    expect(isSpoilerHeading("Spikarna före bandet")).toBe(false);
     expect(isSpoilerHeading("Usain Bolt springer 9,69 i Peking")).toBe(true);
     expect(isSpoilerHeading("Spyridon Louis vinner det första olympiska maratonloppet")).toBe(true);
     expect(publicCaseTitle("The Masterpiece in Hamilton")).toBe("Den 87:e symfonin");
-    expect(publicCaseTitle("The Lake Placid Frequency")).toBe("Det frusna miraklet");
+    expect(publicCaseTitle("The Lake Placid Frequency")).toBe("Sirenen i kylan");
+    expect(publicCaseTitle("Bronshjältarna från Pasadena")).toBe("Sommarnatten i västern");
     expect(safeHeading("USA vs Soviet Union (Winter Olympics)", 1980, "miracle-on-ice-1980")).toBe(
-      "Det frusna miraklet",
+      "Sirenen i kylan",
     );
     const archived = previewFromArchive({
       id: "row-1",
