@@ -1,9 +1,9 @@
 export const ARCHIVE_SPORTS = [
-  { id: "ice_hockey", name: "Ice Hockey", icon: "🏒" },
-  { id: "football", name: "Football", icon: "⚽" },
-  { id: "boxing", name: "Boxing", icon: "🥊" },
+  { id: "ice_hockey", name: "Ishockey", icon: "🏒" },
+  { id: "football", name: "Fotboll", icon: "⚽" },
+  { id: "boxing", name: "Boxning", icon: "🥊" },
   { id: "tennis", name: "Tennis", icon: "🎾" },
-  { id: "athletics", name: "Athletics", icon: "🏃" },
+  { id: "athletics", name: "Friidrott", icon: "🏃" },
 ] as const;
 
 export type ArchiveSportId = (typeof ARCHIVE_SPORTS)[number]["id"];

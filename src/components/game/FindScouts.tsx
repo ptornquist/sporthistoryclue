@@ -33,13 +33,13 @@ export function ScoutSearchResults({
   return (
     <>
       {searching && (
-        <p className="text-xs font-bold text-zinc-400 py-2">Searching scouts...</p>
+        <p className="text-xs font-bold text-zinc-400 py-2">Söker scouter...</p>
       )}
       {results && (
         <div className="flex flex-col gap-2 pt-2">
           {results.length === 0 ? (
             <p className="text-xs font-bold text-zinc-400 py-2">
-              No scout found matching &apos;@{query}&apos;
+              Ingen scout matchar &apos;@{query}&apos;
             </p>
           ) : (
             results.map((scout) => {
@@ -57,7 +57,7 @@ export function ScoutSearchResults({
                       className="font-black text-sm text-zinc-900 hover:underline"
                     />
                     <span className="ml-2 text-xs font-semibold text-zinc-500">
-                      {(scout.career_score || 0).toLocaleString()} PTS · {scout.fixtures_cleared || 0} matches
+                      {(scout.career_score || 0).toLocaleString()} poäng · {scout.fixtures_cleared || 0} matcher
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export function ScoutSearchResults({
                         onClick={() => onChallenge(handle)}
                         className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-zinc-950 font-black text-xs uppercase rounded-xl border-2 border-zinc-950 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
                       >
-                        ⚔️ Challenge
+                        ⚔️ Utmana
                       </button>
                     )}
                     <button
@@ -75,7 +75,7 @@ export function ScoutSearchResults({
                         onClick={() => onToggleFollow(scout.id, following)}
                       className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-black uppercase"
                     >
-                      {following ? 'Following' : 'Follow'}
+                      {following ? 'Följer' : 'Följ'}
                     </button>
                   </div>
                 </div>
@@ -143,10 +143,10 @@ export default function FindScouts({
       {framed && (
         <div>
           <h2 className="text-xl font-black uppercase tracking-tight text-zinc-950">
-            Find Scouts
+            Sök scouter
           </h2>
           <p className="text-xs text-zinc-500 font-medium">
-            Search registered scouts by username.
+            Sök registrerade scouter på användarnamn.
           </p>
         </div>
       )}
@@ -154,17 +154,17 @@ export default function FindScouts({
       <form onSubmit={handleSearchScouts} className="flex flex-col sm:flex-row gap-2 w-full mt-2">
         <input
           type="text"
-          placeholder="Find Scouts by @username"
+          placeholder="Sök scouter på @användarnamn"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          aria-label="Find Scouts"
+          aria-label="Sök scouter"
           className="w-full min-w-0 flex-1 px-4 py-2.5 rounded-xl border-2 border-zinc-200 focus:border-zinc-900 outline-none font-bold text-sm bg-white"
         />
         <button
           type="submit"
           className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
         >
-          Search
+          Sök
         </button>
       </form>
 

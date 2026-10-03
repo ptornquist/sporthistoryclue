@@ -7,20 +7,20 @@ export function ScoutAccolades({ badges }: { badges: UnlockedAccolade[] }) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black uppercase tracking-tight text-zinc-950">
-            🎖️ Scout Accolades ({badges.length})
+            🎖️ Scoututmärkelser ({badges.length})
           </h2>
           <p className="text-xs text-zinc-500 font-medium">
-            Unlocked badges and honours from the Club Shop.
+            Upplåsta utmärkelser från shopen.
           </p>
         </div>
         <Link className="text-xs font-black uppercase text-blue-600 hover:underline" href="/shop">
-          + Get More
+          + Hämta fler
         </Link>
       </div>
 
       {badges.length === 0 ? (
         <div className="py-6 text-center text-sm font-semibold text-zinc-400 border-2 border-dashed border-zinc-200 rounded-2xl">
-          No badges unlocked yet. Spend career points in the shop!
+          Inga utmärkelser upplåsta ännu. Handla med karriärpoäng i shopen!
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -49,7 +49,7 @@ export function ScoutAccolades({ badges }: { badges: UnlockedAccolade[] }) {
 export function BadgeHandleFlair({ badges }: { badges: UnlockedAccolade[] }) {
   if (badges.length === 0) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-2xl normal-case" aria-label="Unlocked badges">
+    <span className="inline-flex items-center gap-1 text-2xl normal-case" aria-label="Upplåsta utmärkelser">
       {badges.map((badge) => (
         <span key={badge.id} title={badge.name}>
           {badge.icon}

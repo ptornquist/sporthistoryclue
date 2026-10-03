@@ -3,8 +3,8 @@ import { formatShopBalance, loadOwnedBadgeIds, loadShopBalance, purchaseBadge } 
 
 describe("shop catalog", () => {
   it("formats a career balance with a thousands separator", () => {
-    expect(formatShopBalance(7500)).toBe("7,500 PTS");
-    expect(formatShopBalance(null)).toBe("— PTS");
+    expect(formatShopBalance(7500)).toBe("7,500 poäng");
+    expect(formatShopBalance(null)).toBe("— poäng");
   });
 
   it("lists unlockable badges with point costs", async () => {

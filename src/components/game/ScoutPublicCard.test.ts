@@ -22,16 +22,16 @@ describe("ScoutPublicCard", () => {
         }),
       }),
     );
-    expect(html).toContain("← Back to Standings");
+    expect(html).toContain("← Tillbaka till tabellen");
     expect(html).toContain('href="/standings"');
     expect(html).toContain("@ada");
-    expect(html).toContain("CAREER SCORE");
-    expect(html).toContain("14,000 PTS");
-    expect(html).toContain("FIXTURES CLEARED");
+    expect(html).toContain("Karriärpoäng");
+    expect(html).toContain("14,000 poäng");
+    expect(html).toContain("Avklarade matcher");
     expect(html).toContain(">6<");
-    expect(html).toContain("⚔️ Challenge Scout");
-    expect(html).toContain("Follow / Network");
-    expect(html).toContain("This scout has not unlocked any honours yet.");
+    expect(html).toContain("⚔️ Utmana scout");
+    expect(html).toContain("Följ i nätverket");
+    expect(html).toContain("Den här scouten har inga utmärkelser ännu.");
   });
 
   it("lists unlocked badge icons and names", () => {
@@ -46,16 +46,16 @@ describe("ScoutPublicCard", () => {
         ]),
       }),
     );
-    expect(html).toContain("📌 ROOKIE PIN");
-    expect(html).toContain("🏮 ARCHIVE LANTERN");
-    expect(html).not.toContain("⚔️ Challenge Scout");
+    expect(html).toContain("📌 NYBÖRJARNÅL");
+    expect(html).toContain("🏮 ARKIVLYKTA");
+    expect(html).not.toContain("⚔️ Utmana scout");
   });
 
   it("explains a missing scout", () => {
     const html = renderToStaticMarkup(
       createElement(ScoutPublicCard, { username: "missing", missing: true }),
     );
-    expect(html).toContain("No scout found matching &#x27;@missing&#x27;.");
+    expect(html).toContain("Ingen scout matchar &#x27;@missing&#x27;.");
     expect(html).toContain('href="/standings"');
   });
 });

@@ -43,15 +43,15 @@ describe("StandingsBoard", () => {
     expect(html).toContain('href="/scout/ada"');
     expect(html).toContain('href="/scout/beau"');
     expect(html).toContain("<table");
-    expect(html).toContain("Leader");
+    expect(html).toContain("Ledare");
     expect(html).not.toContain("No career scores yet");
   });
 
   it("offers the club championship tab and ranks Klubbligan by poäng", async () => {
     const { default: StandingsPage } = await import("./page");
     const page = renderToStaticMarkup(createElement(StandingsPage));
-    expect(page).toContain("GLOBAL SCOUTS");
-    expect(page).toContain("CLUB CHAMPIONSHIP");
+    expect(page).toContain("GLOBALA SCOUTER");
+    expect(page).toContain("KLUBBLIGAN");
     expect(page).toContain('href="/archive"');
 
     const board = renderToStaticMarkup(

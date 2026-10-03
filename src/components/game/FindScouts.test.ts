@@ -6,12 +6,12 @@ import { ScoutSearchResults, default as FindScouts } from "./FindScouts";
 describe("Find Scouts", () => {
   it("renders the search form", () => {
     const html = renderToStaticMarkup(createElement(FindScouts));
-    expect(html).toContain("Find Scouts");
-    expect(html).toContain('placeholder="Find Scouts by @username"');
+    expect(html).toContain("Sök scouter");
+    expect(html).toContain('placeholder="Sök scouter på @användarnamn"');
     expect(html).toContain("flex flex-col sm:flex-row gap-2 w-full mt-2");
     expect(html).toContain("w-full sm:w-auto");
-    expect(html).toContain(">Search<");
-    expect(html).not.toContain("Searching scouts...");
+    expect(html).toContain(">Sök<");
+    expect(html).not.toContain("Söker scouter...");
   });
 
   it("shows a miss, then a scout card with points, matches, and follow", () => {
@@ -24,7 +24,7 @@ describe("Find Scouts", () => {
         onToggleFollow: vi.fn(),
       }),
     );
-    expect(empty).toContain("No scout found matching &#x27;@ptornquist&#x27;");
+    expect(empty).toContain("Ingen scout matchar &#x27;@ptornquist&#x27;");
 
     const hit = renderToStaticMarkup(
       createElement(ScoutSearchResults, {
@@ -35,12 +35,12 @@ describe("Find Scouts", () => {
         onToggleFollow: vi.fn(),
       }),
     );
-    expect(hit).toContain("Searching scouts...");
+    expect(hit).toContain("Söker scouter...");
     expect(hit).toContain("@ptornquist");
     expect(hit).toContain('href="/scout/ptornquist"');
     expect(hit).toContain("hover:underline");
-    expect(hit).toContain("7,500 PTS · 4 matches");
-    expect(hit).toContain(">Follow<");
+    expect(hit).toContain("7,500 poäng · 4 matcher");
+    expect(hit).toContain(">Följ<");
   });
 
   it("offers a challenge when the row is another scout", () => {
@@ -58,7 +58,7 @@ describe("Find Scouts", () => {
         onChallenge: vi.fn(),
       }),
     );
-    expect(html).toContain("⚔️ Challenge");
-    expect(html.match(/⚔️ Challenge/g)?.length).toBe(1);
+    expect(html).toContain("⚔️ Utmana");
+    expect(html.match(/⚔️ Utmana/g)?.length).toBe(1);
   });
 });

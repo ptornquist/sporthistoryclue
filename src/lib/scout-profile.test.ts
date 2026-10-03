@@ -12,7 +12,7 @@ describe("public scout profiles", () => {
     expect(cleanScoutHandle("%40Ada")).toBe("Ada");
     expect(cleanScoutHandle("@beau")).toBe("beau");
     expect(scoutProfilePath("@Ada")).toBe("/scout/Ada");
-    expect(formatCareerPoints(14000)).toBe("14,000 PTS");
+    expect(formatCareerPoints(14000)).toBe("14,000 poäng");
   });
 
   it("loads a profile stored with a leading @ and its honours", async () => {
@@ -46,7 +46,7 @@ describe("public scout profiles", () => {
     const loaded = await loadPublicScout(supabase, "%40ada");
     expect(lookups).toEqual(["ada", "@ada"]);
     expect(loaded?.profile.career_score).toBe(14000);
-    expect(loaded?.badges.map((badge) => badge.name)).toEqual(["ROOKIE PIN", "ARCHIVE LANTERN"]);
+    expect(loaded?.badges.map((badge) => badge.name)).toEqual(["NYBÖRJARNÅL", "ARKIVLYKTA"]);
   });
 
   it("hides challenge actions on your own profile", async () => {

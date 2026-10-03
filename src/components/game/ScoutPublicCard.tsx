@@ -25,16 +25,16 @@ export function ScoutPublicCard({
     <main className="min-h-screen bg-[#fafafa] px-6 py-10 text-zinc-900">
       <div className="mx-auto flex max-w-2xl flex-col gap-6">
         <Link href="/standings" className="text-sm font-black text-blue-600 hover:underline">
-          ← Back to Standings
+          ← Tillbaka till tabellen
         </Link>
 
         {missing ? (
           <section className="rounded-3xl border-2 border-zinc-200 bg-white p-8 shadow-sm">
-            <h1 className="text-2xl font-black uppercase tracking-tight">Scout profile</h1>
+            <h1 className="text-2xl font-black uppercase tracking-tight">Scoutprofil</h1>
             <p className="mt-3 text-sm font-semibold text-zinc-500">
               {cleanScoutHandle(username)
-                ? `No scout found matching '@${cleanScoutHandle(username)}'.`
-                : "No scout found."}
+                ? `Ingen scout matchar '@${cleanScoutHandle(username)}'.`
+                : "Ingen scout hittades."}
             </p>
           </section>
         ) : (
@@ -47,20 +47,20 @@ export function ScoutPublicCard({
                 {initial}
               </div>
               <div>
-                <p className="text-[11px] font-black uppercase tracking-wider text-zinc-400">Scout profile</p>
+                <p className="text-[11px] font-black uppercase tracking-wider text-zinc-400">Scoutprofil</p>
                 <h1 className="text-3xl font-black tracking-tight text-zinc-950">@{handle}</h1>
               </div>
             </header>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl border-2 border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-zinc-400">CAREER SCORE</p>
+                <p className="text-[11px] font-black uppercase tracking-wider text-zinc-400">Karriärpoäng</p>
                 <p className="mt-1 font-mono text-2xl font-black text-blue-600">
                   {formatCareerPoints(careerScore)}
                 </p>
               </div>
               <div className="rounded-2xl border-2 border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-zinc-400">FIXTURES CLEARED</p>
+                <p className="text-[11px] font-black uppercase tracking-wider text-zinc-400">Avklarade matcher</p>
                 <p className="mt-1 font-mono text-2xl font-black text-zinc-950">
                   {(fixturesCleared || 0).toLocaleString("en-US")}
                 </p>
@@ -70,10 +70,10 @@ export function ScoutPublicCard({
             {actions}
 
             <div>
-              <h2 className="text-xl font-black uppercase tracking-tight text-zinc-950">Badges &amp; Honours</h2>
+              <h2 className="text-xl font-black uppercase tracking-tight text-zinc-950">Utmärkelser</h2>
               {badges.length === 0 ? (
                 <p className="mt-3 text-sm font-semibold text-zinc-500">
-                  This scout has not unlocked any honours yet.
+                  Den här scouten har inga utmärkelser ännu.
                 </p>
               ) : (
                 <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">

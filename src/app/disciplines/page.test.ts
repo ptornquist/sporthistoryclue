@@ -15,9 +15,9 @@ describe("DisciplinesPage", () => {
     expect(html).toContain("bg-indigo-50/80 border-indigo-200 text-indigo-950 hover:border-indigo-400");
     expect(html).toContain("ring-2 ring-zinc-900 border-2 border-zinc-900 shadow-md font-black scale-[1.02]");
     expect(html).toContain("border-2 border-zinc-300 bg-white rounded-3xl p-6 shadow-sm");
-    expect(html).toContain("border-2 border-zinc-200 hover:border-zinc-400 bg-zinc-50/40 hover:bg-white transition-all rounded-2xl p-4");
-    expect(html).toContain("PLAY →");
-    expect(html).toContain("bg-blue-600 hover:bg-blue-700 text-white");
+    expect(html).toContain("Ishockey");
+    expect(html).toContain("DEDUCERA →");
+    expect(html).toContain("bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wider text-white");
     expect(html).not.toContain("bg-blue-600 border-blue-600 text-white");
   });
 });

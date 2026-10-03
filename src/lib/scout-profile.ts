@@ -78,7 +78,7 @@ export function scoutProfilePath(username: string | null | undefined): string | 
 }
 
 export function formatCareerPoints(score: number | null | undefined): string {
-  return `${(score || 0).toLocaleString("en-US")} PTS`;
+  return `${(score || 0).toLocaleString("en-US")} poäng`;
 }
 
 export function sameScout(left: string | null | undefined, right: string | null | undefined): boolean {

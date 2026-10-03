@@ -139,7 +139,7 @@ export function publicCaseTitle(title: string | null | undefined): string {
 }
 
 export function fixtureSubtitle(year: number, context: string): string {
-  return `${year} · ${context} · 6 Clues`;
+  return `${year} · ${context} · 6 ledtrådar`;
 }
 
 export function isSpoilerHeading(title: string | undefined | null): boolean {

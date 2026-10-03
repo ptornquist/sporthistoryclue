@@ -3,18 +3,18 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-const MOBILE_LINKS = [
-  { name: 'Daily Drop', href: '/' },
-  { name: 'Campaigns', href: '/campaigns' },
-  { name: 'Archive', href: '/archive' },
-  { name: 'Standings', href: '/standings' },
-  { name: 'Shop', href: '/shop' },
+const NAV_LINKS = [
+  { name: '🎯 Dagens Drop', href: '/' },
+  { name: '📖 Kampanjer', href: '/campaigns' },
+  { name: '🏅 Arkiv', href: '/archive' },
+  { name: '🏆 Tabell', href: '/standings' },
+  { name: '🛍️ Shop', href: '/shop' },
 ] as const;
 
 export function MobileNavDropdown({ onNavigate }: { onNavigate: () => void }) {
   return (
     <div className="absolute top-full left-0 w-full bg-white border-b border-zinc-200 shadow-2xl py-5 px-6 flex flex-col gap-1 z-50 md:hidden">
-      {MOBILE_LINKS.map((link) => (
+      {NAV_LINKS.map((link) => (
         <Link
           key={link.href}
           href={link.href}
@@ -39,26 +39,26 @@ export default function Header() {
           <span className="text-[10px] bg-zinc-200 px-1.5 py-0.5 rounded text-zinc-700 ml-1">BETA</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-xs font-black uppercase tracking-wider text-zinc-700">
-          <Link className="hover:text-blue-600 transition-colors" href="/">Daily Drop</Link>
-          <Link className="hover:text-blue-600 transition-colors" href="/campaigns">Campaigns</Link>
-          <Link className="hover:text-blue-600 transition-colors" href="/archive">Archive</Link>
-          <Link className="hover:text-blue-600 transition-colors" href="/standings">Standings</Link>
-          <Link className="hover:text-blue-600 transition-colors" href="/shop">Shop</Link>
+          {NAV_LINKS.map((link) => (
+            <Link key={link.href} className="hover:text-blue-600 transition-colors" href={link.href}>
+              {link.name}
+            </Link>
+          ))}
         </nav>
       </div>
       <div className="flex items-center gap-4 shrink-0">
         <Link className="hidden md:flex px-3.5 py-1.5 rounded-full bg-white border-2 border-zinc-200 hover:border-zinc-900 text-xs font-black uppercase text-zinc-900 shadow-sm transition-all items-center gap-2" href="/profile">
-          👤 Profile
+          👤 Profil
         </Link>
         <div className="flex items-center gap-2 md:hidden">
-          <Link aria-label="Profile" className="w-10 h-10 rounded-xl bg-white border-2 border-zinc-200 flex items-center justify-center text-zinc-900 shadow-sm text-base font-black" href="/profile">
+          <Link aria-label="Profil" className="w-10 h-10 rounded-xl bg-white border-2 border-zinc-200 flex items-center justify-center text-zinc-900 shadow-sm text-base font-black" href="/profile">
             👤
           </Link>
           <button
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
             className="w-10 h-10 rounded-xl bg-white border-2 border-zinc-200 flex items-center justify-center text-zinc-900 shadow-sm text-lg font-black"
-            aria-label="Toggle Menu"
+            aria-label="Öppna meny"
             aria-expanded={mobileOpen}
           >
             {mobileOpen ? '✕' : '☰'}

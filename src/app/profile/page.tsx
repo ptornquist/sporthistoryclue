@@ -200,11 +200,11 @@ export default function ProfilePage() {
   const handleChallenge = async (opponentUsername: string) => {
     const { data, error } = await sendDuelChallenge(opponentUsername, careerScore || 0);
     if (data?.success) {
-      alert(`Challenge sent to @${opponentUsername.replace(/^@/, '')}! ⚔️`);
+      alert(`Utmaning skickad till @${opponentUsername.replace(/^@/, '')}! ⚔️`);
       const handle = (profile?.username || '').replace(/^@/, '');
       if (handle) setDuels(await loadMyDuels(handle));
     } else {
-      alert(data?.error || error?.message || 'Could not send challenge');
+      alert(data?.error || error?.message || 'Kunde inte skicka utmaningen');
     }
   };
 
@@ -218,7 +218,7 @@ export default function ProfilePage() {
         .eq('follower_id', user.id)
         .eq('following_id', targetId);
       if (error) {
-        alert(error.message || 'Could not update your network');
+        alert(error.message || 'Kunde inte uppdatera nätverket');
         return;
       }
     } else {
@@ -226,7 +226,7 @@ export default function ProfilePage() {
         .from('scout_follows')
         .insert({ follower_id: user.id, following_id: targetId });
       if (error && error.code !== '23505') {
-        alert(error.message || 'Could not update your network');
+        alert(error.message || 'Kunde inte uppdatera nätverket');
         return;
       }
     }
@@ -243,25 +243,25 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-zinc-200 bg-zinc-100 flex items-center justify-center shrink-0">
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile Avatar" className="w-full h-full object-cover" />
+                <img src={profile.avatar_url} alt="Profilbild" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-2xl">👤</span>
               )}
               <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-black uppercase cursor-pointer">
-                <span>Change</span>
+                <span>Byt</span>
                 <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               </label>
             </div>
             <div>
               <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
-                Scout Handle
+                Scoutnamn
               </span>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <span className="text-2xl md:text-3xl font-black tracking-tight text-zinc-950">
                   @{profile?.username?.replace(/^@/, '')}
                 </span>
                 <span className="text-xs bg-zinc-100 text-zinc-600 font-bold px-2.5 py-1 rounded-lg border border-zinc-200">
-                  LOCKED HANDLE
+                  LÅST NAMN
                 </span>
                 <BadgeHandleFlair badges={badges} />
               </div>
@@ -287,14 +287,14 @@ export default function ProfilePage() {
                 }}
                 className="mt-2 text-xs font-medium text-zinc-400 hover:text-zinc-600"
               >
-                Sign Out
+                Logga ut
               </button>
             </div>
           </div>
 
           <div className="flex gap-6 border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8 w-full md:w-auto">
             <div>
-              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Poäng</span>
+              <span className="block text-[11px] font-mono font-bold text-zinc-400 uppercase">Karriärpoäng</span>
               <span className="text-3xl font-black font-mono text-blue-600">
                 {careerScore == null ? '—' : careerScore.toLocaleString()}
               </span>
@@ -303,7 +303,7 @@ export default function ProfilePage() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
                   href="/shop"
                 >
-                  🛍️ Spend Points in Shop
+                  🛍️ Handla i Shopen
                 </Link>
               </div>
             </div>
@@ -329,10 +329,10 @@ export default function ProfilePage() {
         />
 
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
-          <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900 mb-4">My Network</h2>
+          <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900 mb-4">Mitt Nätverk</h2>
           {network.length === 0 ? (
             <div className="text-center py-8 text-zinc-400 text-xs font-medium">
-              You haven&apos;t followed any scouts yet.
+              Du har inte följt några scouter ännu.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -344,7 +344,7 @@ export default function ProfilePage() {
                       className="font-black text-xs text-zinc-900 block truncate hover:underline"
                     />
                     <span className="text-[10px] font-mono text-zinc-500 font-bold">
-                      {(scout.career_score || 0).toLocaleString()} PTS
+                      {(scout.career_score || 0).toLocaleString()} poäng
                     </span>
                   </div>
                   <button
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                     onClick={() => handleToggleFollow(scout.id, true)}
                     className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-white text-zinc-700 border-zinc-200"
                   >
-                    UNFOLLOW
+                    SLUTA FÖLJA
                   </button>
                 </div>
               ))}
@@ -363,12 +363,12 @@ export default function ProfilePage() {
         {/* Match History */}
         <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
           <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900 mb-6">
-            Scouting Log
+            Spaningslogg
           </h2>
 
           {matches.length === 0 ? (
             <div className="text-center py-8 text-zinc-400 text-xs font-medium">
-              No completed fixtures yet. Head over to the Arena to start solving.
+              Inga avklarade matcher ännu. Gå till arenan och deducera.
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
@@ -379,7 +379,7 @@ export default function ProfilePage() {
                       {m.challenges?.subject} ({m.challenges?.year})
                     </span>
                     <span className="text-[11px] font-medium text-zinc-400 uppercase">
-                      {m.challenges?.category?.replace('_', ' ')} · Solved on Clue {m.clues_used}
+                      {m.challenges?.category?.replace('_', ' ')} · Avklarad på ledtråd {m.clues_used}
                     </span>
                   </div>
                   <div className="text-right">

@@ -17,11 +17,11 @@ describe("DateSwitcher", () => {
         onForward: vi.fn(),
       }),
     );
-    expect(today).toContain("&lt; Yesterday");
-    expect(today).toContain("Today");
-    expect(today).toContain("📅 Calendar");
+    expect(today).toContain("&lt; Igår");
+    expect(today).toContain("Idag");
+    expect(today).toContain("📅 Kalender");
     expect(today).toContain('href="/archive"');
-    expect(today).not.toContain("Step forward to today");
+    expect(today).not.toContain("Gå fram till idag");
 
     const yesterday = renderToStaticMarkup(
       createElement(DateSwitcher, {
@@ -32,7 +32,7 @@ describe("DateSwitcher", () => {
         onForward: vi.fn(),
       }),
     );
-    expect(yesterday).toContain("Step forward to today");
+    expect(yesterday).toContain("Gå fram till idag");
     expect(yesterday).toContain("&gt;");
   });
 });
@@ -44,10 +44,10 @@ describe("ClueStack", () => {
     const html = renderToStaticMarkup(
       createElement(ClueStack, { clues, revealedIndex: 0, locked: false, onReveal: vi.fn() }),
     );
-    expect(html).toContain("Card #1: Arena &amp; Stakes");
+    expect(html).toContain("Kort #1: Arena &amp; insatser");
     expect(html).toContain("Rink");
-    expect(html).not.toContain("Era &amp; Context");
-    expect(html).toContain("REVEAL NEXT CLUE (-1,500 PTS)");
+    expect(html).not.toContain("Epok &amp; sammanhang");
+    expect(html).toContain("VISA NÄSTA LEDTRÅD (-1,500 POÄNG)");
     expect(html).toContain("shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]");
   });
 
@@ -55,11 +55,11 @@ describe("ClueStack", () => {
     const html = renderToStaticMarkup(
       createElement(ClueStack, { clues, revealedIndex: 4, locked: false, onReveal: vi.fn() }),
     );
-    expect(html).toContain("Card #2: Era &amp; Context");
-    expect(html).toContain("Card #3: Lineup &amp; Tactics");
-    expect(html).toContain("Card #4: Archive Photo");
-    expect(html).toContain("Card #5: The Climax");
-    expect(html).not.toContain("REVEAL NEXT CLUE");
+    expect(html).toContain("Kort #2: Epok &amp; sammanhang");
+    expect(html).toContain("Kort #3: Laguppställning &amp; taktik");
+    expect(html).toContain("Kort #4: Arkivfoto");
+    expect(html).toContain("Kort #5: Klimaxet");
+    expect(html).not.toContain("VISA NÄSTA LEDTRÅD");
   });
 });
 
@@ -75,19 +75,19 @@ describe("SolvedFixtureCard", () => {
         onShare: vi.fn(),
       }),
     );
-    expect(html).toContain("Fixture Solved!");
+    expect(html).toContain("Klassiker Avklarad!");
     expect(html).toContain("Ice Hockey (1980)");
-    expect(html).toContain("8,500 PTS");
+    expect(html).toContain("8,500 poäng");
     expect(html).toContain("🟩");
-    expect(html).toContain("🔥 3-Day Streak");
-    expect(html).toContain("Share Result");
+    expect(html).toContain("🔥 3 dagars svit");
+    expect(html).toContain("Dela resultat");
   });
 });
 
 describe("ArchiveMonth", () => {
   it("links the month, with today returning to the live drop", () => {
     const html = renderToStaticMarkup(createElement(ArchiveMonth, { now: new Date("2026-10-02T12:00:00.000Z") }));
-    expect(html).toContain("October 2026");
+    expect(html).toContain("oktober 2026");
     expect(html).toContain('href="/"');
     expect(html).toContain('href="/?date=2026-10-01"');
     expect(html).not.toContain('href="/?date=2026-10-03"');

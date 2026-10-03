@@ -17,8 +17,8 @@ describe("FixturePreview", () => {
       }),
     );
     expect(html).toContain("The 1.00 Scoreboard Anomaly");
-    expect(html).toContain("1976 · Olympic All-Around · 6 Clues");
-    expect(html).toContain("DEDUCE →");
+    expect(html).toContain("1976 · Olympic All-Around · 6 ledtrådar");
+    expect(html).toContain("DEDUCERA →");
     expect(html).not.toContain("Nadia");
     expect(html).not.toContain("SOLVED");
   });
@@ -36,10 +36,10 @@ describe("FixturePreview", () => {
       }),
     );
     expect(html).toContain("The Beijing Lightning Bolt");
-    expect(html).toContain("✓ SOLVED · 8500 PTS");
+    expect(html).toContain("✓ AVKLARAD · 8500 POÄNG");
     expect(html).toContain("Usain Bolt (2008)");
-    expect(html).toContain("2008 · Olympic 100m Final · 6 Clues");
-    expect(html).not.toContain("DEDUCE");
+    expect(html).toContain("2008 · Olympic 100m Final · 6 ledtrådar");
+    expect(html).not.toContain("DEDUCERA");
   });
 });
 
