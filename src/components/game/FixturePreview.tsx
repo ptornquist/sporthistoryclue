@@ -99,12 +99,22 @@ export function FixturePreview({
     );
   }
 
+  const compactClass =
+    "group flex w-full max-w-full flex-col justify-between gap-2 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50 sm:flex-row sm:items-center";
+
+  if (href) {
+    return (
+      <Link href={href} className={compactClass}>
+        {body}
+        {solved ? null : (
+          <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCERA →</span>
+        )}
+      </Link>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onDeduce}
-      className="group flex w-full max-w-full flex-col justify-between gap-2 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50 sm:flex-row sm:items-center"
-    >
+    <button type="button" onClick={onDeduce} className={compactClass}>
       {body}
       {solved ? null : (
         <span className="shrink-0 text-xs font-bold text-blue-600">DEDUCERA →</span>

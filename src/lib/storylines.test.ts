@@ -4,9 +4,9 @@ import { STORYLINES, arenaHref, firstOpenMatch, nextStorylineMatch, storylineByI
 describe("storyline routing", () => {
   it("points each fixture at that match and campaign", () => {
     expect(arenaHref("comaneci-1976", "olympic-miracles")).toBe(
-      "/?match=comaneci-1976&campaign=olympic-miracles",
+      "/play/comaneci-1976?campaign=olympic-miracles",
     );
-    expect(arenaHref("bolt-beijing-2008")).toBe("/?match=bolt-beijing-2008");
+    expect(arenaHref("bolt-beijing-2008")).toBe("/play/bolt-beijing-2008");
   });
 
   it("starts a campaign on the first unsolved fixture", () => {

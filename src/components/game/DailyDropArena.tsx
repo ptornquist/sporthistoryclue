@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
   isSoundMuted,
@@ -24,6 +25,7 @@ import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
 import { choiceSportKey, scopeOptionsToSport } from '@/lib/sport-options';
+import { arenaHref, campaignHeadline, nextStorylineMatch, storylineById } from '@/lib/storylines';
 
 interface DailyFixture {
   id: string;
@@ -65,6 +67,7 @@ export function DailyDropArena(props: {
   archiveDate?: string;
   archiveId?: string;
   training?: boolean;
+  playMode?: 'daily' | 'fixture';
 }) {
   const initialFixture = props.initialFixture ?? null;
   const initialDuel = props.initialDuel ?? "";
@@ -177,8 +180,10 @@ export function DailyDropArena(props: {
         const today = utcDateKey();
         const urlDate = params.get('date');
         const urlMatch = params.get('match')?.trim() || '';
-        const activeDate = sportMatch ? null : pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
-        const match = sportMatch || (pinnedDrop || activeDate ? '' : urlMatch);
+        const lockedMatch = props.playMode === 'fixture' ? (props.specificMatch || '').trim() : '';
+        const requestedMatch = lockedMatch || sportMatch || urlMatch;
+        const activeDate = requestedMatch ? null : pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
+        const match = requestedMatch;
         const query = match
           ? `?match=${encodeURIComponent(match)}`
           : activeDate && activeDate !== today
@@ -214,8 +219,8 @@ export function DailyDropArena(props: {
         setChallenge(fixture);
       } catch {
         if (cancelled) return;
-        showToast('Kunde inte ladda den här droppen.');
-        setChallenge(null);
+        showToast('Kunde inte ladda den här matchen.');
+        if (props.playMode !== 'fixture') setChallenge(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -225,7 +230,7 @@ export function DailyDropArena(props: {
     return () => {
       cancelled = true;
     };
-  }, [pinnedDrop, sportMatch]);
+  }, [pinnedDrop, sportMatch, props.playMode, props.specificMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -427,6 +432,15 @@ export function DailyDropArena(props: {
   }
 
   const isDuelActive = Boolean(duelHandle);
+  const playingFixture = props.playMode === 'fixture';
+  const storyline = playingFixture ? storylineById(props.campaignId) : undefined;
+  const activeFixtureId = props.specificMatch || challenge.id;
+  const nextMatch = storyline ? nextStorylineMatch(storyline.id, activeFixtureId) : null;
+  const matchIndex = storyline
+    ? storyline.matches.findIndex(
+        (match) => match.key === activeFixtureId || match.lookupIds.includes(activeFixtureId),
+      )
+    : -1;
   const userFinalScore = gameWon ? score : 0;
   const isVictory = isDuelActive && userFinalScore > duelPts;
   const isDefeat = isDuelActive && userFinalScore < duelPts;
@@ -484,23 +498,33 @@ export function DailyDropArena(props: {
           <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-6">
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
-                {sportLabel}
+                {playingFixture ? (storyline ? 'Kampanj' : 'Arkiv') : sportLabel}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
-                Dagens Drop
+                {playingFixture ? campaignHeadline(props.campaignId) : 'Dagens Drop'}
               </h1>
-              <div className="mt-3">
-                <DateSwitcher
-                  todayKey={todayKey}
-                  activeKey={challenge.date_key}
-                  onYesterday={() => openDate(yesterdayKey)}
-                  onToday={() => openDate(todayKey)}
-                  onForward={() => openDate(todayKey)}
-                />
-              </div>
-              <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
-              </p>
+              {playingFixture ? null : (
+                <div className="mt-3">
+                  <DateSwitcher
+                    todayKey={todayKey}
+                    activeKey={challenge.date_key}
+                    onYesterday={() => openDate(yesterdayKey)}
+                    onToday={() => openDate(todayKey)}
+                    onForward={() => openDate(todayKey)}
+                  />
+                </div>
+              )}
+              {playingFixture ? (
+                <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+                  {storyline && matchIndex >= 0
+                    ? `Match ${matchIndex + 1} av ${storyline.matches.length}`
+                    : sportLabel}
+                </p>
+              ) : (
+                <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+                  DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
+                </p>
+              )}
             </div>
             <div className="text-right">
               <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Möjlig Poäng</span>
@@ -510,9 +534,50 @@ export function DailyDropArena(props: {
             </div>
           </div>
 
-          <div onPointerDown={(event) => event.stopPropagation()}>
-            <DailySportPills selectedSport={selectedSport} onSelect={handleSelectSport} />
-          </div>
+          {playingFixture ? null : (
+            <div onPointerDown={(event) => event.stopPropagation()}>
+              <DailySportPills selectedSport={selectedSport} onSelect={handleSelectSport} />
+            </div>
+          )}
+
+          {storyline ? (
+            <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-4">
+              <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                Matcher i kampanjen
+              </p>
+              <ol className="mt-2 space-y-1">
+                {storyline.matches.map((match, index) => {
+                  const current = match.key === activeFixtureId || match.lookupIds.includes(activeFixtureId);
+                  return (
+                    <li key={match.key}>
+                      <Link
+                        href={arenaHref(match.key, storyline.id)}
+                        className={`text-sm font-bold ${current ? 'text-blue-600' : 'text-zinc-700 hover:text-blue-600'}`}
+                      >
+                        {index + 1}. {match.title}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+              {nextMatch ? (
+                <Link
+                  href={arenaHref(nextMatch.key, storyline.id)}
+                  className="mt-3 inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
+                >
+                  Nästa match →
+                </Link>
+              ) : isSolved || gameWon ? (
+                <p className="mt-3 text-xs font-bold uppercase tracking-wider text-emerald-700">
+                  Kampanjen är avklarad
+                </p>
+              ) : (
+                <p className="mt-3 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Sista matchen
+                </p>
+              )}
+            </div>
+          ) : null}
 
           <div className="mb-6">
             <div className="mb-4 flex items-center justify-end gap-2">
@@ -614,6 +679,18 @@ export function DailyDropArena(props: {
                   <p className="mt-3 text-lg tracking-widest" aria-label="Score grid">{gridLine}</p>
                 </div>
               )}
+              {nextMatch ? (
+                <Link
+                  href={arenaHref(nextMatch.key, storyline?.id)}
+                  className="block w-full rounded-xl bg-zinc-900 py-3 text-center text-xs font-black uppercase tracking-wider text-white hover:bg-black"
+                >
+                  Nästa match →
+                </Link>
+              ) : storyline && (isSolved || gameWon) ? (
+                <p className="text-center text-xs font-bold uppercase tracking-wider text-emerald-700">
+                  Kampanjen är avklarad
+                </p>
+              ) : null}
             </div>
           )}
         </div>

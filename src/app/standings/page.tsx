@@ -110,10 +110,10 @@ export function ClubLeagueTabs({
   return (
     <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Klubbliga">
       <button type="button" role="tab" aria-selected={league === 'hockey'} onClick={() => onLeague('hockey')} className={tabClass(league === 'hockey')}>
-        🏒 Ishockey-ligan
+        🏒 HOCKEYLIGAN
       </button>
       <button type="button" role="tab" aria-selected={league === 'football'} onClick={() => onLeague('football')} className={tabClass(league === 'football')}>
-        ⚽ Fotbollsligan
+        ⚽ FOTBOLLSLIGAN
       </button>
     </div>
   );
@@ -163,10 +163,8 @@ export default function StandingsPage() {
   const [myUsername, setMyUsername] = useState<string | null>(null);
   const [myScore, setMyScore] = useState(0);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
-  const [view, setView] = useState<'scouts' | 'clubs'>('scouts');
-  const [league, setLeague] = useState<'hockey' | 'football'>('hockey');
-  const [hockeyRows, setHockeyRows] = useState<ClubChampionshipRow[]>([]);
-  const [footballRows, setFootballRows] = useState<ClubChampionshipRow[]>([]);
+  const [view, setView] = useState<'scouts' | 'hockey' | 'football'>('scouts');
+  const [leagueRows, setLeagueRows] = useState<ClubChampionshipRow[]>([]);
   const [clubsLoading, setClubsLoading] = useState(false);
 
   useEffect(() => {
@@ -209,43 +207,50 @@ export default function StandingsPage() {
   }, []);
 
   useEffect(() => {
-    if (view !== 'clubs') return;
+    if (view === 'scouts') return;
     let active = true;
     const loadClubs = async () => {
+      const clubs = view === 'hockey' ? HOCKEY_CLUBS : FOOTBALL_CLUBS;
       try {
         await Promise.resolve();
+        if (!active) return;
+        setClubsLoading(true);
         if (!isSupabaseConfigured) {
-          if (active) {
-            setHockeyRows(rankLeague(HOCKEY_CLUBS, []));
-            setFootballRows(rankLeague(FOOTBALL_CLUBS, []));
+          setLeagueRows(rankLeague(clubs, []));
+          return;
+        }
+        if (view === 'hockey') {
+          const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('favorite_hockey_club, career_score');
+          if (!active) return;
+          if (error) {
+            console.error('Failed to load Hockeyligan:', error);
+            setLeagueRows([]);
+            return;
           }
+          setLeagueRows(rankLeague(HOCKEY_CLUBS, (data ?? []).map((row) => ({
+            club: row.favorite_hockey_club,
+            career_score: row.career_score,
+          }))));
           return;
         }
         const { data, error } = await supabaseClient
           .from('profiles')
-          .select('favorite_hockey_club, favorite_football_club, career_score');
+          .select('favorite_football_club, career_score');
         if (!active) return;
         if (error) {
-          console.error('Failed to load Klubbligan:', error);
-          setHockeyRows([]);
-          setFootballRows([]);
+          console.error('Failed to load Fotbollsligan:', error);
+          setLeagueRows([]);
           return;
         }
-        const scores = data ?? [];
-        setHockeyRows(rankLeague(HOCKEY_CLUBS, scores.map((row) => ({
-          club: row.favorite_hockey_club,
-          career_score: row.career_score,
-        }))));
-        setFootballRows(rankLeague(FOOTBALL_CLUBS, scores.map((row) => ({
+        setLeagueRows(rankLeague(FOOTBALL_CLUBS, (data ?? []).map((row) => ({
           club: row.favorite_football_club,
           career_score: row.career_score,
         }))));
       } catch (error) {
         console.error('Failed to load Klubbligan:', error);
-        if (active) {
-          setHockeyRows([]);
-          setFootballRows([]);
-        }
+        if (active) setLeagueRows([]);
       } finally {
         if (active) setClubsLoading(false);
       }
@@ -270,14 +275,14 @@ export default function StandingsPage() {
       <Header />
       <div className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="text-3xl font-black uppercase tracking-tight">
-          {view === 'clubs' ? 'Klubbligan' : 'Global Tabell'}
+          {view === 'hockey' ? 'Hockeyligan' : view === 'football' ? 'Fotbollsligan' : 'Global Tabell'}
         </h1>
         <p className="mt-1 text-xs font-medium text-zinc-500">
-          {view === 'clubs'
-            ? league === 'hockey'
-              ? 'Sammanlagda karriärpoäng för scouter som valt samma SHL-klubb.'
-              : 'Sammanlagda karriärpoäng för scouter som valt samma Allsvenskan-klubb.'
-            : 'Rankad efter karriärpoäng från varje avklarad match.'}
+          {view === 'hockey'
+            ? 'Sammanlagda karriärpoäng för scouter som valt samma SHL-klubb.'
+            : view === 'football'
+              ? 'Sammanlagda karriärpoäng för scouter som valt samma Allsvenskan-klubb.'
+              : 'Rankad efter karriärpoäng från varje avklarad match.'}
         </p>
         <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Standings view">
           <button
@@ -291,23 +296,39 @@ export default function StandingsPage() {
                 : 'border-zinc-200 bg-white text-zinc-700'
             }`}
           >
-            GLOBALA SCOUTER
+            🌐 GLOBALA SCOUTER
           </button>
           <button
             type="button"
             role="tab"
-            aria-selected={view === 'clubs'}
+            aria-selected={view === 'hockey'}
             onClick={() => {
               setClubsLoading(true);
-              setView('clubs');
+              setView('hockey');
             }}
             className={`rounded-xl border-2 px-4 py-2 text-xs font-black uppercase ${
-              view === 'clubs'
+              view === 'hockey'
                 ? 'border-blue-600 bg-blue-600 text-white'
                 : 'border-zinc-200 bg-white text-zinc-700'
             }`}
           >
-            🏆 KLUBBLIGAN
+            🏒 HOCKEYLIGAN
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'football'}
+            onClick={() => {
+              setClubsLoading(true);
+              setView('football');
+            }}
+            className={`rounded-xl border-2 px-4 py-2 text-xs font-black uppercase ${
+              view === 'football'
+                ? 'border-blue-600 bg-blue-600 text-white'
+                : 'border-zinc-200 bg-white text-zinc-700'
+            }`}
+          >
+            ⚽ FOTBOLLSLIGAN
           </button>
         </div>
         {view === 'scouts' ? (
@@ -320,21 +341,22 @@ export default function StandingsPage() {
             />
           </div>
         ) : null}
-        {view === 'clubs' ? <ClubLeagueTabs league={league} onLeague={setLeague} /> : null}
         <div className="mt-8">
-          {view === 'clubs' ? (
-            clubsLoading ? (
-              <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Laddar Klubbligan...</p>
+          {view === 'scouts' ? (
+            loading ? (
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Laddar tabellen...</p>
             ) : (
-              <ClubChampionshipBoard
-                rows={league === 'hockey' ? hockeyRows : footballRows}
-                label={league === 'hockey' ? 'Ishockey-ligan' : 'Fotbollsligan'}
-              />
+              <StandingsBoard rows={rows} currentUsername={myUsername} onChallenge={handleChallenge} />
             )
-          ) : loading ? (
-            <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">Laddar tabellen...</p>
+          ) : clubsLoading ? (
+            <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-400">
+              {view === 'hockey' ? 'Laddar Hockeyligan...' : 'Laddar Fotbollsligan...'}
+            </p>
           ) : (
-            <StandingsBoard rows={rows} currentUsername={myUsername} onChallenge={handleChallenge} />
+            <ClubChampionshipBoard
+              rows={leagueRows}
+              label={view === 'hockey' ? 'Hockeyligan' : 'Fotbollsligan'}
+            />
           )}
         </div>
       </div>

@@ -195,5 +195,5 @@ export function loadArchiveIndex(sport: string | undefined | null = "ice_hockey"
 }
 
 export function deduceHref(fixtureId: string): string {
-  return `/?match=${encodeURIComponent(fixtureId)}`;
+  return `/play/${encodeURIComponent(fixtureId)}`;
 }
