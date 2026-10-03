@@ -13,6 +13,7 @@ interface FixturePreviewProps {
   href?: string;
   onChallenge?: () => void;
   density?: "compact" | "row";
+  clueCount?: boolean;
 }
 
 export function FixturePreview({
@@ -25,10 +26,11 @@ export function FixturePreview({
   href,
   onChallenge,
   density = "compact",
+  clueCount = true,
 }: FixturePreviewProps) {
   const solved = solvedScore != null;
-  const reveal = solved ? matchup : null;
-  const subtitle = fixtureSubtitle(year, context);
+  const reveal = solved && matchup ? matchup : null;
+  const subtitle = fixtureSubtitle(year, context, { clueCount });
 
   const body = (
     <div className="min-w-0 text-left">
