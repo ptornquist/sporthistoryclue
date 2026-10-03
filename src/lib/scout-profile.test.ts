@@ -4,6 +4,7 @@ import {
   formatCareerPoints,
   loadPublicScout,
   loadScoutActions,
+  normalizeScoutName,
   scoutProfilePath,
 } from "./scout-profile";
 
@@ -13,6 +14,9 @@ describe("public scout profiles", () => {
     expect(cleanScoutHandle("@beau")).toBe("beau");
     expect(scoutProfilePath("@Ada")).toBe("/scout/Ada");
     expect(formatCareerPoints(14000)).toBe("14,000 poäng");
+    expect(normalizeScoutName("  @PuckScout  ")).toBe("PuckScout");
+    expect(normalizeScoutName("")).toBeNull();
+    expect(normalizeScoutName("@")).toBeNull();
   });
 
   it("loads a profile stored with a leading @ and its honours", async () => {

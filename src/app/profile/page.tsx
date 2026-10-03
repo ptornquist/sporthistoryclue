@@ -12,6 +12,7 @@ import FindScouts from '@/components/game/FindScouts';
 import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { type ScoutProfile } from '@/lib/supabase/network';
+import { normalizeScoutName } from '@/lib/scout-profile';
 import { FOOTBALL_CLUBS, HOCKEY_CLUBS, isFootballClub, isHockeyClub } from '@/lib/swedish-clubs';
 import { CAREER_UPDATED_EVENT } from '@/lib/career-ledger';
 import { useCareerStats } from '@/components/CareerStatsProvider';
@@ -49,10 +50,15 @@ export default function ProfilePage() {
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const [scoutName, setScoutName] = useState('');
+  const [nameMessage, setNameMessage] = useState<string | null>(null);
   const loadSeq = useRef(0);
+  const nameDirty = useRef(false);
 
   const loadData = async () => {
     const seq = ++loadSeq.current;
+    const savedHandle = normalizeScoutName(localStorage.getItem('shc_handle') || '');
+    if (savedHandle && !nameDirty.current) setScoutName(savedHandle);
     if (!isSupabaseConfigured) return;
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (seq !== loadSeq.current) return;
@@ -72,10 +78,12 @@ export default function ProfilePage() {
     if (seq !== loadSeq.current) return;
 
     if (prof) {
+      const savedUsername = normalizeScoutName(prof.username || '');
+      if (savedUsername && !nameDirty.current) setScoutName(savedUsername);
       setProfile({
         id: prof.id,
-        username: prof.username || '',
-        display_name: prof.display_name || prof.username || '',
+        username: savedUsername || prof.username || '',
+        display_name: prof.display_name || savedUsername || prof.username || '',
         avatar_url: avatarRow?.avatar_url ?? prof.avatar_url ?? null,
         favorite_hockey_club: avatarRow?.favorite_hockey_club ?? null,
         favorite_football_club: avatarRow?.favorite_football_club ?? null,
@@ -220,6 +228,32 @@ export default function ProfilePage() {
     setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
   };
 
+  const handleScoutNameSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const handle = normalizeScoutName(scoutName);
+    if (!handle) {
+      setNameMessage('Välj ett scoutnamn på 1–40 tecken.');
+      return;
+    }
+    nameDirty.current = false;
+    setScoutName(handle);
+    localStorage.setItem('shc_handle', handle);
+    if (!user || !isSupabaseConfigured) {
+      setNameMessage('Sparat');
+      return;
+    }
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ username: handle, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+    if (error) {
+      setNameMessage(error.message || 'Kunde inte spara scoutnamnet');
+      return;
+    }
+    setProfile((prev) => (prev ? { ...prev, username: handle, display_name: handle } : prev));
+    setNameMessage('Sparat');
+  };
+
   const handleChallenge = async (opponentUsername: string) => {
     const { data, error } = await sendDuelChallenge(opponentUsername, careerScore || 0);
     if (data?.success) {
@@ -263,7 +297,7 @@ export default function ProfilePage() {
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
         {/* Profile Card */}
         <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-10 shadow-sm flex flex-col md:flex-row justify-between gap-8 items-start md:items-center">
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 flex-1 flex-col items-stretch gap-4 sm:flex-row sm:items-start">
             <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-zinc-200 bg-zinc-100 flex items-center justify-center shrink-0">
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="Profilbild" className="w-full h-full object-cover" />
@@ -275,17 +309,40 @@ export default function ProfilePage() {
                 <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               </label>
             </div>
-            <div>
-              <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
-                Scoutnamn
-              </span>
-              <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <span className="text-2xl md:text-3xl font-black tracking-tight text-zinc-950">
-                  @{profile?.username?.replace(/^@/, '')}
-                </span>
-                <span className="text-xs bg-zinc-100 text-zinc-600 font-bold px-2.5 py-1 rounded-lg border border-zinc-200">
-                  LÅST NAMN
-                </span>
+            <div className="min-w-0 flex-1">
+              <form onSubmit={handleScoutNameSave}>
+                <label className="block">
+                  <span className="text-[11px] font-mono font-bold text-blue-600 uppercase tracking-wider">
+                    Scoutnamn
+                  </span>
+                  <div className="mt-1 flex min-w-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="text-2xl font-black tracking-tight text-zinc-950" aria-hidden="true">@</span>
+                      <input
+                        aria-label="Scoutnamn"
+                        value={scoutName}
+                        maxLength={40}
+                        onChange={(event) => {
+                          nameDirty.current = true;
+                          setScoutName(event.target.value);
+                          setNameMessage(null);
+                        }}
+                        className="min-w-0 w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-2 text-lg font-black text-zinc-950"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="shrink-0 self-start rounded-xl bg-zinc-900 px-3 py-2 text-xs font-black uppercase tracking-wider text-white"
+                    >
+                      Spara
+                    </button>
+                  </div>
+                </label>
+              </form>
+              {nameMessage ? (
+                <p className="mt-1 text-xs font-medium text-zinc-500">{nameMessage}</p>
+              ) : null}
+              <div className="mt-2">
                 <BadgeHandleFlair badges={badges} />
               </div>
               <p className="text-xs text-zinc-400 font-medium mt-1">{user?.email}</p>

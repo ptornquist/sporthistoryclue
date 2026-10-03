@@ -51,7 +51,10 @@ describe("career stats shop access", () => {
     expect(html.indexOf("Scoututmärkelser")).toBeLessThan(html.indexOf("Sök scouter"));
     expect(html).toContain("Du har inte följt några scouter ännu.");
     expect(html).toContain("Mitt Nätverk");
-    expect(html).toContain("LÅST NAMN");
+    expect(html).not.toContain("LÅST NAMN");
+    expect(html).not.toContain("Låst namn");
+    expect(html).toContain('aria-label="Scoutnamn"');
+    expect(html).toContain(">Spara<");
     expect(html).toContain("Karriärpoäng");
     expect(html).toContain("Avklarade matcher");
     expect(html).toContain("Ishockeyklubb (SHL)");

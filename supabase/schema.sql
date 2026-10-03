@@ -147,6 +147,7 @@ create policy "user_fixture_solves_update_own"
 
 grant update (career_score, fixtures_cleared) on public.profiles to authenticated;
 grant update (avatar_url, updated_at) on public.profiles to authenticated;
+grant update (username) on public.profiles to authenticated;
 
 alter table public.profiles add column if not exists favorite_club text;
 

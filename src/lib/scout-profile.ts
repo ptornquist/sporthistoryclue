@@ -60,6 +60,14 @@ interface ViewerClient {
   };
 }
 
+/** A scout name the player can save. Empty or oversized names are rejected. */
+export function normalizeScoutName(raw: string): string | null {
+  const handle = raw.trim().replace(/^@+/, "").trim();
+  if (!handle || handle.length > 40) return null;
+  if (/[\u0000-\u001f]/.test(handle)) return null;
+  return handle;
+}
+
 export function cleanScoutHandle(raw: string | null | undefined): string {
   if (!raw) return "";
   let decoded = raw;
