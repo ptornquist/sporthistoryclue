@@ -42,9 +42,32 @@ describe("sport archive", () => {
     expect(html).toContain('href="/play/pele-sweden-1958"');
     expect(html).toContain("bg-blue-600 border-blue-600 text-white");
 
+    for (const fixture of football) {
+      expect(html).not.toContain(`${fixture.year} ·`);
+      expect(html).not.toContain(fixture.context);
+    }
+    expect(html).toContain("Historisk fotbollsmatch");
+
+    const hockey = loadArchiveIndex("ice_hockey");
+    expect(hockey.map((fixture) => fixture.id)).toEqual(["slaget-i-sudden", "guldkampen-i-norr"]);
+    const hockeyHtml = renderToStaticMarkup(
+      createElement(SportArchive, { selected: "ice_hockey", fixtures: hockey }),
+    );
+    expect(hockeyHtml).toContain("Mysteriet på isen #1");
+    expect(hockeyHtml).toContain("Mysteriet på isen #2");
+    expect(hockeyHtml).toContain("Klassisk ishockeymatch");
+    expect(hockeyHtml).not.toContain("Sirenen");
+    expect(hockeyHtml).not.toContain("Internationell");
+    expect(hockeyHtml).not.toContain("USA");
+    expect(hockeyHtml).not.toContain("Sovjet");
+    expect(hockeyHtml).not.toContain("Slutspelsdrama");
+    expect(hockeyHtml).not.toContain("Finalserie");
+    expect(hockeyHtml).not.toMatch(/\b(18|19|20)\d{2}\b/);
+
     const visible = ARCHIVE_FIXTURES.map((fixture) => `${fixture.title} ${fixture.context}`).join("\n");
     for (const leak of ANSWER_LEAKS) {
       expect(visible).not.toMatch(leak);
     }
+    expect(visible).not.toMatch(/Internationell serie|Medaljomgång|Internationell mästerskapsfinal/);
   });
 });

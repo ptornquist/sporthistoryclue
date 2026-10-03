@@ -21,33 +21,6 @@ export interface ArchiveSportFixture {
 /** Public case names only. Match ids open in the daily solver. */
 export const ARCHIVE_FIXTURES: ArchiveSportFixture[] = [
   {
-    id: "summit-series-1972",
-    sport: "ice_hockey",
-    title: "Sirenen före midnatt",
-    year: 1972,
-    context: "Internationell serie",
-    difficulty: 2,
-    clueCount: 5,
-  },
-  {
-    id: "miracle-on-ice-1980",
-    sport: "ice_hockey",
-    title: "Sirenen i kylan",
-    year: 1980,
-    context: "Medaljomgång",
-    difficulty: 1,
-    clueCount: 5,
-  },
-  {
-    id: "turin-gold-2006",
-    sport: "ice_hockey",
-    title: "Vintermorgonen i alperna",
-    year: 2006,
-    context: "Internationell mästerskapsfinal",
-    difficulty: 2,
-    clueCount: 5,
-  },
-  {
     id: "slaget-i-sudden",
     sport: "ice_hockey",
     title: "Mysteriet på isen #1",

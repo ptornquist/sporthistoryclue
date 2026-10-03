@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useSolvedFixtures } from "@/components/game/useSolvedFixtures";
+import { mysteryFixtureLabel } from "@/lib/case-files";
 import {
   ARCHIVE_SPORTS,
   deduceHref,
@@ -14,6 +18,9 @@ export function SportArchive({
   fixtures: ArchiveSportFixture[];
 }) {
   const sport = ARCHIVE_SPORTS.find((item) => item.id === selected) ?? ARCHIVE_SPORTS[0];
+  const solved = useSolvedFixtures(
+    fixtures.map((fixture) => ({ key: fixture.id, lookupIds: [fixture.id] })),
+  );
 
   return (
     <section className="mx-auto w-full max-w-3xl">
@@ -57,28 +64,43 @@ export function SportArchive({
           <p className="py-8 text-center text-xs font-medium text-zinc-400">Inga matcher är registrerade för den här sporten ännu.</p>
         ) : (
           <ul className="space-y-3">
-            {fixtures.map((fixture) => (
-              <li
-                key={fixture.id}
-                className="flex w-full max-w-full flex-col gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <h3 className="text-sm font-black text-zinc-900">{fixture.title}</h3>
-                  <p className="mt-0.5 font-mono text-[10px] text-zinc-400">
-                    {fixture.year} · {fixture.context}
-                  </p>
-                  <p className="mt-1.5 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                    Svårighet {fixture.difficulty} · {fixture.clueCount} ledtrådar
-                  </p>
-                </div>
-                <Link
-                  href={deduceHref(fixture.id)}
-                  className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-center text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
+            {fixtures.map((fixture) => {
+              const record = solved[fixture.id];
+              const open = record == null;
+              return (
+                <li
+                  key={fixture.id}
+                  className="flex w-full max-w-full flex-col gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  DEDUCERA →
-                </Link>
-              </li>
-            ))}
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-black text-zinc-900">{fixture.title}</h3>
+                    {open ? (
+                      <p className="mt-0.5 text-[11px] italic text-zinc-400">
+                        {mysteryFixtureLabel(fixture.sport)}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mt-0.5 font-mono text-[10px] text-zinc-400">
+                          {fixture.year} · {fixture.context}
+                        </p>
+                        {record.matchup ? (
+                          <p className="mt-1 text-[11px] font-semibold text-zinc-700">{record.matchup}</p>
+                        ) : null}
+                      </>
+                    )}
+                    <p className="mt-1.5 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+                      Svårighet {fixture.difficulty} · {fixture.clueCount} ledtrådar
+                    </p>
+                  </div>
+                  <Link
+                    href={deduceHref(fixture.id)}
+                    className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-center text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-blue-700"
+                  >
+                    DEDUCERA →
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
