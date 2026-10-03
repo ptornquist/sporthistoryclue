@@ -4,7 +4,7 @@ import { findCase } from "@/lib/case-files";
 import { caseClues } from "@/lib/case-clues";
 import { solvedMatchup } from "@/lib/case-solutions";
 import { canonicalSport } from "@/lib/decoy-options";
-import { choiceSportKey, choicesForSport, optionSport } from "@/lib/sport-options";
+import { choiceSportKey, choicesForSport, domesticLeagueOptions, optionSport } from "@/lib/sport-options";
 import { puzzles } from "@/lib/catalog";
 import {
   fetchDailyChallengeRow,
@@ -167,6 +167,13 @@ async function withDistinctOptions(fixture: SecretDaily): Promise<SecretDaily> {
   const correct =
     fixture.options.find((option) => gradeOption(fixture, option)) ??
     `${fixture.subject} (${fixture.year})`;
+  const domestic = domesticLeagueOptions(fixture.id);
+  if (domestic) {
+    return {
+      ...fixture,
+      options: fourDistinctOptions([], correct, [...domestic]),
+    };
+  }
   const sameSport = fixture.options.filter(
     (option) => optionSport(option) === choiceSportKey(sport) || gradeOption(fixture, option),
   );

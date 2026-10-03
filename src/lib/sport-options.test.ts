@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { optionSport, scopeOptionsToSport, SPORT_CHOICES } from "./sport-options";
+import { distinctOptionValues } from "./option-text";
+import {
+  ALLSVENSKAN_MATCHUPS,
+  domesticLeagueOptions,
+  optionSport,
+  scopeOptionsToSport,
+  SHL_MATCHUPS,
+  SPORT_CHOICES,
+} from "./sport-options";
+
+const INTERNATIONAL =
+  /USA|Sovjet|Kanada|Argentina|Brasilien|Italien|England|Uruguay|Finland|Bulgarien|Pelé|Maradona|Tjeckoslovakien/;
 
 const MIXED = Object.values(SPORT_CHOICES).flat();
 
@@ -32,4 +43,22 @@ describe("scopeOptionsToSport", () => {
       expect(options.every((option) => optionSport(option) === sport)).toBe(true);
     },
   );
+});
+
+describe("domestic league campaign options", () => {
+  it.each([
+    ["slaget-i-sudden", "Växjö mot Frölunda (2015)", "ice_hockey", SHL_MATCHUPS],
+    ["guldkampen-i-norr", "Skellefteå mot Luleå (2013)", "ice_hockey", SHL_MATCHUPS],
+    ["sondagsmorgonen-stockholms-stad", "Hammarby mot Djurgården (2018)", "football", ALLSVENSKAN_MATCHUPS],
+    ["guldstriden-sista-omgangen", "IFK Göteborg mot Trelleborg (2007)", "football", ALLSVENSKAN_MATCHUPS],
+  ] as const)("%s uses only Swedish club matchups", (slug, correct, sport, pool) => {
+    expect(domesticLeagueOptions(slug)).toEqual(pool);
+    expect(domesticLeagueOptions("miracle-on-ice-1980")).toBeNull();
+    const options = distinctOptionValues([correct, ...pool], 4);
+    expect(options).toHaveLength(4);
+    expect(options).toContain(correct);
+    expect(options.join(" | ")).not.toMatch(INTERNATIONAL);
+    expect(options.every((option) => optionSport(option) === sport)).toBe(true);
+    expect(scopeOptionsToSport(options, sport)).toEqual(options);
+  });
 });

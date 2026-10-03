@@ -1,5 +1,37 @@
+import { findCase } from "@/lib/case-files";
 import { canonicalSport } from "@/lib/decoy-options";
 import { distinctOptionValues, optionIdentity } from "@/lib/option-text";
+
+/** SHL club matchups. Used as the whole option set for the hockey campaign. */
+export const SHL_MATCHUPS = [
+  "Växjö mot Frölunda (2015)",
+  "Färjestad mot HV71 (2011)",
+  "Brynäs mot Leksand (2016)",
+  "Skellefteå mot Luleå (2013)",
+] as const;
+
+/** Allsvenskan club matchups. Used as the whole option set for the football campaign. */
+export const ALLSVENSKAN_MATCHUPS = [
+  "Hammarby mot Djurgården (2018)",
+  "AIK mot Djurgården (2017)",
+  "Malmö FF mot IFK Göteborg (2015)",
+  "Elfsborg mot AIK (2006)",
+  "IFK Göteborg mot Trelleborg (2007)",
+] as const;
+
+const DOMESTIC_LEAGUE_OPTIONS: Record<string, readonly string[]> = {
+  "slaget-i-sudden": SHL_MATCHUPS,
+  "guldkampen-i-norr": SHL_MATCHUPS,
+  "sondagsmorgonen-stockholms-stad": ALLSVENSKAN_MATCHUPS,
+  "guldstriden-sista-omgangen": ALLSVENSKAN_MATCHUPS,
+};
+
+/** Swedish club buttons for a league campaign fixture. Null for every other match. */
+export function domesticLeagueOptions(matchId: string | null | undefined): readonly string[] | null {
+  if (!matchId) return null;
+  const key = findCase(matchId)?.slug ?? matchId;
+  return DOMESTIC_LEAGUE_OPTIONS[key] ?? null;
+}
 
 /**
  * Answer buttons for one sport. Strings are disjoint across sports so a
@@ -13,8 +45,7 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Sovjetunionen mot Tjeckoslovakien (1968)",
     "Kanada mot USA (1987)",
     "Miraklet på isen",
-    "Växjö mot Frölunda (2015)",
-    "Skellefteå mot Luleå (2013)",
+    ...SHL_MATCHUPS,
   ],
   football: [
     "Sverige mot Bulgarien (1994)",
@@ -34,8 +65,7 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Brandi Chastains straff vinner damernas VM",
     "Leicester City vinner Premier League till 5000–1",
     "Messi vinner VM i Lusail",
-    "Hammarby mot Djurgården (2018)",
-    "IFK Göteborg mot Trelleborg (2007)",
+    ...ALLSVENSKAN_MATCHUPS,
   ],
   boxing: [
     "Muhammad Ali mot George Foreman (1974)",

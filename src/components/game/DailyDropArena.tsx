@@ -23,8 +23,8 @@ import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSo
 import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
-import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
-import { choiceSportKey, scopeOptionsToSport } from '@/lib/sport-options';
+import { distinctOptionValues, formatOptionText, optionIdentity } from '@/lib/option-text';
+import { choiceSportKey, domesticLeagueOptions, scopeOptionsToSport } from '@/lib/sport-options';
 import { arenaHref, campaignHeadline, nextStorylineMatch, storylineById } from '@/lib/storylines';
 
 interface DailyFixture {
@@ -45,9 +45,20 @@ function dayIndexFromKey(dateKey: string): number {
   return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
-function setupOptions(options: string[], category: string): string[] {
+function setupOptions(options: string[], category: string, matchId?: string): string[] {
+  const pool = domesticLeagueOptions(matchId);
   const sport = sportIdForCategory(category) ?? choiceSportKey(category);
-  const scoped = scopeOptionsToSport(options, sport);
+  const scoped = pool
+    ? distinctOptionValues(
+        [
+          ...options.filter((option) =>
+            pool.some((item) => optionIdentity(item) === optionIdentity(option)),
+          ),
+          ...pool,
+        ],
+        4,
+      )
+    : scopeOptionsToSport(options, sport);
   const four = distinctOptionValues(scoped.length > 0 ? scoped : options, 4);
   for (let index = four.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(Math.random() * (index + 1));
@@ -202,7 +213,7 @@ export function DailyDropArena(props: {
         if (cancelled) return;
         whistled.current = false;
         setActiveMatch(match || null);
-        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category));
+        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category, match || fixture.id));
         setSelectedSport(sportIdForCategory(fixture.category));
         const solveStamp = match || fixture.date_key || 'today';
         const isLocallySolved = localStorage.getItem('shc_solved_' + solveStamp);
