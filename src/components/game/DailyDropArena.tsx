@@ -23,6 +23,7 @@ import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
 import { distinctOptionValues, formatOptionText } from '@/lib/option-text';
+import { choiceSportKey, scopeOptionsToSport } from '@/lib/sport-options';
 
 interface DailyFixture {
   id: string;
@@ -42,23 +43,10 @@ function dayIndexFromKey(dateKey: string): number {
   return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
-const OLYMPIC_DECOYS = [
-  '1896 Athens: First Modern Olympiad (1896)',
-  '1936 Berlin Olympics (1936)',
-  '1968 Mexico City: Black Power Salute (1968)',
-  '1988 Seoul Olympics (1988)',
-];
-
-const GENERAL_DECOYS = [
-  '1980 Lake Placid: USA vs Soviet Union',
-  '1992 Barcelona: USA Dream Team vs Croatia',
-  '1994 Lillehammer: Sweden vs Canada',
-  '1974 Munich: West Germany vs Netherlands',
-];
-
 function setupOptions(options: string[], category: string): string[] {
-  const pool = /olympic/i.test(category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
-  const four = distinctOptionValues([...options, ...pool, ...GENERAL_DECOYS], 4);
+  const sport = sportIdForCategory(category) ?? choiceSportKey(category);
+  const scoped = scopeOptionsToSport(options, sport);
+  const four = distinctOptionValues(scoped.length > 0 ? scoped : options, 4);
   for (let index = four.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(Math.random() * (index + 1));
     const current = four[index];

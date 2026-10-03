@@ -138,14 +138,27 @@ const KNOWN_MATCHUPS: Record<string, string> = {
   "messi wins the world cup in lusail": "Argentina vs France",
   "south africa win the rugby world cup in a springbok jersey": "South Africa vs New Zealand",
   "billie jean king wins the battle of the sexes": "Billie Jean King vs Bobby Riggs",
+  "miraklet på isen": "USA mot Sovjetunionen",
+  "dream team tar os-guld i barcelona": "USA mot Kroatien",
+  "uruguay vinner det första vm-guldet": "Uruguay mot Argentina",
+  "västtysklands mirakel i bern": "Västtyskland mot Ungern",
+  "en 17-årig pelé vinner vm i sverige": "Brasilien mot Sverige",
+  "geoff hursts hattrick på wembley": "England mot Västtyskland",
+  "maradonas århundradets mål": "Argentina mot England",
+  "manchester uniteds trippel på tilläggstid": "Manchester United mot Bayern München",
+  "brandi chastains straff vinner damernas vm": "USA mot Kina",
+  "messi vinner vm i lusail": "Argentina mot Frankrike",
+  "sydafrika vinner rugby-vm i springboktröja": "Sydafrika mot Nya Zeeland",
+  "billie jean king vinner kampen mellan könen": "Billie Jean King mot Bobby Riggs",
+  "ali besegrar foreman i djungelns dån": "Muhammad Ali mot George Foreman",
 };
 
 export function matchupDetail(subject: string): string {
   const bare = subject.replace(/\s*\((-?\d{1,4})\)\s*$/, "").trim();
-  if (/\bvs\.?\b/i.test(bare)) return bare;
+  if (/\bvs\.?\b/i.test(bare) || /\bmot\b/i.test(bare)) return bare;
   const known = KNOWN_MATCHUPS[bare.toLowerCase()];
   if (known) return known;
-  const defeats = bare.match(/^(.+?)\s+defeats\s+(.+?)(?:\s+in\b.*)?$/i);
+  const defeats = bare.match(/^(.+?)\s+(?:defeats|besegrar)\s+(.+?)(?:\s+(?:in|i)\b.*)?$/i);
   if (defeats) return `${defeats[1].trim()} vs ${defeats[2].trim()}`;
   return bare;
 }

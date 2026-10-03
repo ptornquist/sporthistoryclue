@@ -27,73 +27,73 @@ export const CASE_FILES: CaseFile[] = [
   {
     slug: "miracle-on-ice-1980",
     ids: ["miracle-on-ice-1980", "miracle-1980"],
-    title: "The Frozen Miracle",
+    title: "Det frusna miraklet",
     year: 1980,
-    context: "Olympic Medal Round",
+    context: "OS-medaljomgång",
     sport: "ice_hockey",
   },
   {
     slug: "summit-series-1972",
     ids: ["summit-series-1972"],
-    title: "The Eighth Siren",
+    title: "Den åttonde sirenen",
     year: 1972,
-    context: "Summit Series Decider",
+    context: "Summit Series-avgörandet",
     sport: "ice_hockey",
   },
   {
     slug: "comaneci-1976",
     ids: ["comaneci-1976"],
-    title: "The 1.00 Scoreboard Anomaly",
+    title: "1,00-poängsanomalin",
     year: 1976,
-    context: "Olympic All-Around",
+    context: "OS-mångkamp",
     sport: "gymnastics",
   },
   {
     slug: "dream-team-1992",
     ids: ["dream-team-1992"],
-    title: "The Unmarked Exhibition",
+    title: "Uppvisningen i Barcelona",
     year: 1992,
-    context: "Olympic Gold-Medal Game",
+    context: "OS-final",
     sport: "basketball",
   },
   {
     slug: "bolt-beijing-2008",
     ids: ["bolt-beijing-2008", "bolt-2008"],
-    title: "The Golden Spikes",
+    title: "Guldspikarna",
     year: 2008,
-    context: "Olympic 100m Final",
+    context: "OS-final 100 meter",
     sport: "athletics",
   },
   {
     slug: "pele-sweden-1958",
     ids: ["pele-sweden-1958", "pele-1958"],
-    title: "The Solna Breakthrough",
+    title: "Genombrottet i Solna",
     year: 1958,
-    context: "World Cup Final",
+    context: "VM-final",
     sport: "football",
   },
   {
     slug: "hand-of-god-1986",
     ids: ["hand-of-god-1986", "maradona-1986"],
-    title: "The Azteca Double",
+    title: "Dubbeln på Azteca",
     year: 1986,
-    context: "World Cup Quarter-Final",
+    context: "VM-kvartsfinal",
     sport: "football",
   },
   {
     slug: "rumble-in-the-jungle-1974",
     ids: ["rumble-in-the-jungle-1974", "ali-1974"],
-    title: "The Kinshasa Night",
+    title: "Natten i Kinshasa",
     year: 1974,
-    context: "Heavyweight Title Fight",
+    context: "Titelmatch i tungvikt",
     sport: "boxing",
   },
   {
     slug: "wimbledon-epic-1980",
     ids: ["wimbledon-epic-1980"],
-    title: "The Tiebreak That Wouldn't End",
+    title: "Tiebreaket som inte tog slut",
     year: 1980,
-    context: "Wimbledon Gentlemen's Final",
+    context: "Wimbledonfinalen, herrar",
     sport: "tennis",
   },
 ];
@@ -128,9 +128,29 @@ export function caseIdsFor(id: string): string[] {
 }
 
 const TITLE_RENAMES: Record<string, string> = {
-  "the beijing lightning bolt": "The Golden Spikes",
-  "the lake placid frequency": "The Frozen Miracle",
-  "the masterpiece in hamilton": "The 87th Symphony",
+  "the beijing lightning bolt": "Guldspikarna",
+  "the lake placid frequency": "Det frusna miraklet",
+  "the masterpiece in hamilton": "Den 87:e symfonin",
+  "the frozen miracle": "Det frusna miraklet",
+  "the eighth siren": "Den åttonde sirenen",
+  "the 1.00 scoreboard anomaly": "1,00-poängsanomalin",
+  "the unmarked exhibition": "Uppvisningen i Barcelona",
+  "the golden spikes": "Guldspikarna",
+  "the solna breakthrough": "Genombrottet i Solna",
+  "the azteca double": "Dubbeln på Azteca",
+  "the kinshasa night": "Natten i Kinshasa",
+  "the tiebreak that wouldn't end": "Tiebreaket som inte tog slut",
+  "the centenario night": "Natten på Centenario",
+  "the bern broadcast": "Radiosändningen från Bern",
+  "the extra-time bar": "Ribban i förlängningen",
+  "the stoppage night": "Natten på tilläggstid",
+  "the rose bowl kick": "Straffen på Rose Bowl",
+  "the unpriced title": "Den oprissatta titeln",
+  "the gilded shootout": "Den förgyllda straffläggningen",
+  "the houston exhibition": "Uppvisningen i Houston",
+  "the berlin lanes": "Banorna i Berlin",
+  "the backward bar": "Ribban baklänges",
+  "the london night": "Natten i London",
 };
 
 export function publicCaseTitle(title: string | null | undefined): string {
@@ -148,6 +168,8 @@ export function isSpoilerHeading(title: string | undefined | null): boolean {
   if (/\bvs\.?\b/i.test(value)) return true;
   if (/\(\s*(18|19|20)\d{2}\s*\)/.test(value)) return true;
   if (/\b(scores|defeats|beats|wins|world record|perfect 10|hat-trick|hat trick)\b/i.test(value)) return true;
+  if (/vinner|besegrar|slår|världsrekord|perfekt\w*\s*10|hattrick/i.test(value)) return true;
+  if (/com[aă]neci|usain|\bbolt\b|pel[eé]|maradona|muhammad ali|foreman|mcenroe|\bborg\b|dream team|soviet|sweden|canada|croatia/i.test(value)) return true;
   return false;
 }
 
@@ -156,7 +178,7 @@ export function safeHeading(title: string | undefined, year: number, id?: string
   if (file) return publicCaseTitle(file.title);
   const candidate = title?.trim();
   if (candidate && !isSpoilerHeading(candidate)) return publicCaseTitle(candidate);
-  return `Case File ${year}`;
+  return `Arkivakt ${year}`;
 }
 
 export function safeContext(category: string | undefined, id?: string): string {
@@ -164,7 +186,7 @@ export function safeContext(category: string | undefined, id?: string): string {
   if (file) return file.context;
   const candidate = category?.trim();
   if (candidate && !isSpoilerHeading(candidate)) return candidate;
-  return "Historic Fixture";
+  return "Historisk match";
 }
 
 export function categoryMatchesSport(category: string | undefined, sport: string): boolean {

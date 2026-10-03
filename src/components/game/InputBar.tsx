@@ -73,7 +73,7 @@ export function InputBar({
               role="combobox"
               aria-expanded={open && suggestions.length > 0}
               aria-controls={listId}
-              placeholder="Miracle on Ice, Fosbury Flop…"
+              placeholder="Miraklet på isen, Fosbury-flopen…"
               value={event}
               disabled={disabled}
               className="pl-9"

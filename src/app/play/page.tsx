@@ -55,9 +55,9 @@ function PlayContent() {
           ? provided
           : [
               `${data.subject} (${data.year})`,
-              'Canada vs Soviet Union (1972)',
-              'USA vs Soviet Union (1980)',
-              'Sweden vs Finland (2006)',
+              'Kanada mot Sovjetunionen (1972)',
+              'USA mot Sovjetunionen (1980)',
+              'Sverige mot Finland (2006)',
             ];
         const distinct = distinctOptionValues(
           seeded.filter((option: unknown): option is string => typeof option === 'string'),

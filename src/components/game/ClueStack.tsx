@@ -1,5 +1,5 @@
 export const CLUE_TITLES = [
-  "Arena & insatser",
+  "Arena & förutsättningar",
   "Epok & sammanhang",
   "Laguppställning & taktik",
   "Arkivfoto",

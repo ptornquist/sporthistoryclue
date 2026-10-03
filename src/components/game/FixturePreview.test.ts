@@ -8,16 +8,16 @@ describe("FixturePreview", () => {
   it("hides the matchup and keeps DEDUCE while the case is open", () => {
     const html = renderToStaticMarkup(
       createElement(FixturePreview, {
-        title: "The 1.00 Scoreboard Anomaly",
+        title: "1,00-poängsanomalin",
         year: 1976,
-        context: "Olympic All-Around",
+        context: "OS-mångkamp",
         solvedScore: null,
         matchup: "Nadia Comăneci (1976)",
         onDeduce: () => undefined,
       }),
     );
-    expect(html).toContain("The 1.00 Scoreboard Anomaly");
-    expect(html).toContain("1976 · Olympic All-Around · 6 ledtrådar");
+    expect(html).toContain("1,00-poängsanomalin");
+    expect(html).toContain("1976 · OS-mångkamp · 6 ledtrådar");
     expect(html).toContain("DEDUCERA →");
     expect(html).not.toContain("Nadia");
     expect(html).not.toContain("SOLVED");

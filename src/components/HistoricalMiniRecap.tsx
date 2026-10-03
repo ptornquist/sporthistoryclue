@@ -65,10 +65,10 @@ export function HistoricalMiniRecap({
   }, [challenge.id, challenge.story]);
 
   const facts = [
-    { label: "Year", value: recap.year ? String(recap.year) : "—" },
-    { label: "Venue", value: recap.venue || "—" },
-    { label: "Final Score", value: recap.finalScore || "—" },
-    { label: "Decisive Play", value: recap.decisivePlay || "—" },
+    { label: "År", value: recap.year ? String(recap.year) : "—" },
+    { label: "Arena", value: recap.venue || "—" },
+    { label: "Slutresultat", value: recap.finalScore || "—" },
+    { label: "Avgörande aktion", value: recap.decisivePlay || "—" },
   ];
   const embed = videoEmbedSrc(recap.videoUrl);
 
@@ -76,7 +76,7 @@ export function HistoricalMiniRecap({
     <section className="min-h-[220px] rounded-2xl border border-zinc-200 bg-white p-5 text-left text-zinc-900 shadow-sm">
       <div className="flex items-center gap-2">
         <BookOpen className="h-4 w-4 text-blue-600" aria-hidden />
-        <h3 className="text-sm font-black uppercase tracking-tight">The Decisive Moment</h3>
+        <h3 className="text-sm font-black uppercase tracking-tight">Det avgörande ögonblicket</h3>
       </div>
       <div className="mt-3 min-h-[7.5rem]">
         {recap.story ? (
@@ -102,7 +102,7 @@ export function HistoricalMiniRecap({
         <iframe
           className="mt-4 aspect-video w-full rounded-xl border border-zinc-200"
           src={embed}
-          title="Archival reel"
+          title="Arkivfilm"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -113,7 +113,7 @@ export function HistoricalMiniRecap({
           rel="noopener noreferrer"
           className="mt-4 inline-flex rounded-2xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-700"
         >
-          Watch Archival Reel
+          Se arkivfilmen
         </a>
       ) : null}
     </section>
