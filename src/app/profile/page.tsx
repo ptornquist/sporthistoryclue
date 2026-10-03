@@ -13,9 +13,8 @@ import Header from '@/components/Header';
 import { ScoutHandleLink } from '@/components/game/ScoutHandleLink';
 import { type ScoutProfile } from '@/lib/supabase/network';
 import { FOOTBALL_CLUBS, HOCKEY_CLUBS, isFootballClub, isHockeyClub } from '@/lib/swedish-clubs';
-import { CAREER_UPDATED_EVENT, readCareerLedger, readCareerSolves, reconcileCareerTotals } from '@/lib/career-ledger';
-import { loadCareerStats, loadSolvedChallengeIds } from '@/lib/career-score';
-import { recordFixtureWin } from '@/lib/fixture-solves';
+import { CAREER_UPDATED_EVENT } from '@/lib/career-ledger';
+import { useCareerStats } from '@/components/CareerStatsProvider';
 
 interface Profile {
   id: string;
@@ -44,8 +43,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
-  const [careerScore, setCareerScore] = useState<number | null>(null);
-  const [fixturesCleared, setFixturesCleared] = useState<number | null>(null);
+  const { careerScore, fixturesCleared } = useCareerStats();
   const [badges, setBadges] = useState<UnlockedAccolade[]>([]);
   const [duels, setDuels] = useState<DuelRow[]>([]);
 
@@ -55,10 +53,6 @@ export default function ProfilePage() {
 
   const loadData = async () => {
     const seq = ++loadSeq.current;
-    const localCareer = readCareerLedger(localStorage);
-    const localSolves = readCareerSolves(localStorage);
-    setCareerScore(localCareer.careerScore);
-    setFixturesCleared(localCareer.fixturesCleared);
     if (!isSupabaseConfigured) return;
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (seq !== loadSeq.current) return;
@@ -75,23 +69,7 @@ export default function ProfilePage() {
       .select('avatar_url, favorite_hockey_club, favorite_football_club')
       .eq('id', user.id)
       .maybeSingle();
-    let remoteCareer = await loadCareerStats(user.id);
-    let remoteIds = await loadSolvedChallengeIds(user.id);
-    if (remoteIds) {
-      const known = new Set(remoteIds);
-      const pending = localSolves.filter((solve) => solve.score > 0 && !known.has(solve.id));
-      for (const solve of pending) {
-        await recordFixtureWin(solve.id, solve.score);
-      }
-      if (pending.length > 0) {
-        remoteCareer = await loadCareerStats(user.id);
-        remoteIds = await loadSolvedChallengeIds(user.id);
-      }
-    }
     if (seq !== loadSeq.current) return;
-    const totals = reconcileCareerTotals(remoteCareer, localCareer, localSolves, remoteIds);
-    setCareerScore(totals.careerScore);
-    setFixturesCleared(totals.fixturesCleared);
 
     if (prof) {
       setProfile({

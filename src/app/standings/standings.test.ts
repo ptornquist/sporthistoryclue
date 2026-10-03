@@ -18,9 +18,13 @@ vi.mock("@/lib/supabase/client", () => ({
   },
 }));
 
-vi.mock("@/lib/career-standings", () => ({
-  fetchCareerStandings: async () => [],
-}));
+vi.mock("@/lib/career-standings", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/career-standings")>("@/lib/career-standings");
+  return {
+    ...actual,
+    fetchCareerStandings: async () => [],
+  };
+});
 
 vi.mock("@/lib/supabase/network", () => ({
   getFollowingIds: async () => [],

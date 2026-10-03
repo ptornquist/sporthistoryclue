@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { CareerStatsProvider } from '@/components/CareerStatsProvider';
 import { InstallAppBanner } from '@/components/InstallAppBanner';
 import './globals.css';
 
@@ -62,7 +63,7 @@ export default function RootLayout({
   return (
     <html lang="sv" className="overflow-x-hidden w-full max-w-full">
       <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white overflow-x-hidden w-full max-w-full">
-        {children}
+        <CareerStatsProvider>{children}</CareerStatsProvider>
         <InstallAppBanner />
       </body>
     </html>

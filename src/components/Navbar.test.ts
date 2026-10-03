@@ -27,6 +27,7 @@ describe("site navigation", () => {
     expect(html).toContain("Hur spelar man");
     expect(html).toContain('aria-label="Hur spelar man"');
     expect(html).toContain("👤 Profil");
+    expect(html).toContain('aria-label="Karriärpoäng —, avklarade matcher —"');
     expect(html).toContain("hidden md:flex px-3.5 py-1.5 rounded-full bg-white border-2 border-zinc-200 hover:border-zinc-900 text-xs font-black uppercase text-zinc-900 shadow-sm transition-all items-center gap-2");
     expect(html).toContain("flex items-center gap-2 md:hidden");
     expect(html).toContain('aria-label="Profil"');

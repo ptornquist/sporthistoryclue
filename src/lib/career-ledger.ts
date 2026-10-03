@@ -65,15 +65,24 @@ export function mergeCareerTotals(remote: CareerTotals, local: CareerTotals): Ca
   };
 }
 
-/** Adds solves that are still only on this device on top of the server totals. */
+function coherentCareerTotals(remote: CareerTotals, local: CareerTotals): CareerTotals {
+  const localAhead =
+    local.careerScore >= remote.careerScore && local.fixturesCleared >= remote.fixturesCleared;
+  const remoteAhead =
+    remote.careerScore >= local.careerScore && remote.fixturesCleared >= local.fixturesCleared;
+  if (localAhead && !remoteAhead) return local;
+  if (remoteAhead && !localAhead) return remote;
+  return local.careerScore >= remote.careerScore ? local : remote;
+}
+
+/** One career total for every view. Points and match count stay from the same snapshot. */
 export function reconcileCareerTotals(
   remote: CareerTotals,
   local: CareerTotals,
   localSolves: CareerSolveRecord[],
   remoteIds: readonly string[] | null,
 ): CareerTotals {
-  const baseline = mergeCareerTotals(remote, local);
-  if (!remoteIds) return baseline;
+  if (!remoteIds) return coherentCareerTotals(remote, local);
 
   const known = new Set(remoteIds);
   let pendingScore = 0;
@@ -84,10 +93,18 @@ export function reconcileCareerTotals(
     pendingCount += 1;
   }
 
-  return {
-    careerScore: Math.max(baseline.careerScore, remote.careerScore + pendingScore),
-    fixturesCleared: Math.max(baseline.fixturesCleared, remote.fixturesCleared + pendingCount),
+  const synced = {
+    careerScore: remote.careerScore + pendingScore,
+    fixturesCleared: remote.fixturesCleared + pendingCount,
   };
+  if (
+    pendingCount === 0 &&
+    local.careerScore >= remote.careerScore &&
+    local.fixturesCleared >= remote.fixturesCleared
+  ) {
+    return local;
+  }
+  return synced;
 }
 
 /** Adds one solved fixture to the local career totals. A repeat id does not count again. */
