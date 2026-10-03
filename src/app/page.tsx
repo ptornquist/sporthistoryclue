@@ -119,7 +119,7 @@ export default async function Page({
       <Suspense
         fallback={
           <div className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-            Loading Drop...
+            Laddar kluringen...
           </div>
         }
       >

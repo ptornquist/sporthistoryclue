@@ -14,7 +14,7 @@ describe("site navigation", () => {
     expect(html).toContain(">BETA<");
     expect(html).toContain("hidden md:flex items-center gap-6 text-xs font-black uppercase tracking-wider text-zinc-700");
     expect(html).toContain('href="/"');
-    expect(html).toContain("Dagens Drop");
+    expect(html).toContain("Dagens Kluring");
     expect(html).toContain('href="/campaigns"');
     expect(html).toContain("Utmaningar");
     expect(html).toContain('href="/archive"');
@@ -36,7 +36,7 @@ describe("site navigation", () => {
 
     const menu = renderToStaticMarkup(createElement(MobileNavDropdown, { onNavigate: vi.fn() }));
     expect(menu).toContain("absolute top-full left-0 w-full bg-white border-b border-zinc-200 shadow-2xl py-5 px-6 flex flex-col gap-1 z-50 md:hidden");
-    expect(menu).toContain("Dagens Drop");
+    expect(menu).toContain("Dagens Kluring");
     expect(menu).toContain("Utmaningar");
     expect(menu).toContain("Historik");
     expect(menu).toContain("Tabell");

@@ -203,7 +203,7 @@ export function ClubStandings({
       <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-black uppercase tracking-wider text-zinc-500">Club Activity</h3>
         {activity.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">Club solves will show up here after the next Daily Drop.</p>
+          <p className="mt-3 text-sm text-zinc-500">Klubblösningar visas här efter nästa Dagens Kluring.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {activity.map((item) => (

@@ -426,7 +426,7 @@ export function DailyDropArena(props: {
       '⚔️ DUELL på SportsHistoryClue!',
       outcome,
       `Jag: ${userScore.toLocaleString()} poäng mot @${duelHandle}: ${duelPts.toLocaleString()} poäng`,
-      'Tänker du slå oss båda? Spela dagens drop:',
+      'Tänker du slå oss båda? Spela dagens kluring:',
       `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${userScore}`,
     ].join('\n');
 
@@ -437,7 +437,7 @@ export function DailyDropArena(props: {
   if (loading || !challenge) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-        {loading ? 'Laddar matchen...' : 'Droppen är inte tillgänglig'}
+        {loading ? 'Laddar matchen...' : 'Kluringen är inte tillgänglig'}
       </main>
     );
   }
@@ -512,7 +512,7 @@ export function DailyDropArena(props: {
                 {playingFixture ? (storyline ? 'Utmaning' : 'Historik') : sportLabel}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
-                {playingFixture ? campaignHeadline(props.campaignId) : 'Dagens Drop'}
+                {playingFixture ? campaignHeadline(props.campaignId) : 'Dagens Kluring'}
               </h1>
               {playingFixture ? null : (
                 <div className="mt-3">
@@ -711,7 +711,7 @@ export function DailyDropArena(props: {
       <AuthGateModal
         isOpen={authGateOpen}
         onClose={() => setAuthGateOpen(false)}
-        featureName="Tidigare droppar"
+        featureName="Tidigare kluringar"
       />
     </main>
   );

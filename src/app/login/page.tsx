@@ -179,7 +179,7 @@ function AuthContent() {
 
       <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
         <Link href="/" className="text-xs text-zinc-400 hover:text-black font-medium">
-          ← Tillbaka till Dagens Drop
+          ← Tillbaka till Dagens Kluring
         </Link>
       </div>
     </div>

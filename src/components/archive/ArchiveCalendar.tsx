@@ -76,7 +76,7 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Daily Drop</p>
+            <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Dagens Kluring</p>
             <h1 className="text-3xl font-black uppercase tracking-tight">{month.label}</h1>
           </div>
           <div className="flex items-center gap-2">
