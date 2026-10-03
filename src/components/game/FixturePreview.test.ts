@@ -23,6 +23,37 @@ describe("FixturePreview", () => {
     expect(html).not.toContain("SOLVED");
   });
 
+  it("shows a mysterious placeholder instead of the matchup until the fixture is solved", () => {
+    const open = renderToStaticMarkup(
+      createElement(FixturePreview, {
+        title: "Siffran som inte fick plats",
+        year: 1976,
+        context: "Individuell final",
+        solvedScore: null,
+        matchup: "Nadia Comăneci (1976)",
+        mysteryLabel: "Historiskt mästerskapsögonblick",
+        clueCount: false,
+      }),
+    );
+    expect(open).toContain("Historiskt mästerskapsögonblick");
+    expect(open).not.toContain("Nadia");
+    expect(open).not.toContain("Comăneci");
+
+    const solved = renderToStaticMarkup(
+      createElement(FixturePreview, {
+        title: "Sirenen i kylan",
+        year: 1980,
+        context: "Medaljomgång",
+        solvedScore: 10000,
+        matchup: "USA mot Sovjetunionen (1980)",
+        mysteryLabel: "Klassisk ishockeyduell",
+        clueCount: false,
+      }),
+    );
+    expect(solved).toContain("USA mot Sovjetunionen (1980)");
+    expect(solved).not.toContain("Klassisk ishockeyduell");
+  });
+
   it("reveals the matchup and score only after the case is solved", () => {
     const html = renderToStaticMarkup(
       createElement(FixturePreview, {

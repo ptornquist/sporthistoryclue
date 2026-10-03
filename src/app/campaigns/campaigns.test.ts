@@ -55,6 +55,14 @@ describe("storylines layout", () => {
     expect(html).not.toContain("100 meter");
     expect(html).not.toContain("1,00");
     expect(html).not.toContain("Sverige mot");
+    expect(html).toContain("Klassisk ishockeyduell");
+    expect(html).toContain("Historisk mästerskapsfinal");
+    expect(html).toContain("Historiskt mästerskapsögonblick");
+    expect(html).toContain("Historisk titelmatch");
+    expect(html).not.toContain("USA mot Sovjetunionen");
+    expect(html).not.toContain("Nadia");
+    expect(html).not.toContain("Comăneci");
+    expect(html).not.toContain("Comaneci");
     expect(html).toContain('href="/play/pasadena-bronze-1994?campaign=svenska-underverk"');
     expect(html).toContain('href="/play/turin-gold-2006?campaign=svenska-underverk"');
     expect(html).not.toContain('href="/?match=');

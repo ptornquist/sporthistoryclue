@@ -6,7 +6,7 @@ import Header from '@/components/Header';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
-import { findCase, previewFromCase } from '@/lib/case-files';
+import { findCase, mysteryFixtureLabel, previewFromCase } from '@/lib/case-files';
 import { arenaHref, firstOpenMatch } from '@/lib/storylines';
 
 interface Campaign {
@@ -143,6 +143,7 @@ export default function CampaignsPage() {
                         context={match.context}
                         solvedScore={record?.score ?? null}
                         matchup={record?.matchup ?? null}
+                        mysteryLabel={mysteryFixtureLabel(findCase(match.key)?.sport)}
                         href={arenaHref(match.key, campaign.id)}
                         clueCount={false}
                       />

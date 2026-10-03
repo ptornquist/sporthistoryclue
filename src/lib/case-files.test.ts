@@ -3,6 +3,7 @@ import {
   CASE_FILES,
   fixtureSubtitle,
   isSpoilerHeading,
+  mysteryFixtureLabel,
   previewFromArchive,
   previewFromCase,
   publicCaseTitle,
@@ -72,6 +73,21 @@ describe("mystery case files", () => {
     expect(archived.title).toBe("Arkivakt 1958");
     expect(archived.title).not.toMatch(/vs/i);
     expect(archived.context).toBe("Football");
+  });
+
+  it("uses sport-shaped placeholders that do not name the match", () => {
+    expect(mysteryFixtureLabel("ice_hockey")).toBe("Klassisk ishockeyduell");
+    expect(mysteryFixtureLabel("football")).toBe("Historisk mästerskapsfinal");
+    expect(mysteryFixtureLabel("basketball")).toBe("Historisk mästerskapsfinal");
+    expect(mysteryFixtureLabel("tennis")).toBe("Historisk mästerskapsfinal");
+    expect(mysteryFixtureLabel("gymnastics")).toBe("Historiskt mästerskapsögonblick");
+    expect(mysteryFixtureLabel("athletics")).toBe("Historiskt mästerskapsögonblick");
+    expect(mysteryFixtureLabel("boxing")).toBe("Historisk titelmatch");
+    for (const file of CASE_FILES) {
+      const label = mysteryFixtureLabel(file.sport);
+      expect(isSpoilerHeading(label)).toBe(false);
+      expect(label).not.toMatch(/\(\s*(18|19|20)\d{2}\s*\)/);
+    }
   });
 
   it("stores solved progress under shc_score keys", () => {
