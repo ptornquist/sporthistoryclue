@@ -6,14 +6,14 @@ export interface CaseClueSource {
 
 const CASE_CLUES: Record<string, readonly string[]> = {
   "wimbledon-epic-1980": [
-    "En drömduell mellan två motsatser på Centre Court: den stoiske skandinaviske baslinjemästaren mot den eldige serve-och-volley-spelaren från New York.",
+    "En drömduell på Centre Court mellan två raka motsatser: den stoiske skandinaviske baslinjemästaren mot den eldige serve-och-volley-spelaren från New York.",
     "1980 hör till gräsets storhetstid, när en herrfinal fortfarande kunde kräva fem hela set.",
     "Namn och siffror stannar utanför det här kortet. Den ena håller bollen i spel från baslinjen. Den andra attackerar nätet.",
     "Ett beskuret arkivfoto från Wimbledonfinalen, herrar.",
     "Det avgörande ögonblicket är ett tiebreak som inte vill ta slut, och ett femte set som fortfarande står och väger.",
   ],
   "summit-series-1972": [
-    "En åttonde match i en främmande hall. Serien står lika, och sirenen har inte ljudit för sista gången.",
+    "En enastående 8-matchers interkontinental drabbning som ställde NHL-superstjärnor mot den hemlighetsfulla Röd Maskinen.",
     "1972 hör till mötet mellan två hockeysystem som länge hade spelat var sitt spel.",
     "Namn och siffror stannar utanför det här kortet. Ett lag är byggt för proffsligan. Det andra för landslaget året runt.",
     "Ett beskuret arkivfoto från Summit Series-avgörandet.",

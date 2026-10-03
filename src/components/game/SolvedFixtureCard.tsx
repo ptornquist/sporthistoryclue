@@ -4,10 +4,11 @@ interface SolvedFixtureCardProps {
   score: number;
   cells: string[];
   streak: number;
+  fixtureId: string;
   onShare: () => void;
 }
 
-export function SolvedFixtureCard({ sport, year, score, cells, streak, onShare }: SolvedFixtureCardProps) {
+export function SolvedFixtureCard({ sport, year, score, cells, streak, fixtureId, onShare }: SolvedFixtureCardProps) {
   const title = year ? `${sport} (${year})` : sport;
 
   return (
@@ -24,13 +25,26 @@ export function SolvedFixtureCard({ sport, year, score, cells, streak, onShare }
       <p className="mt-3 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">
         🔥 {streak} dagars svit
       </p>
-      <button
-        type="button"
-        onClick={onShare}
-        className="mt-4 w-full rounded-xl bg-zinc-900 py-3 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
-      >
-        Dela resultat
-      </button>
+      <div className="mt-4 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onShare}
+          className="w-full rounded-xl bg-zinc-900 py-3 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
+        >
+          Dela resultat
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const challengeUrl = `${window.location.origin}?challenge=${fixtureId}&score=${score}`;
+            navigator.clipboard.writeText(challengeUrl);
+            alert('Utmaningslänk kopierad till urklipp! Skicka den till en vän.');
+          }}
+          className="w-full py-3 bg-blue-600 text-white font-black uppercase rounded-xl hover:bg-blue-700 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
+        >
+          <span>⚔️</span> Utmana en vän
+        </button>
+      </div>
     </div>
   );
 }

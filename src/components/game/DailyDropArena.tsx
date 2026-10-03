@@ -668,6 +668,7 @@ export function DailyDropArena(props: {
                   score={earnedScore ?? score}
                   cells={gridCells}
                   streak={streak}
+                  fixtureId={props.specificMatch || challenge.id}
                   onShare={handleShareResult}
                 />
               ) : (

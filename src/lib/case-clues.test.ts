@@ -9,9 +9,20 @@ describe("caseClues", () => {
       year: 1980,
     });
     expect(clues[0]).toBe(
-      "En drömduell mellan två motsatser på Centre Court: den stoiske skandinaviske baslinjemästaren mot den eldige serve-och-volley-spelaren från New York.",
+      "En drömduell på Centre Court mellan två raka motsatser: den stoiske skandinaviske baslinjemästaren mot den eldige serve-och-volley-spelaren från New York.",
     );
     expect(clues.join(" ")).not.toMatch(/\b(the|and|with|winner|scoreboard)\b/i);
+  });
+
+  it("opens the 1972 Summit Series in Swedish", () => {
+    const clues = caseClues({
+      slug: "summit-series-1972",
+      context: "Summit Series-avgörandet",
+      year: 1972,
+    });
+    expect(clues[0]).toBe(
+      "En enastående 8-matchers interkontinental drabbning som ställde NHL-superstjärnor mot den hemlighetsfulla Röd Maskinen.",
+    );
   });
 
   it("keeps the other case ladders in Swedish", () => {
