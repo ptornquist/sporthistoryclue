@@ -135,7 +135,7 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
               {recap.challengeId
                 ? story?.id === recap.challengeId
                   ? story.text
-                  : "Opening the recap…"
+                  : "Öppnar sammanfattningen…"
                 : "The solved dossier is filed in the archive."}
             </p>
             <div className="mt-6 flex justify-end gap-2">

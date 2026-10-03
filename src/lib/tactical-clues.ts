@@ -65,12 +65,18 @@ function looksLikeClue(record: Record<string, unknown>): boolean {
 function preferredSlot(record: Record<string, unknown>): number | null {
   const kind = typeof record.kind === "string" ? record.kind.toLowerCase() : "";
   const kicker = typeof record.kicker === "string" ? record.kicker.toLowerCase() : "";
-  if (kind === "quote" || kicker.includes("climax")) return 4;
+  if (kind === "quote" || kicker.includes("climax") || kicker.includes("klimax")) return 4;
   if (kind === "image" || ("image" in record && kind !== "text" && kind !== "stats")) return 3;
-  if (kind === "stats" || kicker.includes("lineup") || kicker.includes("result")) return 2;
-  if (kicker.includes("era")) return 1;
-  if (kicker.includes("final")) return 1;
-  if (kind === "text" || kicker.includes("field") || kicker.includes("arena") || kicker.includes("venue")) {
+  if (kind === "stats" || kicker.includes("lineup") || kicker.includes("result") || kicker.includes("uppställning")) return 2;
+  if (kicker.includes("era") || kicker.includes("epok")) return 1;
+  if (kicker.includes("final") || kicker.includes("slutbrief")) return 1;
+  if (
+    kind === "text" ||
+    kicker.includes("field") ||
+    kicker.includes("fält") ||
+    kicker.includes("arena") ||
+    kicker.includes("venue")
+  ) {
     return 0;
   }
   return null;

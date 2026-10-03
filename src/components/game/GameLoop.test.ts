@@ -44,7 +44,7 @@ describe("ClueStack", () => {
     const html = renderToStaticMarkup(
       createElement(ClueStack, { clues, revealedIndex: 0, locked: false, onReveal: vi.fn() }),
     );
-    expect(html).toContain("Kort #1: Arena &amp; insatser");
+    expect(html).toContain("Kort #1: Arena &amp; förutsättningar");
     expect(html).toContain("Rink");
     expect(html).not.toContain("Epok &amp; sammanhang");
     expect(html).toContain("VISA NÄSTA LEDTRÅD (-1,500 POÄNG)");

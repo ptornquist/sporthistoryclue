@@ -4,12 +4,12 @@ const SCOREBOARD =
 const NUMERIC_SCORE =
   /\b\d+\s*[–—-]\s*\d+\b|\bperfect 10\b|\b\d+\.\d{2}\b|\b(?:ko|tko)\b|\bround\s+\d+\b/i;
 
-const PADDED_CLUE = /^clue #\d+:/i;
+const PADDED_CLUE = /^(clue|ledtråd) #\d+:/i;
 
 const PERSON = /\b[A-Z][a-zà-ÿ]{2,}(?:\s+[A-Z][a-zà-ÿ]{2,})+\b/g;
 
 const VENUE =
-  /\b(venue|stadium|arena|rink|court|olympic|olympics|world cup|tournament|quarter-final|semi-final|medal|village|stage|setting|calendar)\b|\b(?:1[89]\d{2}|20\d{2})\b/i;
+  /\b(venue|stadium|arena|rink|court|olympic|olympics|world cup|tournament|quarter-final|semi-final|medal|village|stage|setting|calendar|scen\w*|kalender\w*|mästerskap\w*|turnering\w*)\b|\b(?:1[89]\d{2}|20\d{2})\b/i;
 
 const PLACE_WORD =
   /^(lake|new|san|los|mexico|centre|center|world|olympic|estadio|old|wembley|azteca|barcelona|munich|berlin|athens|paris|london|rome|tokyo|beijing|sydney|seoul|montreal|moscow|kinshasa|wimbledon|roland|queens|flushing|panathenaic|centre|city|cup|games|series|final|court|stadium|arena|rink)$/i;
@@ -34,13 +34,13 @@ export function arrangeClueLadder(
   const tournament = hints?.category?.trim().toLowerCase();
   const venueFill: [string, string] = [
     tournament
-      ? `The stage belongs to the ${tournament}, and the sport's own calendar has circled this date.`
-      : "The venue is a championship ground, and the tournament bracket is down to a deciding tie.",
-    "The setting narrows the map: a famous arena for this sport, not a friendly exhibition.",
+      ? `Scenen tillhör ${tournament}, och sportens egen kalender har ringat in datumet.`
+      : "Arenan är en mästerskapsplan, och turneringsträdet är nere på en avgörande match.",
+    "Platsen smalnar av kartan: en berömd arena för den här sporten, inte en vänskapsmatch.",
   ];
   const stakes = [
-    "The building is already on its feet. The next minute will be argued about for years.",
-    "One side carries the favorite's burden. The other only needs one swing of momentum.",
+    "Byggnaden står redan upp. Nästa minut kommer att diskuteras i åratal.",
+    "Den ena sidan bär favoritens börda. Den andra behöver bara ett omslag i momentum.",
   ];
   const [nameClue, scoreClue] = pickDecisive(decisive);
   const [venueClue, tournamentClue] = twoDistinct(venue, venueFill);
@@ -63,8 +63,8 @@ function twoDistinct(preferred: string[], fills: [string, string]): [string, str
 }
 
 function pickDecisive(decisive: string[]): [string, string] {
-  const fallbackName = "The decisive names stay with the final score, revealed only once the stage is clear.";
-  const fallbackScore = "The final score is the line that closed the record.";
+  const fallbackName = "De avgörande namnen stannar hos slutresultatet och visas först när scenen är klar.";
+  const fallbackScore = "Slutresultatet är raden som stängde protokollet.";
   const numeric = decisive.find((clue) => NUMERIC_SCORE.test(clue));
   const named = decisive.find((clue) => clue !== numeric && isNamedResult(clue));
   const first = named ?? decisive.find((clue) => clue !== numeric) ?? fallbackName;

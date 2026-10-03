@@ -10,11 +10,11 @@ export interface TacticalTile {
 }
 
 const TACTICAL_TILES: readonly Omit<TacticalTile, "text">[] = [
-  { id: "arena", icon: "🏟️", name: "The Arena & Stakes", cost: 1000, image: false },
-  { id: "epoch", icon: "⏱️", name: "Era & Context", cost: 1500, image: false },
-  { id: "profiles", icon: "📋", name: "Lineup & Tactics", cost: 2000, image: false },
-  { id: "archive", icon: "📸", name: "Archive Photo", cost: 2500, image: true },
-  { id: "decisive", icon: "⚡", name: "The Climax", cost: 3500, image: false },
+  { id: "arena", icon: "🏟️", name: "Arena & förutsättningar", cost: 1000, image: false },
+  { id: "epoch", icon: "⏱️", name: "Epok & sammanhang", cost: 1500, image: false },
+  { id: "profiles", icon: "📋", name: "Laguppställning & taktik", cost: 2000, image: false },
+  { id: "archive", icon: "📸", name: "Arkivfoto", cost: 2500, image: true },
+  { id: "decisive", icon: "⚡", name: "Klimaxet", cost: 3500, image: false },
 ];
 
 export const FREE_TILE_ID = "arena";

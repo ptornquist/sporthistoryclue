@@ -67,17 +67,17 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
 }
 
 const OLYMPIC_DECOYS = [
-  "1896 Athens: First Modern Olympiad (1896)",
-  "1936 Berlin Olympics (1936)",
-  "1968 Mexico City: Black Power Salute (1968)",
-  "1988 Seoul Olympics (1988)",
+  "1896 Aten: de första moderna olympiska spelen (1896)",
+  "1936 OS i Berlin (1936)",
+  "1968 Mexico City: black power-hälsningen (1968)",
+  "1988 OS i Seoul (1988)",
 ];
 
 const GENERAL_DECOYS = [
-  "1980 Lake Placid: USA vs Soviet Union",
-  "1992 Barcelona: USA Dream Team vs Croatia",
-  "1994 Lillehammer: Sweden vs Canada",
-  "1974 Munich: West Germany vs Netherlands",
+  "1980 Lake Placid: USA mot Sovjetunionen",
+  "1992 Barcelona: USA:s uppvisningslag mot Kroatien",
+  "1994 Lillehammer: Sverige mot Kanada",
+  "1974 München: Västtyskland mot Nederländerna",
 ];
 
 export function fourDistinctOptions(rawOptions: string[], correct: string, decoys: string[]): string[] {
@@ -163,11 +163,11 @@ function subjectFromMatchup(label: string, fallbackYear: number): { subject: str
 
 function caseLadder(file: { context: string; year: number }): string[] {
   return [
-    `${file.context}. The venue card is the first one in this file.`,
-    `${file.year} belongs to a longer stretch of the sport.`,
-    "Names and numbers stay off this card.",
-    `A cropped photograph from the ${file.context.toLowerCase()}.`,
-    "The decisive call is the last card in this file.",
+    `${file.context}. Arenakortet är det första i den här akten.`,
+    `${file.year} hör till en längre epok i sporten.`,
+    "Namn och siffror stannar utanför det här kortet.",
+    `Ett beskuret arkivfoto från ${file.context.toLowerCase()}.`,
+    "Det avgörande ögonblicket är det sista kortet i akten.",
   ];
 }
 
@@ -214,7 +214,7 @@ function clueLine(clue: Clue): string {
   if (clue.stats?.length) {
     return clue.stats.map((stat) => `${stat.label}: ${stat.value}`).join(" · ");
   }
-  return clue.kicker ?? "A detail from the archive.";
+  return clue.kicker ?? "En detalj ur arkivet.";
 }
 
 function shuffle(items: string[]): string[] {
@@ -388,7 +388,7 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: fixture.clues.length > 0 ? fixture.clues : ["A detail from the archive."],
+    clues: fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."],
     options: options.length > 0 ? options : generated,
   };
 }

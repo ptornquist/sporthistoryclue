@@ -43,17 +43,17 @@ function dayIndexFromKey(dateKey: string): number {
 }
 
 const OLYMPIC_DECOYS = [
-  '1896 Athens: First Modern Olympiad (1896)',
-  '1936 Berlin Olympics (1936)',
-  '1968 Mexico City: Black Power Salute (1968)',
-  '1988 Seoul Olympics (1988)',
+  '1896 Aten: de första moderna olympiska spelen (1896)',
+  '1936 OS i Berlin (1936)',
+  '1968 Mexico City: black power-hälsningen (1968)',
+  '1988 OS i Seoul (1988)',
 ];
 
 const GENERAL_DECOYS = [
-  '1980 Lake Placid: USA vs Soviet Union',
-  '1992 Barcelona: USA Dream Team vs Croatia',
-  '1994 Lillehammer: Sweden vs Canada',
-  '1974 Munich: West Germany vs Netherlands',
+  '1980 Lake Placid: USA mot Sovjetunionen',
+  '1992 Barcelona: USA:s uppvisningslag mot Kroatien',
+  '1994 Lillehammer: Sverige mot Kanada',
+  '1974 München: Västtyskland mot Nederländerna',
 ];
 
 function setupOptions(options: string[], category: string): string[] {

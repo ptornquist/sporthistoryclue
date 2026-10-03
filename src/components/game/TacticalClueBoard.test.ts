@@ -34,7 +34,7 @@ describe("TacticalClueBoard", () => {
     expect(html).toContain("bg-rose-50/90 border-rose-600 text-rose-950");
     expect(html).toContain("ring-4 ring-zinc-900/30 -translate-y-1 shadow-[5px_5px_0px_0px_rgba(24,24,27,1)]");
     expect(html).toContain("FREE / UNLOCKED");
-    expect(html).toContain("ACTIVE INTEL: 🏟️ The Arena &amp; Stakes");
+    expect(html).toContain("ACTIVE INTEL: 🏟️ Arena &amp; förutsättningar");
     expect(html).toContain("border-[3px] border-zinc-900 bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[5px_5px_0px_0px_rgba(24,24,27,1)] relative overflow-hidden mt-4 mb-4");
     expect(html).toContain("bg-zinc-900 text-white font-black px-3 py-1 rounded-lg text-xs uppercase tracking-wider inline-flex items-center gap-1.5 mb-3");
     expect(html).toContain("text-zinc-900 text-sm sm:text-base md:text-lg font-semibold leading-snug sm:leading-relaxed");
@@ -58,9 +58,9 @@ describe("TacticalClueBoard", () => {
         onSelect: () => undefined,
       }),
     );
-    expect(html).toContain("ACTIVE INTEL: ⏱️ Era &amp; Context");
+    expect(html).toContain("ACTIVE INTEL: ⏱️ Epok &amp; sammanhang");
     expect(html).toContain("A winter of amateurs.");
-    expect(html).toContain("The Arena &amp; Stakes");
+    expect(html).toContain("Arena &amp; förutsättningar");
     expect(html).not.toContain("The rink is loud.");
   });
 
