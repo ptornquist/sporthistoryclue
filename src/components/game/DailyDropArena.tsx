@@ -567,9 +567,13 @@ export function DailyDropArena(props: {
                 >
                   Nästa match →
                 </Link>
-              ) : (
+              ) : isSolved || gameWon ? (
                 <p className="mt-3 text-xs font-bold uppercase tracking-wider text-emerald-700">
                   Kampanjen är avklarad
+                </p>
+              ) : (
+                <p className="mt-3 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Sista matchen
                 </p>
               )}
             </div>
@@ -682,7 +686,7 @@ export function DailyDropArena(props: {
                 >
                   Nästa match →
                 </Link>
-              ) : storyline ? (
+              ) : storyline && (isSolved || gameWon) ? (
                 <p className="text-center text-xs font-bold uppercase tracking-wider text-emerald-700">
                   Kampanjen är avklarad
                 </p>
