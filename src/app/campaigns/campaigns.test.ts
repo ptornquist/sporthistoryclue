@@ -19,7 +19,7 @@ describe("storylines layout", () => {
     expect(html).toContain(">CLUE<");
     expect(html).toContain(">BETA<");
     expect(html).toContain("hidden md:flex items-center gap-6 text-xs font-black uppercase tracking-wider text-zinc-700");
-    expect(html).toContain("Dagens Drop");
+    expect(html).toContain("Dagens Kluring");
     expect(html).toContain("Utmaningar");
     expect(html).toContain("Historik");
     expect(html).toContain("Tabell");

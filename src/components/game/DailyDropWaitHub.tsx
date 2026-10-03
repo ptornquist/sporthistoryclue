@@ -40,7 +40,7 @@ function MidnightCountdown() {
     <div className="bg-white border border-zinc-200 rounded-2xl p-5 text-center shadow-sm">
       <p className="flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">
         <Timer className="h-4 w-4 text-blue-600" aria-hidden="true" />
-        Next Daily Drop In
+        Nästa kluring om
       </p>
       <p
         className="mt-3 text-3xl sm:text-4xl font-black tracking-wider text-blue-600 font-mono tabular-nums"

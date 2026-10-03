@@ -66,7 +66,7 @@ export default function AuthGateModal({
         </h3>
 
         <p className="text-xs text-zinc-600 leading-relaxed mt-2 mb-5">
-          <strong>Dagens Drop</strong> är alltid gratis — inget konto behövs. Men{' '}
+          <strong>Dagens Kluring</strong> är alltid gratis — inget konto behövs. Men{' '}
           <strong>{featureName}</strong> ingår i scoutarkivet. Skapa ett gratis konto för att
           spela obegränsat och behålla karriärsviten på alla enheter.
         </p>
@@ -106,7 +106,7 @@ export default function AuthGateModal({
             onClick={onClose}
             className="w-full py-2 text-zinc-400 hover:text-zinc-600 text-xs font-medium transition-colors"
           >
-            Kanske senare · Tillbaka till dagens drop
+            Kanske senare · Tillbaka till dagens kluring
           </button>
         </div>
       </div>
