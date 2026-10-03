@@ -221,8 +221,12 @@ export function publicCaseTitle(title: string | null | undefined): string {
   return TITLE_RENAMES[value.toLowerCase()] ?? value;
 }
 
-export function fixtureSubtitle(year: number, context: string, options?: { clueCount?: boolean }): string {
-  const base = `${year} · ${context}`;
+export function fixtureSubtitle(
+  year: number,
+  context: string,
+  options?: { clueCount?: boolean; showYear?: boolean },
+): string {
+  const base = options?.showYear === false ? context : `${year} · ${context}`;
   if (options?.clueCount === false) return base;
   return `${base} · 6 ledtrådar`;
 }
