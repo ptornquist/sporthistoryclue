@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import Header from '@/components/Header';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
@@ -16,6 +17,8 @@ type HomeSearchParams = {
   duel?: string | string[];
   pts?: string | string[];
   match?: string | string[];
+  challenge?: string | string[];
+  score?: string | string[];
   campaign?: string | string[];
   date?: string | string[];
   id?: string | string[];
@@ -65,6 +68,10 @@ export default async function Page({
   searchParams: Promise<HomeSearchParams>;
 }) {
   const params = await searchParams;
+  const challengeSlug = firstParam(params.challenge);
+  if (!firstParam(params.match) && /^[a-z0-9-]{1,80}$/i.test(challengeSlug)) {
+    redirect(`/play/${challengeSlug}`);
+  }
   const specificMatch = firstParam(params.match);
   const campaignId = firstParam(params.campaign);
   const duel = firstParam(params.duel);

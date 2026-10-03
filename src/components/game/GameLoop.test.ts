@@ -72,6 +72,7 @@ describe("SolvedFixtureCard", () => {
         score: 8500,
         cells: ["🟩", "⬜", "⬜", "⬜", "⬜"],
         streak: 3,
+        fixtureId: "miracle-on-ice-1980",
         onShare: vi.fn(),
       }),
     );
@@ -81,6 +82,8 @@ describe("SolvedFixtureCard", () => {
     expect(html).toContain("🟩");
     expect(html).toContain("🔥 3 dagars svit");
     expect(html).toContain("Dela resultat");
+    expect(html).toContain("Utmana en vän");
+    expect(html).toContain("bg-blue-600");
   });
 });
 
