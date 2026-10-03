@@ -1,7 +1,10 @@
 import "server-only";
 
 import { findCase } from "@/lib/case-files";
-import { allMatchupLabels, solvedMatchup } from "@/lib/case-solutions";
+import { caseClues } from "@/lib/case-clues";
+import { solvedMatchup } from "@/lib/case-solutions";
+import { canonicalSport } from "@/lib/decoy-options";
+import { choiceSportKey, choicesForSport, optionSport } from "@/lib/sport-options";
 import { puzzles } from "@/lib/catalog";
 import {
   fetchDailyChallengeRow,
@@ -65,20 +68,6 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
     return false;
   }
 }
-
-const OLYMPIC_DECOYS = [
-  "1896 Aten: de första moderna olympiska spelen (1896)",
-  "1936 OS i Berlin (1936)",
-  "1968 Mexico City: black power-hälsningen (1968)",
-  "1988 OS i Seoul (1988)",
-];
-
-const GENERAL_DECOYS = [
-  "1980 Lake Placid: USA mot Sovjetunionen",
-  "1992 Barcelona: USA:s uppvisningslag mot Kroatien",
-  "1994 Lillehammer: Sverige mot Kanada",
-  "1974 München: Västtyskland mot Nederländerna",
-];
 
 export function fourDistinctOptions(rawOptions: string[], correct: string, decoys: string[]): string[] {
   return shuffle(distinctOptionValues([correct, ...rawOptions, ...decoys], 4));
@@ -161,24 +150,29 @@ function subjectFromMatchup(label: string, fallbackYear: number): { subject: str
   return { subject: matched[1].trim(), year: Number(matched[2]) };
 }
 
-function caseLadder(file: { context: string; year: number }): string[] {
-  return [
-    `${file.context}. Arenakortet är det första i den här akten.`,
-    `${file.year} hör till en längre epok i sporten.`,
-    "Namn och siffror stannar utanför det här kortet.",
-    `Ett beskuret arkivfoto från ${file.context.toLowerCase()}.`,
-    "Det avgörande ögonblicket är det sista kortet i akten.",
-  ];
+function caseLadder(file: { slug?: string; context: string; year: number }): string[] {
+  return caseClues(file);
+}
+
+function fixtureSport(fixture: SecretDaily): string {
+  const file = findCase(fixture.id);
+  if (file) return file.sport;
+  const puzzle = puzzles.find((item) => item.id === fixture.id);
+  if (puzzle) return canonicalSport(puzzle.sport);
+  return canonicalSport(fixture.category);
 }
 
 async function withDistinctOptions(fixture: SecretDaily): Promise<SecretDaily> {
-  const decoys = await decoyLabels(fixture);
+  const sport = fixtureSport(fixture);
   const correct =
     fixture.options.find((option) => gradeOption(fixture, option)) ??
     `${fixture.subject} (${fixture.year})`;
+  const sameSport = fixture.options.filter(
+    (option) => optionSport(option) === choiceSportKey(sport) || gradeOption(fixture, option),
+  );
   return {
     ...fixture,
-    options: fourDistinctOptions(fixture.options, correct, decoys),
+    options: fourDistinctOptions(sameSport, correct, choicesForSport(sport)),
   };
 }
 
@@ -226,38 +220,6 @@ function shuffle(items: string[]): string[] {
     copy[swap] = current;
   }
   return copy;
-}
-
-async function decoyLabels(fixture: SecretDaily): Promise<string[]> {
-  const themed = /olympic/i.test(fixture.category) ? OLYMPIC_DECOYS : GENERAL_DECOYS;
-  const fromArchive = await challengeDecoys(fixture);
-  const fromCatalog = puzzles
-    .filter((puzzle) => puzzle.title !== fixture.subject)
-    .map((puzzle) => puzzle.title);
-  return [...allMatchupLabels(), ...fromArchive, ...fromCatalog, ...themed, ...GENERAL_DECOYS];
-}
-
-async function challengeDecoys(fixture: SecretDaily): Promise<string[]> {
-  const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
-  if (!client) return [];
-  try {
-    const { data, error } = await client.from("challenges").select("subject, year, category").limit(8);
-    if (error || !data?.length) return [];
-    const sameCategory = data.filter((row) => {
-      const category = stringField(row, "category");
-      return category && category.toLowerCase() === fixture.category.toLowerCase();
-    });
-    const pool = (sameCategory.length >= 3 ? sameCategory : data).slice(0, 5);
-    return pool
-      .map((row) => {
-        const subject = stringField(row, "subject");
-        const year = numberField(row, "year");
-        return subject && year ? `${subject} (${year})` : "";
-      })
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
 }
 
 async function loadFromTable(
