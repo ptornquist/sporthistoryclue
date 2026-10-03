@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
+import Link from 'next/link';
 import Header from '@/components/Header';
-import { supabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
-import AuthGateModal from '@/components/AuthGateModal';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
 import { findCase, previewFromCase } from '@/lib/case-files';
+import { arenaHref, firstOpenMatch } from '@/lib/storylines';
 
 interface Campaign {
   id: string;
@@ -72,40 +71,14 @@ const STORYLINES = CAMPAIGNS.map((campaign) => ({
 }));
 
 export default function CampaignsPage() {
-  const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<unknown>(null);
-  const [showAuthGate, setShowAuthGate] = useState(false);
   const solved = useSolvedFixtures(
     STORYLINES.flatMap((campaign) =>
       campaign.matches.map((match) => ({ key: match.key, lookupIds: match.lookupIds })),
     ),
   );
 
-  useEffect(() => {
-    if (!isSupabaseConfigured) return;
-    supabaseClient.auth
-      .getUser()
-      .then(({ data }) => setCurrentUser(data.user ?? null))
-      .catch(() => setCurrentUser(null));
-  }, []);
-
-  // Campaign fixtures live in the Scout archive, so guests are prompted to sign up first.
-  const handleStartMatch = (slug: string) => {
-    if (!currentUser) {
-      setShowAuthGate(true);
-      return;
-    }
-    router.push(`/?match=${slug}`);
-  };
-
   return (
     <main className="min-h-screen overflow-x-hidden w-full max-w-full bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
-      <AuthGateModal
-        isOpen={showAuthGate}
-        onClose={() => setShowAuthGate(false)}
-        featureName="Kampanjer"
-      />
-
       <Header />
 
       {/* Main Container */}
@@ -160,7 +133,7 @@ export default function CampaignsPage() {
                         context={match.context}
                         solvedScore={record?.score ?? null}
                         matchup={record?.matchup ?? null}
-                        onDeduce={() => handleStartMatch(match.key)}
+                        href={arenaHref(match.key, campaign.id)}
                       />
                     );
                   })}
@@ -172,13 +145,15 @@ export default function CampaignsPage() {
                   {campaign.matches.length}{' '}
                   {campaign.matches.length === 1 ? 'historisk match' : 'historiska matcher'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => handleStartMatch(campaign.matches[0].key)}
-                  className="w-full max-w-full px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors sm:w-auto"
+                <Link
+                  href={arenaHref(
+                    (firstOpenMatch(campaign.matches, solved) ?? campaign.matches[0]).key,
+                    campaign.id,
+                  )}
+                  className="w-full max-w-full px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors sm:w-auto text-center"
                 >
                   Starta kampanj
-                </button>
+                </Link>
               </div>
             </article>
           ))}

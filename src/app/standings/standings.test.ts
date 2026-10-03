@@ -50,15 +50,16 @@ describe("StandingsBoard", () => {
   it("offers the club championship tab and ranks Klubbligan by poäng", async () => {
     const { default: StandingsPage } = await import("./page");
     const page = renderToStaticMarkup(createElement(StandingsPage));
-    expect(page).toContain("GLOBALA SCOUTER");
-    expect(page).toContain("KLUBBLIGAN");
+    expect(page).toContain("🌐 GLOBALA SCOUTER");
+    expect(page).toContain("🏒 HOCKEYLIGAN");
+    expect(page).toContain("⚽ FOTBOLLSLIGAN");
     expect(page).toContain('href="/archive"');
 
     const tabs = renderToStaticMarkup(
       createElement(ClubLeagueTabs, { league: "hockey", onLeague: () => undefined }),
     );
-    expect(tabs).toContain("🏒 Ishockey-ligan");
-    expect(tabs).toContain("⚽ Fotbollsligan");
+    expect(tabs).toContain("🏒 HOCKEYLIGAN");
+    expect(tabs).toContain("⚽ FOTBOLLSLIGAN");
     expect(tabs).toContain('aria-selected="true"');
 
     const board = renderToStaticMarkup(

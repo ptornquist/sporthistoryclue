@@ -87,8 +87,21 @@ export function firstOpenMatch(
   return matches.find((match) => solved[match.key] == null) ?? matches[0];
 }
 
+const CAMPAIGN_HEADLINES: Record<string, string> = {
+  "cold-war-on-ice": "Kalla kriget på isen",
+  "olympic-miracles": "Olympiska mirakel",
+  "world-cup-epics": "VM-epos",
+  "rivalries-of-the-century": "Århundradets rivaliteter",
+};
+
+export function campaignHeadline(campaignId: string | null | undefined): string {
+  if (!campaignId) return "Arkivmatch";
+  return CAMPAIGN_HEADLINES[campaignId] ?? "Arkivmatch";
+}
+
 export function arenaHref(matchId: string, campaignId?: string): string {
-  const params = new URLSearchParams({ match: matchId });
+  const params = new URLSearchParams();
   if (campaignId) params.set("campaign", campaignId);
-  return `/?${params.toString()}`;
+  const query = params.toString();
+  return query ? `/play/${matchId}?${query}` : `/play/${matchId}`;
 }

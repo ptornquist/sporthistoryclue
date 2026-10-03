@@ -31,6 +31,9 @@ describe("storylines layout", () => {
     expect(html).toContain("sm:flex-row sm:items-center");
     expect(html).toContain("DEDUCERA →");
     expect(html).toContain("Starta kampanj");
+    expect(html).toContain('href="/play/miracle-on-ice-1980?campaign=cold-war-on-ice"');
+    expect(html).toContain('href="/play/pele-sweden-1958?campaign=world-cup-epics"');
+    expect(html).not.toContain('href="/?match=');
     expect(html).not.toMatch(/w-\[\d+px\]/);
   });
 });
