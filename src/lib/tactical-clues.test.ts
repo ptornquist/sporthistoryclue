@@ -60,4 +60,29 @@ describe("resolveTacticalClueList", () => {
     expect(resolved[4]).toBe("Do you believe in miracles? YES!");
     expect(resolved[0]?.includes("miracles")).toBe(false);
   });
+
+  it("keeps named opponents off the lineup card until the last tile", () => {
+    const resolved = resolveTacticalClueList([
+      { kind: "text", kicker: "Fältnotis", body: "Hettan ligger kvar på hög höjd." },
+      {
+        kind: "text",
+        kicker: "Slutbrief",
+        body: "En solskenshistoria på hög höjd där teologin mötte fysiken i en ikonisk kvartsfinal.",
+      },
+      {
+        kind: "stats",
+        kicker: "Resultatkort",
+        stats: [
+          { label: "Omgång", value: "VM-kvartsfinal", revealedAtClue: 3 },
+          { label: "Motståndare", value: "England", revealedAtClue: 6 },
+        ],
+      },
+      { kind: "quote", kicker: "Radio", quote: "En löpning som inte tar slut." },
+    ]);
+    expect(resolved[0]).not.toMatch(/England|Argentina|1986/);
+    expect(resolved[1]).not.toMatch(/England|Argentina/);
+    expect(resolved[2]).toContain("VM-kvartsfinal");
+    expect(resolved[2]).not.toContain("England");
+    expect(resolved[4]).toContain("England");
+  });
 });

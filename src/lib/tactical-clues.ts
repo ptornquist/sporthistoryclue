@@ -29,18 +29,26 @@ function hasSlotKey(record: Record<string, unknown>): boolean {
 }
 
 function statLine(value: unknown): string {
-  if (!Array.isArray(value)) return "";
-  return value
-    .map((item) => {
-      if (!item || typeof item !== "object") return "";
-      const stat = item as Record<string, unknown>;
-      const label = typeof stat.label === "string" ? stat.label.trim() : "";
-      const statValue = typeof stat.value === "string" ? stat.value.trim() : "";
-      if (label && statValue) return `${label}: ${statValue}`;
-      return label || statValue;
-    })
-    .filter(Boolean)
-    .join(" · ");
+  return splitStats(value).early;
+}
+
+/** Names and years marked for clue 5+ stay off the lineup card. */
+function splitStats(value: unknown): { early: string; late: string } {
+  if (!Array.isArray(value)) return { early: "", late: "" };
+  const early: string[] = [];
+  const late: string[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const stat = item as Record<string, unknown>;
+    const label = typeof stat.label === "string" ? stat.label.trim() : "";
+    const statValue = typeof stat.value === "string" ? stat.value.trim() : "";
+    const line = label && statValue ? `${label}: ${statValue}` : label || statValue;
+    if (!line) continue;
+    const reveal = typeof stat.revealedAtClue === "number" ? stat.revealedAtClue : 3;
+    if (reveal >= 5) late.push(line);
+    else early.push(line);
+  }
+  return { early: early.join(" · "), late: late.join(" · ") };
 }
 
 function textOf(value: unknown): string {
@@ -94,8 +102,11 @@ function isKindClue(record: Record<string, unknown>): boolean {
   return typeof record.kind === "string" && CLUE_KINDS.has(record.kind.toLowerCase());
 }
 
-function assignClue(record: Record<string, unknown>, slots: string[], leftovers: string[]): void {
-  const text = textOf(record);
+function assignClue(record: Record<string, unknown>, slots: string[], leftovers: string[], lateStats: string[]): void {
+  const kind = typeof record.kind === "string" ? record.kind.toLowerCase() : "";
+  const stats = kind === "stats" || Array.isArray(record.stats) ? splitStats(record.stats) : null;
+  const text = stats ? stats.early : textOf(record);
+  if (stats?.late) lateStats.push(stats.late);
   if (!text) return;
   const index = preferredSlot(record);
   if (index !== null && !slots[index]) {
@@ -113,12 +124,19 @@ function fillEmpty(slots: string[], leftovers: string[]): void {
   }
 }
 
+function attachLateStats(slots: string[], lateStats: string[]): void {
+  const extra = lateStats.filter(Boolean).join(" · ");
+  if (!extra) return;
+  slots[4] = slots[4] ? `${slots[4]} · ${extra}` : extra;
+}
+
 function readStructuredSlots(source: unknown): string[] | null {
   const parsed = parseMaybeJson(source);
   if (!parsed || typeof parsed !== "object") return null;
 
   const slots = ["", "", "", "", ""];
   const leftovers: string[] = [];
+  const lateStats: string[] = [];
 
   if (Array.isArray(parsed)) {
     if (parsed.length === 0 || parsed.every((item) => typeof item === "string")) return null;
@@ -133,13 +151,13 @@ function readStructuredSlots(source: unknown): string[] | null {
       const record = item as Record<string, unknown>;
       if (isKindClue(record)) {
         recognized = true;
-        assignClue(record, slots, leftovers);
+        assignClue(record, slots, leftovers, lateStats);
       } else if (hasSlotKey(record)) {
         recognized = true;
         assignKeys(record, slots);
       } else if (looksLikeClue(record)) {
         recognized = true;
-        assignClue(record, slots, leftovers);
+        assignClue(record, slots, leftovers, lateStats);
       } else {
         const text = textOf(record);
         if (text) leftovers.push(text);
@@ -147,13 +165,15 @@ function readStructuredSlots(source: unknown): string[] | null {
     }
     if (!recognized) return null;
     fillEmpty(slots, leftovers);
+    attachLateStats(slots, lateStats);
     return slots;
   }
 
   const record = parsed as Record<string, unknown>;
   if (isKindClue(record)) {
-    assignClue(record, slots, leftovers);
+    assignClue(record, slots, leftovers, lateStats);
     fillEmpty(slots, leftovers);
+    attachLateStats(slots, lateStats);
     return slots;
   }
   if (hasSlotKey(record)) {
@@ -162,8 +182,9 @@ function readStructuredSlots(source: unknown): string[] | null {
     return slots;
   }
   if (looksLikeClue(record)) {
-    assignClue(record, slots, leftovers);
+    assignClue(record, slots, leftovers, lateStats);
     fillEmpty(slots, leftovers);
+    attachLateStats(slots, lateStats);
     return slots;
   }
   return null;

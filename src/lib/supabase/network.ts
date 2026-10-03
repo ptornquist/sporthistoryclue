@@ -80,3 +80,30 @@ export async function searchScouts(
   if (error) throw error;
   return data ?? [];
 }
+
+export async function loadChallengeScouts(currentUserId: string): Promise<{
+  scouts: ScoutProfile[];
+  source: "following" | "active";
+}> {
+  const following = await getFollowingIds(currentUserId);
+  if (following.length > 0) {
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("id, username, career_score, fixtures_cleared")
+      .in("id", following);
+    if (error) throw error;
+    const scouts = (data ?? []).filter((row) => row.username && row.id !== currentUserId);
+    if (scouts.length > 0) return { scouts, source: "following" };
+  }
+
+  const { data, error } = await supabaseClient
+    .from("profiles")
+    .select("id, username, career_score, fixtures_cleared")
+    .order("career_score", { ascending: false })
+    .limit(12);
+  if (error) throw error;
+  return {
+    scouts: (data ?? []).filter((row) => row.username && row.id !== currentUserId),
+    source: "active",
+  };
+}
