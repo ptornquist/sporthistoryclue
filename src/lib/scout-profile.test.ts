@@ -50,7 +50,7 @@ describe("public scout profiles", () => {
     const loaded = await loadPublicScout(supabase, "%40ada");
     expect(lookups).toEqual(["ada", "@ada"]);
     expect(loaded?.profile.career_score).toBe(14000);
-    expect(loaded?.badges.map((badge) => badge.name)).toEqual(["NYBÖRJARNÅL", "ARKIVLYKTA"]);
+    expect(loaded?.badges.map((badge) => badge.name)).toEqual(["BRONSMEDALJ", "SILVERMEDALJ"]);
   });
 
   it("hides challenge actions on your own profile", async () => {

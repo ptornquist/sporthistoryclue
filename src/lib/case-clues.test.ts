@@ -10,7 +10,7 @@ describe("caseClues", () => {
     });
     expect(clues[0]).not.toMatch(/Centre Court|New York|baslinjemästaren|1980/);
     expect(clues[4]).toBe(
-      "En drömduell på Centre Court mellan två raka motsatser: den stoiske skandinaviske baslinjemästaren mot den eldige serve-och-volley-spelaren från New York.",
+      "En drömduell på huvudbanan mellan två raka motsatser: den stoiske skandinaviske baslinjespelaren mot den hetlevrade nätspelaren från andra sidan Atlanten.",
     );
     expect(clues.join(" ")).not.toMatch(/\b(the|and|with|winner|scoreboard)\b/i);
   });
@@ -23,8 +23,9 @@ describe("caseClues", () => {
     });
     expect(clues[0]).not.toMatch(/NHL|Röd Maskinen|1972|Sovjet|Kanada/);
     expect(clues[4]).toBe(
-      "En enastående 8-matchers interkontinental drabbning som ställde NHL-superstjärnor mot den hemlighetsfulla Röd Maskinen.",
+      "Toppmötesserien 1972. Kanadas proffs möter det sovjetiska landslaget i åtta matcher, och sista minuten i Moskva avgör.",
     );
+    expect(clues.join(" ")).not.toMatch(/NHL|8-matchers|Röd Maskinen|roaring|spectators|avspark|mittcirkel|\bboll\b/i);
   });
 
   it("keeps the Pasadena bronze cryptic until the last card", () => {

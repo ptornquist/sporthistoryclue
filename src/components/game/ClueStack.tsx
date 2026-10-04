@@ -2,7 +2,7 @@ export const CLUE_TITLES = [
   "Arena & förutsättningar",
   "Epok & sammanhang",
   "Laguppställning & taktik",
-  "Arkivfoto",
+  "Det avgörande skedet",
   "Klimaxet",
 ] as const;
 

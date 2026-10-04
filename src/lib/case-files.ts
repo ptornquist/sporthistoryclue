@@ -157,11 +157,11 @@ export const SPORT_NAME: Record<CaseFile["sport"], string> = {
 };
 
 const SPORT_LABELS: Record<string, string[]> = {
-  ice_hockey: ["ice hockey", "hockey"],
-  football: ["football", "soccer"],
-  boxing: ["boxing"],
+  ice_hockey: ["ice hockey", "hockey", "ishockey"],
+  football: ["football", "soccer", "fotboll"],
+  boxing: ["boxing", "boxning"],
   tennis: ["tennis"],
-  athletics: ["athletics", "track and field", "track"],
+  athletics: ["athletics", "track and field", "track", "friidrott"],
   gymnastics: ["gymnastics"],
   basketball: ["basketball"],
 };

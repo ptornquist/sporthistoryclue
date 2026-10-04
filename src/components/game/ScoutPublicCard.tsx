@@ -70,10 +70,10 @@ export function ScoutPublicCard({
             {actions}
 
             <div>
-              <h2 className="text-xl font-black uppercase tracking-tight text-zinc-950">Utmärkelser</h2>
+              <h2 className="text-xl font-black uppercase tracking-tight text-zinc-950">Medaljer</h2>
               {badges.length === 0 ? (
                 <p className="mt-3 text-sm font-semibold text-zinc-500">
-                  Den här scouten har inga utmärkelser ännu.
+                  Den här scouten har inga medaljer ännu.
                 </p>
               ) : (
                 <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">

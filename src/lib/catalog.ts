@@ -487,7 +487,7 @@ export const puzzles: Puzzle[] = [
         kicker: "Resultatkort",
         stats: [
           { label: "Resultat", value: "6–4, 6–3, 6–3", revealedAtClue: 4 },
-          { label: "Arena", value: "Houston Astrodome", revealedAtClue: 5 },
+          { label: "Arena", value: "Inomhusarenan i Houston", revealedAtClue: 5 },
           { label: "Vinnare", value: "Billie Jean King", revealedAtClue: 6 },
           { label: "Format", value: "Bäst av fem, uppvisning med allt på spel", revealedAtClue: 3 },
         ],
@@ -500,7 +500,7 @@ export const puzzles: Puzzle[] = [
       },
       {
         kind: "image",
-        kicker: "Arkivbilden dras ut: Houston Astrodome fullsatt.",
+        kicker: "Arkivbilden dras ut: inomhusarenan i Houston, fullsatt.",
         image: { plateId: "lawn-tennis", scale: 1.35, x: 50, y: 50 },
       },
       {
@@ -637,7 +637,7 @@ export const puzzles: Puzzle[] = [
     title: "Miraklet på isen",
     teaser: "Collegestudenter, en supermakt och en fråga rakt in i en mikrofon.",
     summary:
-      "USA:s olympiska hockeylag av collegespelare slog Sovjetunionen med 4–3 i Lake Placid och tog sedan guld mot Finland.",
+      "USA:s olympiska hockeylag av collegespelare slog Sovjetunionen med 4–3 i den olympiska bergsbyn och tog sedan guld mot Finland.",
     answers: [
       "the miracle on ice",
       "miracle on ice",
@@ -649,7 +649,7 @@ export const puzzles: Puzzle[] = [
     clues: [
       {
         kind: "image",
-        kicker: "Beskuren bild: en isrink och en flagga i rörelse.",
+        kicker: "Beskuren bild: en is och en flagga i rörelse.",
         image: { plateId: "ice-rink", scale: 3.15, x: 70, y: 75 },
       },
       {
@@ -664,7 +664,7 @@ export const puzzles: Puzzle[] = [
           { label: "Resultat", value: "4–3", revealedAtClue: 4 },
           { label: "Vinnare", value: "USA", revealedAtClue: 5 },
           { label: "Motståndare", value: "Sovjetunionen", revealedAtClue: 5 },
-          { label: "Arena", value: "Lake Placid", revealedAtClue: 6 },
+          { label: "Arena", value: "Bergsbyn", revealedAtClue: 6 },
         ],
       },
       {
@@ -675,13 +675,13 @@ export const puzzles: Puzzle[] = [
       },
       {
         kind: "image",
-        kicker: "Arkivbilden dras ut: Olympic Field House i Lake Placid.",
+        kicker: "Arkivbilden dras ut: olympiahallen i bergsbyn.",
         image: { plateId: "ice-rink", scale: 1.28, x: 50, y: 50 },
       },
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Ett collegelag. Ett avgörande från en kapten. En semifinal som ett helt land minns som en final.",
+        body: "Ett universitetslag. Ett avgörande från en kapten. En semifinal som ett helt land minns som en final.",
       },
     ],
   },

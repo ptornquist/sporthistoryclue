@@ -46,9 +46,9 @@ describe("career stats shop access", () => {
     expect(html).toContain("👤 Profil");
     expect(html).toContain("🛍️ Handla i Shopen");
     expect(html).toContain("shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]");
-    expect(html).toContain("Scoututmärkelser (0)");
-    expect(html).toContain("Inga utmärkelser upplåsta ännu. Handla med karriärpoäng i shopen!");
-    expect(html.indexOf("Scoututmärkelser")).toBeLessThan(html.indexOf("Sök scouter"));
+    expect(html).toContain("Scoutmedaljer (0)");
+    expect(html).toContain("Inga medaljer upplåsta ännu. Handla med karriärpoäng i shopen!");
+    expect(html.indexOf("Scoutmedaljer")).toBeLessThan(html.indexOf("Sök scouter"));
     expect(html).toContain("Du har inte följt några scouter ännu.");
     expect(html).toContain("Mitt Nätverk");
     expect(html).not.toContain("LÅST NAMN");
