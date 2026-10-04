@@ -30,7 +30,7 @@ export const SUMMIT_SERIES_1972_OPTIONS = [
 /** Four buttons for Scandinavium 1984. Index 3 is the graded answer. */
 export const SVERIGE_SOVJET_1984_OPTIONS = [
   "Sverige mot Kanada (1987)",
-  "Tjeckoslovakien mot Sovjetunionen (1976)",
+  "Sverige mot Sovjetunionen (1981)",
   "Kanada mot Sovjetunionen (1972)",
   "Sverige mot Sovjetunionen (1984)",
 ] as const;
@@ -41,13 +41,13 @@ const PINNED_DAILY_OPTIONS: Record<string, readonly string[]> = {
 };
 
 function recognizePinnedOptions(options: readonly string[]): readonly string[] | null {
-  const incoming = distinctOptionValues([...options], 4);
+  const incoming = [...options].map((option) => option.trim()).filter(Boolean).sort();
   if (incoming.length < 4) return null;
   for (const set of Object.values(PINNED_DAILY_OPTIONS)) {
-    const same =
-      incoming.length === set.length &&
-      incoming.every((option) => set.some((item) => optionIdentity(item) === optionIdentity(option)));
-    if (same) return set;
+    const pinned = [...set].map((option) => option.trim()).sort();
+    if (incoming.length === pinned.length && incoming.every((option, index) => option === pinned[index])) {
+      return set;
+    }
   }
   return null;
 }
@@ -349,7 +349,7 @@ export function ensureFourDailyOptions(
   const pinnedKey = findCase(matchId ?? "")?.slug ?? matchId ?? "";
   const pinned = PINNED_DAILY_OPTIONS[pinnedKey] ?? recognizePinnedOptions(options ?? []);
   if (pinned) {
-    return fisherYates(distinctOptionValues([...pinned], 4), random);
+    return fisherYates([...pinned], random);
   }
 
   const sportKnown = Boolean(SPORT_CHOICES[key]);

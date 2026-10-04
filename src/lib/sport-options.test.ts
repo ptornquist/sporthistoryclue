@@ -133,6 +133,11 @@ describe("ensureFourDailyOptions", () => {
     expect(gradesDailyOption("Sverige mot Kanada (1987)", "Sverige mot Sovjetunionen", 1984, "ice_hockey")).toBe(
       false,
     );
+    expect(gradesDailyOption("Sverige mot Sovjetunionen (1981)", "Sverige mot Sovjetunionen", 1984, "ice_hockey")).toBe(
+      false,
+    );
+    expect(options).toContain("Sverige mot Sovjetunionen (1981)");
+    expect(options).toContain("Sverige mot Sovjetunionen (1984)");
     expect(SVERIGE_SOVJET_1984_OPTIONS[3]).toBe("Sverige mot Sovjetunionen (1984)");
     expect(
       gradesDailyOption("Tjeckoslovakien mot Sovjetunionen (1976)", "Sverige mot Sovjetunionen", 1984, "ice_hockey"),
