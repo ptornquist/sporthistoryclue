@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { FEEDBACK_CATEGORIES, prepareBetaFeedback, type FeedbackCategory } from "@/lib/beta-feedback";
-import { useCareerStats } from "@/components/CareerStatsProvider";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 
 export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { userId, username } = useCareerStats();
   const [rating, setRating] = useState(0);
   const [category, setCategory] = useState<FeedbackCategory | "">("");
   const [comment, setComment] = useState("");
@@ -14,28 +12,33 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
   const [success, setSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const dismiss = useCallback(() => {
+    if (success) {
+      setRating(0);
+      setCategory("");
+      setComment("");
+      setSuccess(false);
+    }
+    setErrorMsg("");
+    setSaving(false);
+    onClose();
+  }, [onClose, success]);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") dismiss();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, dismiss]);
 
   if (!open) return null;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setErrorMsg("");
-    const prepared = prepareBetaFeedback({
-      rating,
-      category,
-      comment,
-      scoutName: username ?? (typeof window === "undefined" ? null : localStorage.getItem("shc_handle")),
-      pagePath: typeof window === "undefined" ? null : window.location.pathname,
-      userId,
-    });
+    const prepared = prepareBetaFeedback({ rating, category, comment });
     if (!prepared.ok) {
       setErrorMsg(prepared.message);
       return;
@@ -45,7 +48,11 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
       return;
     }
     setSaving(true);
-    const { error } = await supabaseClient.from("beta_feedback").insert(prepared.row);
+    const { error } = await supabaseClient.from("beta_feedback").insert({
+      rating: prepared.row.rating,
+      category: prepared.row.category,
+      comment: prepared.row.comment,
+    });
     setSaving(false);
     if (error) {
       setErrorMsg("Feedback kunde inte sparas. Försök igen om en stund.");
@@ -57,7 +64,7 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
-      onClick={onClose}
+      onClick={dismiss}
       role="dialog"
       aria-modal="true"
       aria-labelledby="beta-feedback-title"
@@ -68,7 +75,7 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
       >
         <button
           type="button"
-          onClick={onClose}
+          onClick={dismiss}
           aria-label="Stäng"
           className="absolute top-4 right-4 text-zinc-400 hover:text-black text-xl font-bold w-8 h-8 rounded-full hover:bg-zinc-100"
         >
@@ -80,9 +87,18 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
         <p className="mt-1 mb-4 text-xs text-zinc-500">Berätta vad som fungerar och vad som ska bli bättre.</p>
 
         {success ? (
-          <p className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-medium text-emerald-800">
-            Tack. Synpunkten är sparad.
-          </p>
+          <div className="space-y-4" role="status">
+            <p className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-6 text-center text-lg font-black text-emerald-800">
+              Tack för din feedback!
+            </p>
+            <button
+              type="button"
+              onClick={dismiss}
+              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-black text-white hover:bg-emerald-700"
+            >
+              Tack för din feedback!
+            </button>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset>
