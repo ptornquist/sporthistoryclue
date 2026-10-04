@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { FEEDBACK_CATEGORIES, prepareBetaFeedback, type FeedbackCategory } from "@/lib/beta-feedback";
-import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client";
 
 export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [rating, setRating] = useState(0);
@@ -43,22 +43,25 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
       setErrorMsg(prepared.message);
       return;
     }
-    if (!isSupabaseConfigured) {
-      setErrorMsg("Feedback kan inte sparas just nu. Försök igen om en stund.");
-      return;
-    }
     setSaving(true);
-    const { error } = await supabaseClient.from("beta_feedback").insert({
-      rating: prepared.row.rating,
-      category: prepared.row.category,
-      comment: prepared.row.comment,
-    });
-    setSaving(false);
-    if (error) {
+    try {
+      const { error } = await supabaseClient.from("beta_feedback").insert({
+        rating: prepared.row.rating,
+        category: prepared.row.category,
+        comment: prepared.row.comment,
+      });
+      if (error) {
+        console.error(error);
+        setErrorMsg("Feedback kunde inte sparas. Försök igen om en stund.");
+        return;
+      }
+      setSuccess(true);
+    } catch (error) {
+      console.error(error);
       setErrorMsg("Feedback kunde inte sparas. Försök igen om en stund.");
-      return;
+    } finally {
+      setSaving(false);
     }
-    setSuccess(true);
   };
 
   return (

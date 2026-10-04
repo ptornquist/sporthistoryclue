@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { prepareBetaFeedback } from "./beta-feedback";
 
@@ -17,6 +19,18 @@ describe("prepareBetaFeedback", () => {
       });
       expect(Object.keys(result.row).sort()).toEqual(["category", "comment", "rating"]);
     }
+  });
+
+  it("inserts the three columns and logs a thrown or returned error", () => {
+    const source = readFileSync(resolve("src/components/feedback/BetaFeedbackModal.tsx"), "utf8");
+    expect(source).toContain('supabaseClient.from("beta_feedback").insert({');
+    expect(source).toContain("rating: prepared.row.rating");
+    expect(source).toContain("category: prepared.row.category");
+    expect(source).toContain("comment: prepared.row.comment");
+    expect(source).toContain("console.error(error)");
+    expect(source).toContain("setSuccess(true)");
+    expect(source).toContain("Tack för din feedback!");
+    expect(source).not.toContain("user_id");
   });
 
   it("rejects an empty comment and an unknown category", () => {
