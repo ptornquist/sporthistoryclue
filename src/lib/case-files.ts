@@ -73,6 +73,14 @@ export const CASE_FILES: CaseFile[] = [
     sport: "athletics",
   },
   {
+    slug: "duplantis-2026",
+    ids: ["duplantis-2026"],
+    title: "Ribban som höjdes",
+    year: 2026,
+    context: "Inomhusrekord",
+    sport: "athletics",
+  },
+  {
     slug: "pele-sweden-1958",
     ids: ["pele-sweden-1958", "pele-1958"],
     title: "Genombrottet på värdarnas plan",

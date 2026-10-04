@@ -76,6 +76,14 @@ export const HAMMARBY_AIK_2016_CARDS = [
   "Den 24 juli 2016 vinner AIK med 3–0 borta mot Hammarby. Haukur Hauksson, Eero Markkanen och Ebenezer Ofori gör målen före paus.",
 ] as const;
 
+export const DUPLANTIS_2026_CARDS = [
+  "En inomhustävling med en enda gren. Mattan ligger redo, ribban väntar högt, och vinden är borta.",
+  "Tre höjder klaras i första försöket. Sedan ber hopparen om ett lyft långt större än en centimeter.",
+  "Ribban flyttas tjugotre centimeter upp. Det finns bara ett försök, och staven är redan vald.",
+  "Staven böjs under taket. Kroppen går över utan att ribban rör sig, och hallen reser sig.",
+  "Den 12 mars 2026 i Uppsala. Armand Duplantis klarar 6,31 meter och sätter sitt femtonde världsrekord i stav.",
+] as const;
+
 export const SVERIGE_SOVJET_1984_CARDS = [
   "Ljuset strålar över isen i ett kokande Scandinavium. Den mäktiga stämningen från läktarna vittnar om en historisk drabbning.",
   "Det är turneringen där världens absolut bästa hockeyspelare ställs mot varandra under intensiva höstkvällar på 1980-talet.",
@@ -94,6 +102,7 @@ const CASE_CLUES: Record<string, readonly string[]> = {
   ],
   "summit-series-1972": SUMMIT_SERIES_1972_CARDS,
   "sverige-sovjet-1984": SVERIGE_SOVJET_1984_CARDS,
+  "duplantis-2026": DUPLANTIS_2026_CARDS,
   "miracle-on-ice-1980": [
     "Pucken studsar i sargen i en olympisk ishall. Favoriten har tränat året runt, och flaggan på läktaren vill inte ligga still.",
     "Det är semifinal på isen, men stämningen är redan som i en final. Ett universitetslag möter en maskin som rullar i långa perioder.",

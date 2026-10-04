@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SVERIGE_SOVJET_1984_CARDS } from "./case-clues";
+import { DUPLANTIS_2026_CARDS, SVERIGE_SOVJET_1984_CARDS } from "./case-clues";
 import { publishDailyClues } from "./daily-clue-copy";
 import { dayIndexFromKey, kluringForDay, SPORT_KLURING_POOL } from "./sport-kluringar-pool";
 
@@ -16,10 +16,21 @@ describe("sport kluring pool", () => {
 
   it("moves to the next authored row on the next day", () => {
     expect(kluringForDay("2026-10-05").id).not.toBe(kluringForDay("2026-10-04").id);
-    expect(SPORT_KLURING_POOL).toHaveLength(10);
-    expect(new Set(SPORT_KLURING_POOL.map((item) => item.id)).size).toBe(10);
+    expect(SPORT_KLURING_POOL).toHaveLength(15);
+    expect(new Set(SPORT_KLURING_POOL.map((item) => item.id)).size).toBe(15);
+    expect(SPORT_KLURING_POOL.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        "miracle-1980",
+        "ali-1974",
+        "pele-1958",
+        "wimbledon-epic-1980",
+        "duplantis-2026",
+      ]),
+    );
     expect(new Set(SPORT_KLURING_POOL.map((item) => item.sport))).toEqual(
       new Set(["ice_hockey", "football", "boxing", "tennis", "athletics"]),
     );
+    expect(publishDailyClues("duplantis-2026", [], "athletics")).toEqual([...DUPLANTIS_2026_CARDS]);
+    expect(kluringForDay("2026-10-04", "athletics").id).toBe("duplantis-2026");
   });
 });

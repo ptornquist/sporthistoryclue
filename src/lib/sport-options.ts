@@ -197,6 +197,7 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Billie Jean King vinner Kampen mellan könen",
   ],
   athletics: [
+    "Armand Duplantis (2026)",
     "Usain Bolt (2008)",
     "Jesse Owens tar fyra guld i Berlin",
     "Dick Fosbury floppar sig till OS-guld",
