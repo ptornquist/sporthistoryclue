@@ -45,10 +45,10 @@ export function SportArchive({
         <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Historik</h1>
       )}
       <p className="mt-1 max-w-xl text-sm text-zinc-500">
-        Alla klassiker uppdelade på ishockey, fotboll, boxning, tennis och friidrott.
+        Sju sporter i ett bibliotek att bläddra i: ishockey, fotboll, boxning, tennis, friidrott, ridsport och handboll.
       </p>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2 py-1" role="tablist" aria-label="Sport categories">
+      <div className="sticky top-16 z-20 mt-6 flex flex-wrap items-center gap-2 rounded-2xl bg-[#fafafa]/95 py-2 backdrop-blur" role="tablist" aria-label="Sport categories">
         {ARCHIVE_SPORTS.map((item) => {
           const active = item.id === selected;
           const className = `px-4 py-2 rounded-xl font-black text-xs uppercase flex items-center gap-2 border-2 transition-all ${
@@ -83,15 +83,21 @@ export function SportArchive({
         })}
       </div>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-6 space-y-8">
         {groups.map((sport) => (
           <section
             key={sport.id}
             id={`bibliotek-${sport.id}`}
-            className="scroll-mt-24 rounded-3xl border-2 border-zinc-200 bg-white p-5 shadow-sm"
+            className="scroll-mt-28 rounded-3xl border-2 border-zinc-200 bg-white p-5 shadow-sm"
           >
-            <div className="mb-5 flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
-              <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">{sport.name}</h2>
+            <div className="mb-5 flex items-start justify-between gap-4 border-b border-zinc-200 pb-4">
+              <div className="min-w-0">
+                <h2 className="flex items-center gap-2 text-lg font-black uppercase tracking-tight text-zinc-900">
+                  <span aria-hidden>{sport.icon}</span>
+                  <span>{sport.name}</span>
+                </h2>
+                <p className="mt-1 text-xs text-zinc-500">{sport.blurb}</p>
+              </div>
               <span className="shrink-0 rounded-full bg-zinc-900 px-3 py-1 text-xs font-mono font-black text-white">
                 {sport.rows.length} {sport.rows.length === 1 ? "match" : "matcher"}
               </span>
@@ -102,14 +108,14 @@ export function SportArchive({
                 Inga matcher är registrerade för den här sporten ännu.
               </p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {sport.rows.map((fixture) => {
                   const record = solved[fixture.id];
                   const open = record == null;
                   return (
                     <li
                       key={fixture.id}
-                      className="flex w-full max-w-full flex-col gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex h-full flex-col justify-between gap-3 rounded-2xl border border-zinc-200 border-l-4 border-l-blue-600 bg-zinc-50 p-4 shadow-sm"
                     >
                       <div className="min-w-0">
                         <h3 className="text-sm font-black text-zinc-900">{fixture.title}</h3>

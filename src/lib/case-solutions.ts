@@ -32,6 +32,21 @@ const MATCHUPS: Record<string, string> = {
   "malmo-ifk-2015": "Malmö FF mot IFK Göteborg (2015)",
   "elfsborg-djurgarden-2006": "Elfsborg mot Djurgården (2006)",
   "hammarby-aik-2016": "Hammarby mot AIK (2016)",
+  "tyson-holyfield-1996": "Mike Tyson mot Evander Holyfield (1996)",
+  "thrilla-manila-1975": "Muhammad Ali mot Joe Frazier (1975)",
+  "clay-liston-1964": "Cassius Clay mot Sonny Liston (1964)",
+  "hagler-leonard-1987": "Sugar Ray Leonard mot Marvin Hagler (1987)",
+  "louis-schmeling-1938": "Joe Louis mot Max Schmeling (1938)",
+  "federer-nadal-2008": "Roger Federer mot Rafael Nadal (2008)",
+  "borg-mcenroe-1981": "Björn Borg mot John McEnroe (1981)",
+  "edberg-becker-1988": "Stefan Edberg mot Boris Becker (1988)",
+  "wilander-1982": "Mats Wilander mot Guillermo Vilas (1982)",
+  "saint-cyr-1956": "Henri Saint Cyr (1956)",
+  "tokyo-hopp-2021": "Sveriges hopplandslag (2021)",
+  "dujardin-2012": "Charlotte Dujardin (2012)",
+  "handboll-vm-1999": "Sverige mot Ryssland (1999)",
+  "handboll-em-1994": "Sverige mot Ryssland (1994)",
+  "handboll-em-2022": "Sverige mot Spanien (2022)",
 };
 
 export function solvedMatchup(id: string): string | null {

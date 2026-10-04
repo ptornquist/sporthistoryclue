@@ -49,9 +49,11 @@ describe("sport archive", () => {
     expect(html).toContain("Historisk fotbollsmatch");
 
     expect(loadArchiveIndex("football")).toHaveLength(16);
-    expect(loadArchiveIndex("boxing")).toHaveLength(1);
-    expect(loadArchiveIndex("tennis")).toHaveLength(2);
+    expect(loadArchiveIndex("boxing")).toHaveLength(6);
+    expect(loadArchiveIndex("tennis")).toHaveLength(6);
     expect(loadArchiveIndex("athletics")).toHaveLength(5);
+    expect(loadArchiveIndex("equestrian")).toHaveLength(3);
+    expect(loadArchiveIndex("handball")).toHaveLength(3);
 
     const hockey = loadArchiveIndex("ice_hockey");
     expect(hockey.map((fixture) => fixture.id)).toEqual([

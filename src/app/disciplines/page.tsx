@@ -38,6 +38,8 @@ const SPORTS: SportGroup[] = [
   { id: 'boxing', name: 'Boxning', icon: '🥊', description: 'Tungviktskrig, långa nätter och skrällar.' },
   { id: 'tennis', name: 'Tennis', icon: '🎾', description: 'Historiska tiebreak, Wimbledon-epos och maraton i fem set.' },
   { id: 'athletics', name: 'Friidrott', icon: '🏃', description: 'Slagna världsrekord och ikoniska OS-lopp.' },
+  { id: 'equestrian', name: 'Ridsport', icon: '🏇', description: 'Olympiska hoppningar och dressyrtriumfer.' },
+  { id: 'handball', name: 'Handboll', icon: '🤾', description: 'VM-finaler och dramatiska EM-avgöranden.' },
 ];
 
 const SPORT_TILE: Record<string, string> = {
@@ -46,6 +48,8 @@ const SPORT_TILE: Record<string, string> = {
   boxing: 'bg-rose-50/80 border-rose-200 text-rose-950 hover:border-rose-400',
   tennis: 'bg-amber-50/80 border-amber-200 text-amber-950 hover:border-amber-400',
   athletics: 'bg-indigo-50/80 border-indigo-200 text-indigo-950 hover:border-indigo-400',
+  equestrian: 'bg-lime-50/80 border-lime-200 text-lime-950 hover:border-lime-400',
+  handball: 'bg-orange-50/80 border-orange-200 text-orange-950 hover:border-orange-400',
 };
 
 const ACTIVE_TILE = 'ring-2 ring-zinc-900 border-2 border-zinc-900 shadow-md font-black scale-[1.02] hover:border-zinc-900';

@@ -68,6 +68,10 @@ export function canonicalSport(value: string | null | undefined): string {
   if (text.includes("basket")) return "basketball";
   if (text.includes("gymnast")) return "gymnastics";
   if (text.includes("athletic") || text.includes("track")) return "athletics";
+  if (text.includes("equestrian") || text.includes("ridsport") || text.includes("dressyr") || text.includes("dressage")) {
+    return "equestrian";
+  }
+  if (text.includes("handball") || text.includes("handboll")) return "handball";
   if (text.includes("rugby")) return "rugby";
   return text.trim();
 }

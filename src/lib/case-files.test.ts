@@ -91,6 +91,8 @@ describe("mystery case files", () => {
     expect(mysteryFixtureLabel("gymnastics")).toBe("Historiskt mästerskapsögonblick");
     expect(mysteryFixtureLabel("athletics")).toBe("Historiskt mästerskapsögonblick");
     expect(mysteryFixtureLabel("boxing")).toBe("Historisk titelmatch");
+    expect(mysteryFixtureLabel("equestrian")).toBe("Historisk ridsportstriumf");
+    expect(mysteryFixtureLabel("handball")).toBe("Historisk handbollsmatch");
     for (const file of CASE_FILES) {
       const label = mysteryFixtureLabel(file.sport);
       expect(isSpoilerHeading(label)).toBe(false);

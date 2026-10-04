@@ -224,6 +224,33 @@ const RECAPS: Record<string, HistoricalRecap> = {
     story:
       "Centre Court hade is i Björn Borg och oväsen i John McEnroe, och herrfinalen vägrade korta någon av dem. Tiebreaket i fjärde set gick till 18–16, så långt att setet själv blev matchen folk minns. Borg vann ändå femte set med 8–6. Det var hans femte raka Wimbledon, taget på andra sidan ett tiebreak som ritade om vad en final fick kräva.",
   },
+  "handboll-em-2022": {
+    year: 2022,
+    venue: "Budapest Handball Arena",
+    finalScore: "Sverige 27–26 Spanien",
+    decisivePlay: "Niclas Ekbergs straff efter slutsignalen",
+    videoUrl: null,
+    story:
+      "EM-finalen 30 januari 2022 stod och vägde tills klockan var noll. Niclas Ekberg fick en straff efter signalen och satte den. Sverige vann med 27–26 mot Spanien och tog sitt första EM-guld sedan 2002.",
+  },
+  "saint-cyr-1956": {
+    year: 1956,
+    venue: "Stockholms olympiastadion",
+    finalScore: "860 poäng",
+    decisivePlay: "Henri Saint Cyr och Juli i dressyr",
+    videoUrl: null,
+    story:
+      "Ridsporten vid OS 1956 fick stanna i Stockholm, eftersom hästarna inte släpptes in i Australien. Henri Saint Cyr tog individuellt guld på Juli med 860 poäng och ledde även Sverige till lagguld.",
+  },
+  "tokyo-hopp-2021": {
+    year: 2021,
+    venue: "Baji Koen, Tokyo",
+    finalScore: "Sverige före USA på tid",
+    decisivePlay: "Peder Fredricsons ankarritt i omhoppningen",
+    videoUrl: null,
+    story:
+      "Den 7 augusti 2021 stod laghoppningen lika på fel. Omhoppningen blev felfri, och tiden avgjorde. Peder Fredricson, Henrik von Eckermann och Malin Baryard-Johnsson tog Sveriges första OS-guld i laghoppning sedan 1924.",
+  },
 };
 
 const ALIASES: Record<string, string> = {

@@ -1,3 +1,21 @@
+import {
+  BORG_MCENROE_1981_CARDS,
+  CLAY_LISTON_1964_CARDS,
+  DUJARDIN_2012_CARDS,
+  EDBERG_BECKER_1988_CARDS,
+  FEDERER_NADAL_2008_CARDS,
+  HAGLER_LEONARD_1987_CARDS,
+  HANDBOLL_EM_1994_CARDS,
+  HANDBOLL_EM_2022_CARDS,
+  HANDBOLL_VM_1999_CARDS,
+  LOUIS_SCHMELING_1938_CARDS,
+  SAINT_CYR_1956_CARDS,
+  THRILLA_MANILA_1975_CARDS,
+  TOKYO_HOPP_2021_CARDS,
+  TYSON_HOLYFIELD_1996_CARDS,
+  WILANDER_1982_CARDS,
+} from "@/lib/extended-klassiker";
+
 export interface CaseClueSource {
   slug?: string;
   context: string;
@@ -181,6 +199,21 @@ const CASE_CLUES: Record<string, readonly string[]> = {
     "Ett beskuret arkivfoto från en VM-final.",
     "Det avgörande ögonblicket är det sista kortet i akten, när en pojke gråter i kaptens tröja.",
   ],
+  "tyson-holyfield-1996": TYSON_HOLYFIELD_1996_CARDS,
+  "thrilla-manila-1975": THRILLA_MANILA_1975_CARDS,
+  "clay-liston-1964": CLAY_LISTON_1964_CARDS,
+  "hagler-leonard-1987": HAGLER_LEONARD_1987_CARDS,
+  "louis-schmeling-1938": LOUIS_SCHMELING_1938_CARDS,
+  "federer-nadal-2008": FEDERER_NADAL_2008_CARDS,
+  "borg-mcenroe-1981": BORG_MCENROE_1981_CARDS,
+  "edberg-becker-1988": EDBERG_BECKER_1988_CARDS,
+  "wilander-1982": WILANDER_1982_CARDS,
+  "saint-cyr-1956": SAINT_CYR_1956_CARDS,
+  "tokyo-hopp-2021": TOKYO_HOPP_2021_CARDS,
+  "dujardin-2012": DUJARDIN_2012_CARDS,
+  "handboll-vm-1999": HANDBOLL_VM_1999_CARDS,
+  "handboll-em-1994": HANDBOLL_EM_1994_CARDS,
+  "handboll-em-2022": HANDBOLL_EM_2022_CARDS,
 };
 
 export function hasAuthoredCaseLadder(slug: string | undefined): boolean {

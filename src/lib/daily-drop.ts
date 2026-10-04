@@ -109,6 +109,8 @@ const CASE_SPORT_LABEL: Record<string, string> = {
   boxing: "Boxing",
   tennis: "Tennis",
   athletics: "Athletics",
+  equestrian: "Ridsport",
+  handball: "Handboll",
   gymnastics: "Gymnastics",
   basketball: "Basketball",
 };

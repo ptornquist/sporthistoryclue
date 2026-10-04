@@ -8,6 +8,8 @@ export const DAILY_SPORTS = [
   { id: 'boxing', name: 'Boxning', icon: '🥊' },
   { id: 'tennis', name: 'Tennis', icon: '🎾' },
   { id: 'athletics', name: 'Friidrott', icon: '🏃' },
+  { id: 'equestrian', name: 'Ridsport', icon: '🏇' },
+  { id: 'handball', name: 'Handboll', icon: '🤾' },
 ] as const;
 
 export type DailySportId = (typeof DAILY_SPORTS)[number]['id'];
