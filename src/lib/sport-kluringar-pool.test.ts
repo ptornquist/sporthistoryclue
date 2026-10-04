@@ -16,6 +16,10 @@ describe("sport kluring pool", () => {
 
   it("moves to the next authored row on the next day", () => {
     expect(kluringForDay("2026-10-05").id).not.toBe(kluringForDay("2026-10-04").id);
-    expect(new Set(SPORT_KLURING_POOL.map((item) => item.id)).size).toBe(SPORT_KLURING_POOL.length);
+    expect(SPORT_KLURING_POOL).toHaveLength(10);
+    expect(new Set(SPORT_KLURING_POOL.map((item) => item.id)).size).toBe(10);
+    expect(new Set(SPORT_KLURING_POOL.map((item) => item.sport))).toEqual(
+      new Set(["ice_hockey", "football", "boxing", "tennis", "athletics"]),
+    );
   });
 });
