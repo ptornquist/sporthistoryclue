@@ -92,8 +92,9 @@ describe("publishDailyClues", () => {
     const cards = publishDailyClues("sverige-sovjet-1984", ["Amateurs against a machine."], "ice_hockey");
     expect(cards).toEqual([...SVERIGE_SOVJET_1984_CARDS]);
     expect(cards[0]).toMatch(/Scandinavium/);
-    expect(cards[3]).toMatch(/sargen/);
-    expect(cards[4]).toMatch(/Slutsignalen/);
+    expect(cards[2]).toMatch(/Tomas Sandström/);
+    expect(cards[2]).toMatch(/Mats Thelin/);
+    expect(cards[4]).toMatch(/hockeyhistoria/);
     expect(publishDailyClues("daily-ice_hockey-2026-10-04", cards, "ice_hockey")).toEqual(cards);
   });
 

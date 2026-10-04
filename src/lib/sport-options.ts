@@ -27,12 +27,12 @@ export const SUMMIT_SERIES_1972_OPTIONS = [
   "Tjeckoslovakien mot Sovjetunionen (1976)",
 ] as const;
 
-/** Four buttons for Scandinavium 1984. Index 1 is the graded answer. */
+/** Four buttons for Scandinavium 1984. Index 3 is the graded answer. */
 export const SVERIGE_SOVJET_1984_OPTIONS = [
+  "Sverige mot Kanada (1987)",
+  "Tjeckoslovakien mot Sovjetunionen (1976)",
   "Kanada mot Sovjetunionen (1972)",
   "Sverige mot Sovjetunionen (1984)",
-  "Tjeckoslovakien mot Sovjetunionen (1976)",
-  "USA mot Sovjetunionen (1980)",
 ] as const;
 
 const PINNED_DAILY_OPTIONS: Record<string, readonly string[]> = {
