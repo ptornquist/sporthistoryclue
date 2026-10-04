@@ -37,15 +37,15 @@ export function SportArchive({
   return (
     <section className="mx-auto w-full max-w-3xl">
       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">
-        {embedded ? "Hela biblioteket" : "Biblioteket"}
+        {embedded ? "Hela biblioteket" : "Matchbiblioteket"}
       </span>
       {embedded ? (
         <h2 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Alla matcher</h2>
       ) : (
-        <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Historik</h1>
+        <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Matcher</h1>
       )}
       <p className="mt-1 max-w-xl text-sm text-zinc-500">
-        Sju sporter i ett bibliotek att bläddra i: ishockey, fotboll, boxning, tennis, friidrott, ridsport och handboll.
+        Spela när du vill. Sju sporter: ishockey, fotboll, boxning, tennis, friidrott, ridsport och handboll.
       </p>
 
       <div className="sticky top-16 z-20 mt-6 flex flex-wrap items-center gap-2 rounded-2xl bg-[#fafafa]/95 py-2 backdrop-blur" role="tablist" aria-label="Sport categories">

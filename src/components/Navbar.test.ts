@@ -18,7 +18,7 @@ describe("site navigation", () => {
     expect(html).toContain('href="/campaigns"');
     expect(html).toContain("Utmaningar");
     expect(html).toContain('href="/archive"');
-    expect(html).toContain("Historik");
+    expect(html).toContain("Matcher");
     expect(html).toContain('href="/standings"');
     expect(html).toContain("Tabell");
     expect(html).toContain('href="/shop"');
@@ -39,7 +39,7 @@ describe("site navigation", () => {
     expect(menu).toContain("absolute top-full left-0 w-full bg-white border-b border-zinc-200 shadow-2xl py-5 px-6 flex flex-col gap-1 z-50 md:hidden");
     expect(menu).toContain("Dagens Kluring");
     expect(menu).toContain("Utmaningar");
-    expect(menu).toContain("Historik");
+    expect(menu).toContain("Matcher");
     expect(menu).toContain("Tabell");
     expect(menu).toContain("Shop");
   });

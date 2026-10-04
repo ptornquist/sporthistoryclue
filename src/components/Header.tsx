@@ -10,7 +10,7 @@ import { HowToPlayModal } from './HowToPlayModal';
 const NAV_LINKS = [
   { name: '🎯 Dagens Kluring', href: '/' },
   { name: '📖 Utmaningar', href: '/campaigns' },
-  { name: '🏅 Historik', href: '/archive' },
+  { name: '🏟️ Matcher', href: '/archive' },
   { name: '🏆 Tabell', href: '/standings' },
   { name: '🛍️ Shop', href: '/shop' },
 ] as const;
