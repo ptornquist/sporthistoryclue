@@ -1,36 +1,16 @@
-import { hashString } from "@/lib/utils";
+import { kluringForDay, kluringIdsForSport, type PoolSport } from "@/lib/sport-kluringar-pool";
 
 export const DAILY_SPORT_IDS = ["ice_hockey", "football", "boxing", "tennis", "athletics"] as const;
 
 export type DailySportId = (typeof DAILY_SPORT_IDS)[number];
 
-/** Playable fixtures for one sport. The same date always picks the same row. */
+/** Playable fixtures for one sport, in the question-pool order. */
 const SPORT_FIXTURES: Record<DailySportId, readonly string[]> = {
-  ice_hockey: [
-    "miracle-1980",
-    "summit-series-1972",
-    "sverige-sovjet-1984",
-    "turin-gold-2006",
-    "slaget-i-sudden",
-    "guldkampen-i-norr",
-  ],
-  football: [
-    "montevideo-1930",
-    "bern-1954",
-    "pele-1958",
-    "hurst-1966",
-    "maradona-1986",
-    "pasadena-bronze-1994",
-    "united-1999",
-    "chastain-1999",
-    "guldstriden-sista-omgangen",
-    "sondagsmorgonen-stockholms-stad",
-    "leicester-2016",
-    "messi-2022",
-  ],
-  boxing: ["ali-1974"],
-  tennis: ["king-1973", "wimbledon-epic-1980"],
-  athletics: ["owens-1936", "fosbury-1968", "bolt-2008", "super-saturday-2012"],
+  ice_hockey: kluringIdsForSport("ice_hockey"),
+  football: kluringIdsForSport("football"),
+  boxing: kluringIdsForSport("boxing"),
+  tennis: kluringIdsForSport("tennis"),
+  athletics: kluringIdsForSport("athletics"),
 };
 
 const FIXTURE_ALIASES: Record<string, string> = {
@@ -63,15 +43,7 @@ export function sportDailyKey(dateKey: string, sport: DailySportId): string {
   return `daily-${sport}-${dateKey}`;
 }
 
-/** Date-specific fixtures. Kluring #20730 is 2026-10-04. */
-const PINNED_SPORT_DAYS: Record<string, string> = {
-  "2026-10-04:ice_hockey": "sverige-sovjet-1984",
-};
-
 /** Which archived fixture is that sport's kluring on this date. */
 export function fixtureIdForSportDay(sport: DailySportId, dateKey: string): string {
-  const pinned = PINNED_SPORT_DAYS[`${dateKey}:${sport}`];
-  if (pinned && SPORT_FIXTURES[sport].includes(pinned)) return pinned;
-  const pool = SPORT_FIXTURES[sport];
-  return pool[hashString(`${dateKey}:${sport}`) % pool.length];
+  return kluringForDay(dateKey, sport as PoolSport).id;
 }
