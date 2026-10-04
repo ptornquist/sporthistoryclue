@@ -320,6 +320,8 @@ export function mysteryFixtureLabel(sport: CaseFile["sport"] | string | undefine
       return "Historisk fotbollsmatch";
     case "boxing":
       return "Historisk titelmatch";
+    case "tennis":
+      return "Historisk tennismatch";
     case "athletics":
     case "gymnastics":
       return "Historiskt mästerskapsögonblick";

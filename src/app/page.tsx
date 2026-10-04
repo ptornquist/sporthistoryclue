@@ -7,8 +7,7 @@ import { FirstVisitBriefing } from '@/components/HowToPlayModal';
 import { findCase } from '@/lib/case-files';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
-import { isDailySportId, type DailySportId } from '@/lib/daily-sport';
-import { loadDatedPublicDrop, loadPublicArchive, loadPublicChallengeById, loadPublicSportDaily, loadTodayPublicDrop, utcTodayKey, type PublicDaily } from '@/lib/daily-drop';
+import { loadDatedPublicDrop, loadPublicArchive, loadPublicChallengeById, loadTodayPublicDrop, utcTodayKey, type PublicDaily } from '@/lib/daily-drop';
 import { selectChallengeOptions } from '@/lib/decoy-options';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +23,6 @@ type HomeSearchParams = {
   date?: string | string[];
   id?: string | string[];
   training?: string | string[];
-  sport?: string | string[];
 };
 
 function firstParam(value: string | string[] | undefined): string {
@@ -83,18 +81,11 @@ export default async function Page({
   const archiveId = /^[a-z0-9-]{1,80}$/i.test(requestedId) ? requestedId : '';
   const archiveDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate <= utcTodayKey() ? requestedDate : '';
   const training = firstParam(params.training) === '1';
-  const requestedSport = firstParam(params.sport);
-  const dailySport: DailySportId | null = isDailySportId(requestedSport) ? requestedSport : null;
   const archive = specificMatch ? await loadPublicArchive(specificMatch) : null;
   let datedDrop: PublicDaily | null = null;
   let todayDrop: PublicDaily | null = null;
   if (!specificMatch && archiveId) {
     datedDrop = await loadPublicChallengeById(archiveId);
-  } else if (!specificMatch && dailySport) {
-    const sportDate = archiveDate || utcTodayKey();
-    const sportDrop = await loadPublicSportDaily(dailySport, sportDate);
-    if (archiveDate) datedDrop = sportDrop;
-    else todayDrop = sportDrop;
   } else if (!specificMatch && archiveDate) {
     datedDrop = await loadDatedPublicDrop(archiveDate);
   } else if (!specificMatch) {
@@ -133,10 +124,9 @@ export default async function Page({
         }
       >
         <DailyDropArena
-          key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${archiveId}:${dailySport ?? ''}:${training ? 'training' : 'play'}`}
+          key={`${specificMatch}:${campaignId}:${duel}:${archiveDate}:${archiveId}:${training ? 'training' : 'play'}`}
           specificMatch={specificMatch}
           campaignId={campaignId}
-          initialSport={dailySport}
           initialFixture={initialFixture}
           initialDuel={duel}
           initialDuelPts={duelPts}

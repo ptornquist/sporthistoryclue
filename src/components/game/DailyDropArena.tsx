@@ -15,8 +15,7 @@ import {
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { ClueStack } from '@/components/game/ClueStack';
-import { DAILY_SPORTS, DailySportPills, sportIdForCategory, type DailySportId } from '@/components/game/DailySportPills';
-import { isDailySportId, sportDailyKey } from '@/lib/daily-sport';
+import { DAILY_SPORTS, sportIdForCategory } from '@/components/game/DailySportPills';
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
@@ -58,7 +57,6 @@ export function DailyDropArena(props: {
   archiveId?: string;
   training?: boolean;
   playMode?: 'daily' | 'fixture';
-  initialSport?: DailySportId | null;
 }) {
   const initialFixture = props.initialFixture ?? null;
   const initialDuel = props.initialDuel ?? "";
@@ -70,9 +68,6 @@ export function DailyDropArena(props: {
   const [activeMatch, setActiveMatch] = useState<string | null>(null);
   const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
   const [pinnedDrop, setPinnedDrop] = useState<string | null>(null);
-  const [sportMatch, setSportMatch] = useState<string | null>(null);
-  const [sportFilter, setSportFilter] = useState<DailySportId | null>(props.initialSport ?? null);
-  const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const challengeRef = useRef<DailyFixture | null>(initialFixture);
   const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
@@ -169,26 +164,22 @@ export function DailyDropArena(props: {
       setGameOver(false);
       try {
         const params = new URLSearchParams(window.location.search);
+        if (params.has('sport') && props.playMode !== 'fixture') {
+          params.delete('sport');
+          const cleaned = params.toString();
+          window.history.replaceState(null, '', cleaned ? `/?${cleaned}` : '/');
+        }
         const today = utcDateKey();
         const urlDate = params.get('date');
         const urlMatch = params.get('match')?.trim() || '';
-        const urlSport = params.get('sport');
         const lockedMatch = props.playMode === 'fixture' ? (props.specificMatch || '').trim() : '';
-        const requestedSport = lockedMatch
-          ? null
-          : isDailySportId(urlSport)
-            ? urlSport
-            : sportFilter;
-        const requestedMatch = requestedSport ? '' : lockedMatch || sportMatch || urlMatch;
+        const match = lockedMatch || urlMatch;
         const activeDate = pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
-        const match = requestedMatch;
-        const query = requestedSport
-          ? `?sport=${encodeURIComponent(requestedSport)}&date=${encodeURIComponent(activeDate && activeDate !== today ? activeDate : today)}`
-          : match
-            ? `?match=${encodeURIComponent(match)}`
-            : activeDate && activeDate !== today
-              ? `?date=${encodeURIComponent(activeDate)}`
-              : '';
+        const query = match
+          ? `?match=${encodeURIComponent(match)}`
+          : activeDate && activeDate !== today
+            ? `?date=${encodeURIComponent(activeDate)}`
+            : '';
         const response = await fetch(`/api/daily${query}`, { cache: 'no-store' });
         if (cancelled) return;
         if (response.status === 401) {
@@ -201,13 +192,9 @@ export function DailyDropArena(props: {
         const fixture = (await response.json()) as DailyFixture;
         if (cancelled) return;
         whistled.current = false;
-        setActiveMatch(requestedSport ? null : match || null);
-        setSportFilter(requestedSport);
-        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category, requestedSport ? fixture.id : match || fixture.id));
-        setSelectedSport(requestedSport ?? sportIdForCategory(fixture.category));
-        const solveStamp = requestedSport
-          ? sportDailyKey(fixture.date_key || today, requestedSport)
-          : match || fixture.date_key || 'today';
+        setActiveMatch(match || null);
+        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category, match || fixture.id));
+        const solveStamp = match || fixture.date_key || 'today';
         const isLocallySolved = localStorage.getItem('shc_solved_' + solveStamp);
         const localScore = readLocalDropSolve(localStorage, solveStamp);
         const solvedRecord = isSupabaseConfigured ? await findFixtureSolve(solveStamp) : null;
@@ -233,7 +220,7 @@ export function DailyDropArena(props: {
     return () => {
       cancelled = true;
     };
-  }, [pinnedDrop, sportMatch, sportFilter, props.playMode, props.specificMatch]);
+  }, [pinnedDrop, props.playMode, props.specificMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -267,24 +254,12 @@ export function DailyDropArena(props: {
     }
     const params = new URLSearchParams(window.location.search);
     params.delete('match');
+    params.delete('sport');
     if (dateKey === utcDateKey()) params.delete('date');
     else params.set('date', dateKey);
-    if (sportFilter) params.set('sport', sportFilter);
     const query = params.toString();
     window.history.replaceState(null, '', query ? `/?${query}` : '/');
-    setSportMatch(null);
     setPinnedDrop(dateKey);
-  };
-
-  const handleSelectSport = (sportId: DailySportId) => {
-    setSelectedSport(sportId);
-    setSportFilter(sportId);
-    const params = new URLSearchParams(window.location.search);
-    params.delete('match');
-    params.set('sport', sportId);
-    const query = params.toString();
-    window.history.replaceState(null, '', query ? `/?${query}` : '/');
-    setSportMatch(null);
   };
 
   const handleGuess = async (option: string) => {
@@ -298,8 +273,7 @@ export function DailyDropArena(props: {
           id: challenge.id,
           date_key: challenge.date_key,
           option,
-          match: sportFilter ? undefined : activeMatch,
-          sport: sportFilter ?? undefined,
+          match: activeMatch ?? undefined,
         }),
       });
       if (!response.ok) throw new Error('Verify failed');
@@ -312,7 +286,7 @@ export function DailyDropArena(props: {
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
         const dropDate = challenge.date_key || 'today';
-        const solveStamp = sportFilter ? sportDailyKey(dropDate, sportFilter) : activeMatch || dropDate;
+        const solveStamp = activeMatch || dropDate;
         const careerFixtureId = solveStamp;
         const currentScore = score;
         lockDropLocally(solveStamp, currentScore, localStorage);
@@ -373,8 +347,7 @@ export function DailyDropArena(props: {
             id: challenge.id,
             date_key: challenge.date_key,
             option,
-            match: sportFilter ? undefined : activeMatch,
-            sport: sportFilter ?? undefined,
+            match: activeMatch ?? undefined,
             reveal: true,
           }),
         });
@@ -539,12 +512,6 @@ export function DailyDropArena(props: {
               </span>
             </div>
           </div>
-
-          {playingFixture ? null : (
-            <div onPointerDown={(event) => event.stopPropagation()}>
-              <DailySportPills selectedSport={selectedSport} onSelect={handleSelectSport} />
-            </div>
-          )}
 
           {storyline ? (
             <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-4">
