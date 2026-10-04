@@ -49,10 +49,25 @@ describe("sport archive", () => {
     expect(html).toContain("Historisk fotbollsmatch");
 
     const hockey = loadArchiveIndex("ice_hockey");
-    expect(hockey.map((fixture) => fixture.id)).toEqual(["slaget-i-sudden", "guldkampen-i-norr"]);
+    expect(hockey.map((fixture) => fixture.id)).toEqual([
+      "sverige-sovjet-1984",
+      "slaget-i-sudden",
+      "guldkampen-i-norr",
+    ]);
+    expect(ARCHIVE_FIXTURES.find((fixture) => fixture.id === "sverige-sovjet-1984")).toEqual({
+      id: "sverige-sovjet-1984",
+      sport: "ice_hockey",
+      title: "Klassisk drabbning i Scandinavium",
+      year: 1984,
+      context: "Internationell klassiker",
+      difficulty: 2,
+      clueCount: 5,
+    });
     const hockeyHtml = renderToStaticMarkup(
       createElement(SportArchive, { selected: "ice_hockey", fixtures: hockey }),
     );
+    expect(hockeyHtml).toContain("Klassisk drabbning i Scandinavium");
+    expect(hockeyHtml).toContain('href="/play/sverige-sovjet-1984"');
     expect(hockeyHtml).toContain("Mysteriet på isen #1");
     expect(hockeyHtml).toContain("Mysteriet på isen #2");
     expect(hockeyHtml).toContain("Klassisk ishockeymatch");
@@ -62,7 +77,7 @@ describe("sport archive", () => {
     expect(hockeyHtml).not.toContain("Sovjet");
     expect(hockeyHtml).not.toContain("Slutspelsdrama");
     expect(hockeyHtml).not.toContain("Finalserie");
-    expect(hockeyHtml).not.toMatch(/\b(18|19|20)\d{2}\b/);
+    expect(hockeyHtml.replace(/href="[^"]*"/g, "")).not.toMatch(/\b(18|19|20)\d{2}\b/);
 
     const visible = ARCHIVE_FIXTURES.map((fixture) => `${fixture.title} ${fixture.context}`).join("\n");
     for (const leak of ANSWER_LEAKS) {
