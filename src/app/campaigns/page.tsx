@@ -4,11 +4,9 @@ import React from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { FixturePreview } from '@/components/game/FixturePreview';
-import { SportArchive } from '@/components/game/SportArchive';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
 import { findCase, mysteryFixtureLabel } from '@/lib/case-files';
-import { ARCHIVE_FIXTURES } from '@/lib/sport-archive';
 import { arenaHref, firstOpenMatch, STORYLINES } from '@/lib/storylines';
 
 export default function CampaignsPage() {
@@ -98,10 +96,6 @@ export default function CampaignsPage() {
               </div>
             </article>
           ))}
-        </div>
-
-        <div className="mt-12 border-t border-zinc-200 pt-10">
-          <SportArchive selected="ice_hockey" fixtures={ARCHIVE_FIXTURES} embedded />
         </div>
       </div>
 
