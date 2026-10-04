@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Historik",
-  description: "Öppna tidigare kluringar och spela om klassiker.",
+  title: "Matcher",
+  description: "Spela ishockey, fotboll, boxning, tennis, friidrott, ridsport och handboll när du vill.",
 };
 
 export default function ArchiveLayout({ children }: { children: ReactNode }) {

@@ -468,7 +468,7 @@ export function DailyDropArena(props: {
           <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-6">
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
-                {playingFixture ? (storyline ? 'Utmaning' : 'Historik') : sportLabel}
+                {playingFixture ? (storyline ? 'Utmaning' : 'Match') : sportLabel}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
                 {playingFixture ? campaignHeadline(props.campaignId) : 'Dagens Kluring'}
