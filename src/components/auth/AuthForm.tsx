@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { prepareLogin, prepareSignup } from "@/lib/auth-account";
 import { CAREER_UPDATED_EVENT } from "@/lib/career-ledger";
+import { oauthCallbackUrl } from "@/lib/oauth-return";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 
 const FIELD_CLASS =
@@ -20,12 +21,22 @@ function swedishAuthError(message: string): string {
   return "Kontot kunde inte sparas just nu. Försök igen om en stund.";
 }
 
+function swedishOAuthError(message: string): string {
+  const text = message.toLowerCase();
+  if (text.includes("provider") || text.includes("not enabled") || text.includes("unsupported")) {
+    return "Inloggningen är inte aktiverad ännu. Försök med e-post under tiden.";
+  }
+  return "Inloggningen gick inte igenom. Försök igen om en stund.";
+}
+
 export function AuthForm({
   initialMode = "signup",
   onAuthenticated,
+  returnPath,
 }: {
   initialMode?: "login" | "signup";
   onAuthenticated?: () => void;
+  returnPath?: string;
 }) {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
@@ -95,6 +106,38 @@ export function AuthForm({
     }
   };
 
+  const signInWithProvider = async (provider: "apple" | "google") => {
+    setErrorMsg("");
+    setSuccessMsg("");
+    if (!isSupabaseConfigured) {
+      setErrorMsg("Kontot kan inte sparas just nu. Försök igen om en stund.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const redirectTo = oauthCallbackUrl(
+        window.location.origin,
+        returnPath ?? `${window.location.pathname}${window.location.search}`,
+      );
+      const { error } =
+        provider === "apple"
+          ? await supabaseClient.auth.signInWithOAuth({
+              provider: "apple",
+              options: { redirectTo },
+            })
+          : await supabaseClient.auth.signInWithOAuth({
+              provider: "google",
+              options: { redirectTo },
+            });
+      if (error) throw error;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setErrorMsg(swedishOAuthError(message));
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex p-1 bg-zinc-100 rounded-xl mb-6">
@@ -140,6 +183,31 @@ export function AuthForm({
           {successMsg}
         </div>
       ) : null}
+
+      <div className="space-y-2.5">
+        <button
+          type="button"
+          onClick={() => void signInWithProvider("apple")}
+          disabled={loading}
+          className="w-full py-3 bg-black hover:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all disabled:opacity-50"
+        >
+          Logga in med Apple
+        </button>
+        <button
+          type="button"
+          onClick={() => void signInWithProvider("google")}
+          disabled={loading}
+          className="w-full py-3 bg-white hover:bg-zinc-50 text-zinc-900 font-bold rounded-xl text-sm border border-zinc-300 transition-all disabled:opacity-50"
+        >
+          Logga in med Google
+        </button>
+      </div>
+
+      <div className="flex items-center gap-3 my-4">
+        <div className="h-px flex-1 bg-zinc-200" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">eller e-post</span>
+        <div className="h-px flex-1 bg-zinc-200" />
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-3.5">
         {mode === "signup" ? (

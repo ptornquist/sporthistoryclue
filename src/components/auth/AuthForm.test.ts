@@ -12,6 +12,15 @@ describe("registration and beta feedback", () => {
     expect(html).toContain("E-post");
     expect(html).toContain("Skapa konto");
     expect(html).toContain("Registrera e-post och scoutnamn");
+    expect(html).toContain("Logga in med Apple");
+    expect(html).toContain("Logga in med Google");
+  });
+
+  it("offers Apple and Google on the login view", () => {
+    const html = renderToStaticMarkup(createElement(AuthForm, { initialMode: "login" }));
+    expect(html).toContain("Logga in med Apple");
+    expect(html).toContain("Logga in med Google");
+    expect(html).toContain("E-post");
   });
 
   it("opens a feedback form with rating, category, and comment", () => {
