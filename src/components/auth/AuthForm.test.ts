@@ -10,17 +10,20 @@ describe("registration and beta feedback", () => {
     const html = renderToStaticMarkup(createElement(AuthForm, { initialMode: "signup" }));
     expect(html).toContain("Scoutnamn");
     expect(html).toContain("E-post");
+    expect(html).toContain("Lösenord");
     expect(html).toContain("Skapa konto");
     expect(html).toContain("Registrera e-post och scoutnamn");
-    expect(html).toContain("Logga in med Apple");
-    expect(html).toContain("Logga in med Google");
+    expect(html).not.toContain("Logga in med Apple");
+    expect(html).not.toContain("Logga in med Google");
   });
 
-  it("offers Apple and Google on the login view", () => {
+  it("keeps login to email and password", () => {
     const html = renderToStaticMarkup(createElement(AuthForm, { initialMode: "login" }));
-    expect(html).toContain("Logga in med Apple");
-    expect(html).toContain("Logga in med Google");
     expect(html).toContain("E-post");
+    expect(html).toContain("Lösenord");
+    expect(html).toContain("Logga in");
+    expect(html).not.toContain("Logga in med Apple");
+    expect(html).not.toContain("Logga in med Google");
   });
 
   it("opens a feedback form with rating, category, and comment", () => {
