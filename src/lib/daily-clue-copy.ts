@@ -1,3 +1,4 @@
+import { SUMMIT_SERIES_1972_CARDS } from "@/lib/case-clues";
 import { sportForFixture, type DailySportId } from "@/lib/daily-sport";
 import { localizeDailyClue } from "@/lib/swedish-clues";
 
@@ -20,13 +21,7 @@ const LADDERS: Record<string, Ladder> = {
     "Kaptenens skott från slottet går in med tio minuter kvar av perioden. Resten handlar om att hålla ledningen.",
     "Miraklet på isen, den 22 februari 1980. USA:s universitetslag slår Sovjetunionen med 4–3 och tar två dagar senare OS-guld mot Finland, 4–2.",
   ],
-  "summit-series-1972": [
-    "En fullsatt bortahall. Pucken slår i sargen, och tredje perioden i seriens sista match är igång.",
-    "Efter sju matcher är segrarna lika fördelade. Proffs från den nordamerikanska proffsligan möter ett landslag som tränat ihop i åratal.",
-    "Gästernas kedjor söker avslut nära kassen. Hemmalaget håller blålinjen och vill spela ut tiden.",
-    "Retur framför kassen, 34 sekunder kvar av perioden. Utvisningsbåset är inte inblandat, och skottet går in.",
-    "Toppmötesserien den 28 september 1972. Paul Henderson avgör i Moskva, 6–5, när Kanadas proffs slår Sovjetunionen i den åttonde matchen.",
-  ],
+  "summit-series-1972": SUMMIT_SERIES_1972_CARDS,
   "turin-gold-2006": [
     "En ny OS-hall med omkring 12 000 platser. Pucken glider längs sargen före första tekningen.",
     "Final mellan två nordiska grannar. Ledningen har växlat, och tredje perioden inleds oavgjort.",
@@ -225,7 +220,7 @@ const GENERIC =
   /avgörandet sparas till det sista kortet|ett beskuret arkivfoto|en detalj ur arkivet|uppställningen bär favoritens börda|en arena som redan är full innan startskottet/i;
 
 const ENGLISH_FRAGMENT =
-  /\b(the|and|with|winner|amateurs|against|scoreboard|versus|defeats|summit series|nhl|special teams|champions league|battle of the sexes|super saturday|tiebreak|hardcourt|premier league|centre court|lake placid|field house|collegelag|college|knockar|knockout|floppen|cape|game|jab|volley|momentum|roaring|spectators?|crowd|packed|cheers|cheering|rink|face-?off|8-matchers)\b/i;
+  /\b(the|and|with|winner|amateurs|against|scoreboard|versus|defeats|summit series|special teams|champions league|battle of the sexes|super saturday|tiebreak|hardcourt|premier league|centre court|lake placid|field house|collegelag|college|knockar|knockout|floppen|cape|game|jab|volley|momentum|roaring|spectators?|crowd|packed|cheers|cheering|rink|face-?off|8-matchers)\b/i;
 
 /** Words that belong to another sport and must not survive on this fixture. */
 const FOREIGN: Record<DailySportId, RegExp> = {

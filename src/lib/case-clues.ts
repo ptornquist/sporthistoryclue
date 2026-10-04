@@ -4,6 +4,14 @@ export interface CaseClueSource {
   year: number;
 }
 
+export const SUMMIT_SERIES_1972_CARDS = [
+  "Höstmörkret sänker sig utanför en kokande ishall i Montréal. Spänningen i luften är påtaglig inför den historiska matchserien som ska avgöra vilken hockeynation som egentligen är bäst i världen.",
+  "Kalla kriget pågår för fullt på den politiska scenen, men här flyttas kampen över till isen. Det är proffsen från NHL som ställs mot det sovjetiska landslagets maskinartade samspel.",
+  "Med legendarer som Phil Esposito i spetsen kämpar det nordamerikanska laget för äran, mötande motståndarnas knivskarpa passningsspel och stjärnan Valeri Kharlamov.",
+  "Serien har kommit till Moskva och den sista, avgörande matchen. Ställningen är lika när dramat går in i sin absoluta slutoffensiv.",
+  "Med bara 34 sekunder kvar av sista perioden kliver Paul Henderson fram och slår in den historiska segerpucken som får hela Kanada att explodera i jubel.",
+] as const;
+
 const CASE_CLUES: Record<string, readonly string[]> = {
   "wimbledon-epic-1980": [
     "Gräs, en herrfinal som kan kräva fem set, och två spelare som vägrar likna varandra.",
@@ -12,13 +20,7 @@ const CASE_CLUES: Record<string, readonly string[]> = {
     "Ett beskuret arkivfoto från en herrfinal på gräs, utan namn i bildtexten.",
     "En drömduell på huvudbanan mellan två raka motsatser: den stoiske skandinaviske baslinjespelaren mot den hetlevrade nätspelaren från andra sidan Atlanten.",
   ],
-  "summit-series-1972": [
-    "Bortalagets hall är full. Pucken slår i sargen, och klockan i tredje perioden är nästan slut.",
-    "Två hockeysystem som länge levt åtskilda möts när proffsen äntligen släpps in på isen.",
-    "Ett lag är byggt för en klubbliga. Det andra samlas året runt. Blålinjen är den gräns de inte får ge bort.",
-    "Ett skott från slottet. Målvakten är sen. Utvisningsbåset är tomt, och hallen exploderar med sekunder kvar.",
-    "Toppmötesserien 1972. Kanadas proffs möter det sovjetiska landslaget i åtta matcher, och sista minuten i Moskva avgör.",
-  ],
+  "summit-series-1972": SUMMIT_SERIES_1972_CARDS,
   "miracle-on-ice-1980": [
     "Pucken studsar i sargen i en olympisk ishall. Favoriten har tränat året runt, och flaggan på läktaren vill inte ligga still.",
     "Det är semifinal på isen, men stämningen är redan som i en final. Ett universitetslag möter en maskin som rullar i långa perioder.",

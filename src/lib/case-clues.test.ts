@@ -21,11 +21,15 @@ describe("caseClues", () => {
       context: "Summit Series-avgörandet",
       year: 1972,
     });
-    expect(clues[0]).not.toMatch(/NHL|Röd Maskinen|1972|Sovjet|Kanada/);
-    expect(clues[4]).toBe(
-      "Toppmötesserien 1972. Kanadas proffs möter det sovjetiska landslaget i åtta matcher, och sista minuten i Moskva avgör.",
-    );
-    expect(clues.join(" ")).not.toMatch(/NHL|8-matchers|Röd Maskinen|roaring|spectators|avspark|mittcirkel|\bboll\b/i);
+    expect(clues[0]).toMatch(/Montréal/);
+    expect(clues[0]).not.toMatch(/1972|Sovjet|Kanada|Henderson/);
+    expect(clues[1]).toMatch(/NHL/);
+    expect(clues[2]).toMatch(/Esposito/);
+    expect(clues[2]).toMatch(/Kharlamov/);
+    expect(clues[3]).toMatch(/Moskva/);
+    expect(clues[4]).toMatch(/Paul Henderson/);
+    expect(clues[4]).toMatch(/34 sekunder/);
+    expect(clues.join(" ")).not.toMatch(/8-matchers|Röd Maskinen|roaring|spectators|avspark|mittcirkel|\bboll\b/i);
   });
 
   it("keeps the Pasadena bronze cryptic until the last card", () => {
