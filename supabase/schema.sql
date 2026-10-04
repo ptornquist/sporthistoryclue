@@ -206,18 +206,22 @@ alter table public.profiles
     favorite_hockey_club is null
     or favorite_hockey_club in (
       'AIK Hockey',
-      'Djurgården',
-      'Färjestad',
-      'Frölunda',
-      'Leksand',
-      'Brynäs',
+      'Brynäs IF',
+      'Djurgården Hockey',
+      'Frölunda HC',
+      'Färjestad BK',
       'HV71',
-      'Linköping',
-      'MODO',
-      'Rögle',
+      'IF Björklöven',
+      'Leksands IF',
+      'Linköping HC',
+      'Luleå Hockey',
+      'Malmö Redhawks',
+      'MODO Hockey',
+      'Rögle BK',
       'Skellefteå AIK',
-      'Timrå',
-      'Växjö Lakers'
+      'Timrå IK',
+      'Växjö Lakers',
+      'Örebro Hockey'
     )
   );
 
@@ -228,17 +232,21 @@ alter table public.profiles
     favorite_football_club is null
     or favorite_football_club in (
       'AIK',
-      'Djurgården',
-      'Hammarby',
-      'Malmö FF',
-      'IFK Göteborg',
-      'IF Elfsborg',
       'BK Häcken',
-      'Mjällby',
-      'IFK Norrköping',
-      'Sirius',
+      'Degerfors IF',
+      'Djurgårdens IF',
+      'Gais',
+      'Halmstads BK',
+      'Hammarby IF',
+      'IF Brommapojkarna',
+      'IF Elfsborg',
+      'IFK Göteborg',
+      'IK Sirius',
       'Kalmar FF',
-      'Halmstad'
+      'Malmö FF',
+      'Mjällby AIF',
+      'Västerås SK',
+      'Örgryte IS'
     )
   );
 
