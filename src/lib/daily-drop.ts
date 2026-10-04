@@ -5,6 +5,7 @@ import { caseClues } from "@/lib/case-clues";
 import { solvedMatchup } from "@/lib/case-solutions";
 import { canonicalSport } from "@/lib/decoy-options";
 import { publishDailyClues } from "@/lib/daily-clue-copy";
+import { alignDailyPresentation } from "@/lib/daily-presentation";
 import { fixtureIdForSportDay, sportDailyKey, type DailySportId } from "@/lib/daily-sport";
 import { ensureFourDailyOptions, gradesDailyOption } from "@/lib/sport-options";
 import { puzzles } from "@/lib/catalog";
@@ -50,12 +51,13 @@ export function parseDateKey(value: string | null, now = new Date()): string | n
 }
 
 export function toPublicDaily(fixture: SecretDaily): PublicDaily {
+  const aligned = alignDailyPresentation(fixture);
   return {
     id: fixture.id,
     date_key: fixture.date_key,
-    category: fixture.category,
-    clues: publishDailyClues(fixture.id, fixture.clues, fixture.category),
-    options: fixture.options,
+    category: aligned.category,
+    clues: aligned.clues,
+    options: aligned.options,
   };
 }
 
@@ -345,13 +347,13 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
   return {
     id: fixture.id,
     date_key: fixture.date_key,
-    category: fixture.category,
-    clues: publishDailyClues(
-      fixture.id,
-      fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."],
-      fixture.category,
-    ),
-    options: ensureFourDailyOptions([...generated, ...options], fixture.category, fixture.id),
+    ...alignDailyPresentation({
+      id: fixture.id,
+      date_key: fixture.date_key,
+      category: fixture.category,
+      clues: fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."],
+      options: [...generated, ...options],
+    }),
   };
 }
 

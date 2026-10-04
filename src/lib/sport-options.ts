@@ -49,6 +49,7 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
   ],
   football: [
     "Sverige mot Bulgarien (1994)",
+    "Sverige mot Italien (2017)",
     "Argentina mot England (1986)",
     "Brasilien mot Italien (1970)",
     "Brasilien mot Sverige (1958)",
@@ -133,9 +134,52 @@ export function optionSport(option: string): string | null {
   const key = optionIdentity(option);
   if (!key) return null;
   const hits = Object.entries(SPORT_CHOICES).filter(([, choices]) =>
-    choices.some((choice) => optionIdentity(choice) === key),
+    choices.some((choice) => sameMatchup(choice, option)),
   );
   return hits.length === 1 ? hits[0][0] : null;
+}
+
+const HOCKEY_FAMILY =
+  /summit series|toppmötesserien|miraklet på isen|växjö|frölunda|skellefteå|luleå|färjestad|brynäs|leksand|\bhv71\b|ishockey|sovjetunionen|soviet union/i;
+const FOOTBALL_FAMILY =
+  /pelé|maradona|hurst|leicester|chastain|messi|hammarby|djurgården|malmö|ifk göteborg|trelleborg|elfsborg|allsvenskan|wembley|premier league|vm-final|italien/i;
+
+/** Sport implied by a button that is not an exact pool string. */
+export function familySport(option: string): string | null {
+  const text = localizeMatchup(option);
+  if (HOCKEY_FAMILY.test(text) || HOCKEY_FAMILY.test(option)) return "ice_hockey";
+  if (FOOTBALL_FAMILY.test(text) || FOOTBALL_FAMILY.test(option)) return "football";
+  return null;
+}
+
+/** Sport shared by the answer buttons, when they agree. */
+export function inferOptionSport(options: readonly string[]): string | null {
+  const counts = new Map<string, number>();
+  for (const option of options) {
+    const sport = optionSport(option) ?? familySport(option);
+    if (!sport || !SPORT_CHOICES[sport]) continue;
+    counts.set(sport, (counts.get(sport) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 0;
+  let tied = false;
+  for (const [sport, count] of counts) {
+    if (count > bestCount) {
+      best = sport;
+      bestCount = count;
+      tied = false;
+    } else if (count === bestCount) {
+      tied = true;
+    }
+  }
+  if (!best || tied) return null;
+  return best;
+}
+
+function conflictsWithSport(option: string, sport: string): boolean {
+  if (!SPORT_CHOICES[sport]) return false;
+  const known = optionSport(option) ?? familySport(option);
+  return Boolean(known && known !== sport);
 }
 
 /** Keeps the correct sport's classics and refills until four choices exist. */
@@ -174,6 +218,7 @@ const LOCALIZATIONS: Array<[RegExp, string]> = [
   [/\bSpain\b/gi, "Spanien"],
   [/\bCroatia\b/gi, "Kroatien"],
   [/\bAustralia\b/gi, "Australien"],
+  [/summit series/gi, "Toppmötesserien"],
 ];
 
 /** A stored button such as "1999 football: Sweden vs Bulgaria". */
@@ -253,8 +298,12 @@ export function ensureFourDailyOptions(
   matchId?: string | null,
   random: () => number = Math.random,
 ): string[] {
-  const key = choiceSportKey(sport);
   const campaign = domesticLeagueOptions(matchId);
+  let key = choiceSportKey(sport);
+  if (!SPORT_CHOICES[key]) {
+    const inferred = inferOptionSport(options ?? []);
+    if (inferred) key = inferred;
+  }
   const localized = (options ?? [])
     .map((option) => swedishLabel(option, key))
     .filter((option) => option.length > 0 && !isRawEnglishOption(option));
@@ -266,20 +315,22 @@ export function ensureFourDailyOptions(
 
   const sportKnown = Boolean(SPORT_CHOICES[key]);
   const distinctReady = distinctOptionValues(localized, 4);
-  const alreadyCurated =
+  const sameSport =
     distinctReady.length >= 4 &&
-    (!sportKnown || distinctReady.every((option) => belongsToSport(option, key)));
-  if (alreadyCurated) return fisherYates(distinctReady, random);
+    sportKnown &&
+    distinctReady.every((option) => !conflictsWithSport(option, key));
+  if (sameSport) return fisherYates(distinctReady, random);
 
-  const lead = localized[0];
-  const inSport = localized.filter((option) => belongsToSport(option, key));
+  const compatible = sportKnown ? localized.filter((option) => !conflictsWithSport(option, key)) : localized;
+  const lead = compatible[0];
+  const inSport = compatible.filter((option) => belongsToSport(option, key));
   const leadDomestic = Boolean(lead && isDomesticLabel(lead, key));
   const leadInternational = Boolean(lead && belongsToSport(lead, key) && !leadDomestic);
   const visible = leadDomestic
     ? inSport.filter((option) => isDomesticLabel(option, key))
     : leadInternational && lead
       ? [lead, ...inSport.filter((option) => !isDomesticLabel(option, key) && !sameMatchup(option, lead))]
-      : lead
+      : lead && !conflictsWithSport(lead, key)
         ? [lead]
         : [];
   const domesticOnly = leadDomestic || (visible.length === 0 && TEAM_SPORTS.has(key));
@@ -288,7 +339,9 @@ export function ensureFourDailyOptions(
     ? [...domesticPool(key)]
     : international.length > 0
       ? [...international, ...domesticPool(key)]
-      : [...choicesForSport(key), ...DAILY_OPTION_FALLBACK];
+      : choicesForSport(key).length > 0
+        ? [...choicesForSport(key)]
+        : [...DAILY_OPTION_FALLBACK];
 
-  return fisherYates(distinctOptionValues([...visible, ...fillers, ...DAILY_OPTION_FALLBACK], 4), random);
+  return fisherYates(distinctOptionValues([...visible, ...fillers], 4), random);
 }
