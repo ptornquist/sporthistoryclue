@@ -1,6 +1,6 @@
 import { findCase } from "@/lib/case-files";
-import { canonicalSport } from "@/lib/decoy-options";
-import { distinctOptionValues, optionIdentity } from "@/lib/option-text";
+import { canonicalSport, fisherYates } from "@/lib/decoy-options";
+import { distinctOptionValues, formatOptionText, optionIdentity } from "@/lib/option-text";
 
 /** SHL club matchups. Used as the whole option set for the hockey campaign. */
 export const SHL_MATCHUPS = [
@@ -143,4 +143,152 @@ export function scopeOptionsToSport(options: readonly string[], sport: string): 
   const key = choiceSportKey(sport);
   const kept = options.filter((option) => optionSport(option) === key);
   return distinctOptionValues([...kept, ...choicesForSport(key)], 4);
+}
+
+const TEAM_SPORTS = new Set(["ice_hockey", "football"]);
+
+const DAILY_OPTION_FALLBACK = [
+  "Sverige mot Finland (2006)",
+  "Sverige mot Bulgarien (1994)",
+  "Björn Borg mot John McEnroe (1980)",
+  "Muhammad Ali mot George Foreman (1974)",
+] as const;
+
+const LOCALIZATIONS: Array<[RegExp, string]> = [
+  [/\bvs\.?\b/gi, "mot"],
+  [/\bdefeats\b/gi, "besegrar"],
+  [/\bSoviet Union\b/gi, "Sovjetunionen"],
+  [/\bWest Germany\b/gi, "Västtyskland"],
+  [/\bSouth Africa\b/gi, "Sydafrika"],
+  [/\bNew Zealand\b/gi, "Nya Zeeland"],
+  [/\bCzechoslovakia\b/gi, "Tjeckoslovakien"],
+  [/\bNetherlands\b/gi, "Nederländerna"],
+  [/\bYugoslavia\b/gi, "Jugoslavien"],
+  [/\bSweden\b/gi, "Sverige"],
+  [/\bBulgaria\b/gi, "Bulgarien"],
+  [/\bHungary\b/gi, "Ungern"],
+  [/\bCanada\b/gi, "Kanada"],
+  [/\bBrazil\b/gi, "Brasilien"],
+  [/\bItaly\b/gi, "Italien"],
+  [/\bFrance\b/gi, "Frankrike"],
+  [/\bSpain\b/gi, "Spanien"],
+  [/\bCroatia\b/gi, "Kroatien"],
+  [/\bAustralia\b/gi, "Australien"],
+];
+
+/** A stored button such as "1999 football: Sweden vs Bulgaria". */
+export function isRawEnglishOption(option: string): boolean {
+  const text = option.trim();
+  if (/^\d{3,4}\s+[A-Za-z][^:]{0,48}:\s+\S/.test(text)) return true;
+  if (/\bvs\.?\b/i.test(text)) return true;
+  if (/\bdefeats\b/i.test(text)) return true;
+  return false;
+}
+
+export function localizeMatchup(option: string): string {
+  let text = formatOptionText(option).replace(/^(?:18|19|20)\d{2}\s+[^:]{1,80}:\s*/, "");
+  for (const [pattern, replacement] of LOCALIZATIONS) {
+    text = text.replace(pattern, replacement);
+  }
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function domesticPool(sport: string): readonly string[] {
+  if (sport === "ice_hockey") return SHL_MATCHUPS;
+  if (sport === "football") return ALLSVENSKAN_MATCHUPS;
+  return [];
+}
+
+function sameMatchup(left: string, right: string): boolean {
+  const a = optionIdentity(left);
+  const b = optionIdentity(right);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.length < 8 || b.length < 8) return false;
+  return a.includes(b) || b.includes(a);
+}
+
+function swedishLabel(option: string, sport: string): string {
+  const localized = localizeMatchup(option);
+  if (!localized) return "";
+  const pool = [...choicesForSport(sport), ...domesticPool(sport)];
+  const hit = pool.find((choice) => sameMatchup(choice, localized));
+  const base = hit ?? localized;
+  const year = option.match(/\b(?:18|19|20)\d{2}\b/)?.[0];
+  if (year && !base.includes(year)) return `${base} (${year})`;
+  return base;
+}
+
+function belongsToSport(option: string, sport: string): boolean {
+  if (!SPORT_CHOICES[sport]) return false;
+  return choicesForSport(sport).some((choice) => sameMatchup(choice, option));
+}
+
+/** True when the button still names this fixture after Swedish wording is applied. */
+export function gradesDailyOption(option: string, subject: string, year: number, sport = ""): boolean {
+  const guess = option.trim().toLowerCase();
+  const target = subject.trim().toLowerCase();
+  if (!guess || !target) return false;
+  if (guess === target) return true;
+  if (guess === `${target} (${year})`) return true;
+  if (guess.includes(target) && guess.includes(String(year))) return true;
+  if (year < 1800) return false;
+  const labeled = swedishLabel(`${subject} (${year})`, choiceSportKey(sport)).toLowerCase();
+  if (labeled && guess === labeled) return true;
+  const bare = labeled.replace(/\s*\((?:18|19|20)\d{2}\)\s*$/g, "").trim();
+  return bare.length >= 12 && guess.includes(bare) && guess.includes(String(year));
+}
+
+function isDomesticLabel(option: string, sport: string): boolean {
+  return domesticPool(sport).some((choice) => sameMatchup(choice, option));
+}
+
+/**
+ * Four distinct daily buttons. Team sports stay on Swedish clubs when the
+ * fixture is domestic, and on Swedish matchup wording for an international milestone.
+ */
+export function ensureFourDailyOptions(
+  options: readonly string[] | null | undefined,
+  sport: string,
+  matchId?: string | null,
+  random: () => number = Math.random,
+): string[] {
+  const key = choiceSportKey(sport);
+  const campaign = domesticLeagueOptions(matchId);
+  const localized = (options ?? [])
+    .map((option) => swedishLabel(option, key))
+    .filter((option) => option.length > 0 && !isRawEnglishOption(option));
+
+  if (campaign) {
+    const lead = localized.find((option) => campaign.some((item) => sameMatchup(item, option)));
+    return fisherYates(distinctOptionValues([...(lead ? [lead] : []), ...campaign], 4), random);
+  }
+
+  const sportKnown = Boolean(SPORT_CHOICES[key]);
+  const distinctReady = distinctOptionValues(localized, 4);
+  const alreadyCurated =
+    distinctReady.length >= 4 &&
+    (!sportKnown || distinctReady.every((option) => belongsToSport(option, key)));
+  if (alreadyCurated) return fisherYates(distinctReady, random);
+
+  const lead = localized[0];
+  const inSport = localized.filter((option) => belongsToSport(option, key));
+  const leadDomestic = Boolean(lead && isDomesticLabel(lead, key));
+  const leadInternational = Boolean(lead && belongsToSport(lead, key) && !leadDomestic);
+  const visible = leadDomestic
+    ? inSport.filter((option) => isDomesticLabel(option, key))
+    : leadInternational && lead
+      ? [lead, ...inSport.filter((option) => !isDomesticLabel(option, key) && !sameMatchup(option, lead))]
+      : lead
+        ? [lead]
+        : [];
+  const domesticOnly = leadDomestic || (visible.length === 0 && TEAM_SPORTS.has(key));
+  const international = choicesForSport(key).filter((option) => !isDomesticLabel(option, key));
+  const fillers = domesticOnly
+    ? [...domesticPool(key)]
+    : international.length > 0
+      ? [...international, ...domesticPool(key)]
+      : [...choicesForSport(key), ...DAILY_OPTION_FALLBACK];
+
+  return fisherYates(distinctOptionValues([...visible, ...fillers, ...DAILY_OPTION_FALLBACK], 4), random);
 }
