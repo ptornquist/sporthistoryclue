@@ -4,6 +4,8 @@ import { findCase } from "@/lib/case-files";
 import { caseClues } from "@/lib/case-clues";
 import { solvedMatchup } from "@/lib/case-solutions";
 import { canonicalSport } from "@/lib/decoy-options";
+import { fixtureIdForSportDay, sportDailyKey, type DailySportId } from "@/lib/daily-sport";
+import { localizeDailyClue } from "@/lib/swedish-clues";
 import { ensureFourDailyOptions, gradesDailyOption } from "@/lib/sport-options";
 import { puzzles } from "@/lib/catalog";
 import {
@@ -52,9 +54,26 @@ export function toPublicDaily(fixture: SecretDaily): PublicDaily {
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: fixture.clues,
+    clues: fixture.clues.map((clue) => localizeDailyClue(clue)),
     options: fixture.options,
   };
+}
+
+export async function loadSportDaily(sport: DailySportId, dateKey: string): Promise<SecretDaily | null> {
+  const sourceId = fixtureIdForSportDay(sport, dateKey);
+  const stamped = new Date(`${dateKey}T12:00:00.000Z`);
+  const fixture = await loadMatchFixture(sourceId, Number.isNaN(stamped.getTime()) ? new Date() : stamped);
+  if (!fixture) return null;
+  return {
+    ...fixture,
+    id: sportDailyKey(dateKey, sport),
+    date_key: dateKey,
+  };
+}
+
+export async function loadPublicSportDaily(sport: DailySportId, dateKey: string): Promise<PublicDaily | null> {
+  const fixture = await loadSportDaily(sport, dateKey);
+  return fixture ? toPublicDaily(fixture) : null;
 }
 
 export async function viewerCanOpenArchive(): Promise<boolean> {
@@ -326,7 +345,7 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."],
+    clues: (fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."]).map((clue) => localizeDailyClue(clue)),
     options: ensureFourDailyOptions([...generated, ...options], fixture.category, fixture.id),
   };
 }

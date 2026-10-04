@@ -1,10 +1,11 @@
 import { findCase } from "@/lib/case-files";
-import { gradeOption, loadDailyFixture, loadMatchFixture, parseDateKey } from "@/lib/daily-drop";
+import { isDailySportId } from "@/lib/daily-sport";
+import { gradeOption, loadDailyFixture, loadMatchFixture, loadSportDaily, parseDateKey } from "@/lib/daily-drop";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  let body: { id?: unknown; date_key?: unknown; option?: unknown; reveal?: unknown; match?: unknown };
+  let body: { id?: unknown; date_key?: unknown; option?: unknown; reveal?: unknown; match?: unknown; sport?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -18,7 +19,12 @@ export async function POST(request: Request) {
   }
 
   const match = typeof body.match === "string" ? body.match.trim() : "";
-  const fixture = match ? await loadMatchFixture(match) : await loadDailyFixture(dateKey);
+  const sport = typeof body.sport === "string" ? body.sport.trim() : "";
+  const fixture = isDailySportId(sport)
+    ? await loadSportDaily(sport, dateKey)
+    : match
+      ? await loadMatchFixture(match)
+      : await loadDailyFixture(dateKey);
   if (!fixture) {
     return Response.json({ error: "That drop could not be verified." }, { status: 404 });
   }

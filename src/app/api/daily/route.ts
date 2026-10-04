@@ -1,7 +1,9 @@
+import { isDailySportId } from "@/lib/daily-sport";
 import { isGuestOpenDrop } from "@/lib/drop-dates";
 import {
   loadDailyFixture,
   loadMatchFixture,
+  loadSportDaily,
   parseDateKey,
   toPublicDaily,
   viewerCanOpenArchive,
@@ -13,6 +15,25 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const match = url.searchParams.get("match")?.trim();
+  const sport = url.searchParams.get("sport")?.trim();
+  if (!match && isDailySportId(sport)) {
+    const dateKey = parseDateKey(url.searchParams.get("date"));
+    if (!dateKey) {
+      return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });
+    }
+    if (!isGuestOpenDrop(dateKey) && !(await viewerCanOpenArchive())) {
+      return Response.json({ error: "Sign in to open past drops." }, { status: 401 });
+    }
+    const fixture = await loadSportDaily(sport, dateKey);
+    if (!fixture) {
+      return Response.json({ error: "That sport has no daily kluring." }, { status: 404 });
+    }
+    const payload = toPublicDaily(fixture);
+    return Response.json({
+      ...payload,
+      options: ensureFourDailyOptions(payload.options, payload.category, payload.id),
+    });
+  }
   if (match) {
     const storyline = await loadMatchFixture(match);
     if (!storyline) {

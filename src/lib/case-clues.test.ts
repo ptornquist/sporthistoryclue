@@ -10,7 +10,7 @@ describe("caseClues", () => {
     });
     expect(clues[0]).not.toMatch(/Centre Court|New York|baslinjemästaren|1980/);
     expect(clues[4]).toBe(
-      "En drömduell på Centre Court mellan två raka motsatser: den stoiske skandinaviske baslinjemästaren mot den eldige serve-och-volley-spelaren från New York.",
+      "En drömduell på huvudbanan mellan två raka motsatser: den stoiske skandinaviske baslinjespelaren mot den hetlevrade nätspelaren från andra sidan Atlanten.",
     );
     expect(clues.join(" ")).not.toMatch(/\b(the|and|with|winner|scoreboard)\b/i);
   });

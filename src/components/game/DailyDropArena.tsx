@@ -15,7 +15,8 @@ import {
 import Footer from '@/components/Footer';
 import AuthGateModal from '@/components/AuthGateModal';
 import { ClueStack } from '@/components/game/ClueStack';
-import { DAILY_SPORTS, DailySportPills, sportIdForCategory, sportMatchSlug, type DailySportId } from '@/components/game/DailySportPills';
+import { DAILY_SPORTS, DailySportPills, sportIdForCategory, type DailySportId } from '@/components/game/DailySportPills';
+import { isDailySportId, sportDailyKey } from '@/lib/daily-sport';
 import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
@@ -61,6 +62,7 @@ export function DailyDropArena(props: {
   archiveId?: string;
   training?: boolean;
   playMode?: 'daily' | 'fixture';
+  initialSport?: DailySportId | null;
 }) {
   const initialFixture = props.initialFixture ?? null;
   const initialDuel = props.initialDuel ?? "";
@@ -73,6 +75,7 @@ export function DailyDropArena(props: {
   const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
   const [pinnedDrop, setPinnedDrop] = useState<string | null>(null);
   const [sportMatch, setSportMatch] = useState<string | null>(null);
+  const [sportFilter, setSportFilter] = useState<DailySportId | null>(props.initialSport ?? null);
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const challengeRef = useRef<DailyFixture | null>(initialFixture);
   const [solution, setSolution] = useState<Solution | null>(null);
@@ -173,16 +176,24 @@ export function DailyDropArena(props: {
         const today = utcDateKey();
         const urlDate = params.get('date');
         const urlMatch = params.get('match')?.trim() || '';
+        const urlSport = params.get('sport');
         const lockedMatch = props.playMode === 'fixture' ? (props.specificMatch || '').trim() : '';
-        const requestedMatch = lockedMatch || sportMatch || urlMatch;
-        const activeDate = requestedMatch ? null : pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
+        const requestedSport = lockedMatch
+          ? null
+          : isDailySportId(urlSport)
+            ? urlSport
+            : sportFilter;
+        const requestedMatch = requestedSport ? '' : lockedMatch || sportMatch || urlMatch;
+        const activeDate = pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
         const match = requestedMatch;
-        const query = match
-          ? `?match=${encodeURIComponent(match)}`
-          : activeDate && activeDate !== today
-            ? `?date=${encodeURIComponent(activeDate)}`
-            : '';
-        const response = await fetch(`/api/daily${query}`);
+        const query = requestedSport
+          ? `?sport=${encodeURIComponent(requestedSport)}&date=${encodeURIComponent(activeDate && activeDate !== today ? activeDate : today)}`
+          : match
+            ? `?match=${encodeURIComponent(match)}`
+            : activeDate && activeDate !== today
+              ? `?date=${encodeURIComponent(activeDate)}`
+              : '';
+        const response = await fetch(`/api/daily${query}`, { cache: 'no-store' });
         if (cancelled) return;
         if (response.status === 401) {
           setAuthGateOpen(true);
@@ -194,13 +205,16 @@ export function DailyDropArena(props: {
         const fixture = (await response.json()) as DailyFixture;
         if (cancelled) return;
         whistled.current = false;
-        setActiveMatch(match || null);
-        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category, match || fixture.id));
-        setSelectedSport(sportIdForCategory(fixture.category));
-        const solveStamp = match || fixture.date_key || 'today';
+        setActiveMatch(requestedSport ? null : match || null);
+        setSportFilter(requestedSport);
+        setChoiceOptions(setupOptions(fixture.options ?? [], fixture.category, requestedSport ? fixture.id : match || fixture.id));
+        setSelectedSport(requestedSport ?? sportIdForCategory(fixture.category));
+        const solveStamp = requestedSport
+          ? sportDailyKey(fixture.date_key || today, requestedSport)
+          : match || fixture.date_key || 'today';
         const isLocallySolved = localStorage.getItem('shc_solved_' + solveStamp);
         const localScore = readLocalDropSolve(localStorage, solveStamp);
-        const solvedRecord = isSupabaseConfigured ? await findFixtureSolve(fixture.id) : null;
+        const solvedRecord = isSupabaseConfigured ? await findFixtureSolve(solveStamp) : null;
         if (cancelled) return;
         if (isLocallySolved || solvedRecord) {
           const awarded = localScore ?? solvedRecord?.score_awarded ?? 0;
@@ -223,7 +237,7 @@ export function DailyDropArena(props: {
     return () => {
       cancelled = true;
     };
-  }, [pinnedDrop, sportMatch, props.playMode, props.specificMatch]);
+  }, [pinnedDrop, sportMatch, sportFilter, props.playMode, props.specificMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -259,6 +273,7 @@ export function DailyDropArena(props: {
     params.delete('match');
     if (dateKey === utcDateKey()) params.delete('date');
     else params.set('date', dateKey);
+    if (sportFilter) params.set('sport', sportFilter);
     const query = params.toString();
     window.history.replaceState(null, '', query ? `/?${query}` : '/');
     setSportMatch(null);
@@ -266,19 +281,14 @@ export function DailyDropArena(props: {
   };
 
   const handleSelectSport = (sportId: DailySportId) => {
-    const slug = sportMatchSlug(sportId);
-    if (!slug) {
-      showToast('Ingen match är registrerad för den sporten ännu.');
-      return;
-    }
     setSelectedSport(sportId);
+    setSportFilter(sportId);
     const params = new URLSearchParams(window.location.search);
-    params.delete('date');
-    params.set('match', slug);
+    params.delete('match');
+    params.set('sport', sportId);
     const query = params.toString();
     window.history.replaceState(null, '', query ? `/?${query}` : '/');
-    setPinnedDrop(null);
-    setSportMatch(slug);
+    setSportMatch(null);
   };
 
   const handleGuess = async (option: string) => {
@@ -292,7 +302,8 @@ export function DailyDropArena(props: {
           id: challenge.id,
           date_key: challenge.date_key,
           option,
-          match: activeMatch,
+          match: sportFilter ? undefined : activeMatch,
+          sport: sportFilter ?? undefined,
         }),
       });
       if (!response.ok) throw new Error('Verify failed');
@@ -305,8 +316,8 @@ export function DailyDropArena(props: {
         playVictoryFanfare();
         triggerHaptic([50, 50, 100]);
         const dropDate = challenge.date_key || 'today';
-        const solveStamp = activeMatch || dropDate;
-        const careerFixtureId = activeMatch || dropDate;
+        const solveStamp = sportFilter ? sportDailyKey(dropDate, sportFilter) : activeMatch || dropDate;
+        const careerFixtureId = solveStamp;
         const currentScore = score;
         lockDropLocally(solveStamp, currentScore, localStorage);
         creditCareerSolve(careerFixtureId, currentScore, localStorage);
@@ -366,7 +377,8 @@ export function DailyDropArena(props: {
             id: challenge.id,
             date_key: challenge.date_key,
             option,
-            match: activeMatch,
+            match: sportFilter ? undefined : activeMatch,
+            sport: sportFilter ?? undefined,
             reveal: true,
           }),
         });

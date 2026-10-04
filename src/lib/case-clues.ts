@@ -10,7 +10,7 @@ const CASE_CLUES: Record<string, readonly string[]> = {
     "Den ena håller bollen i spel från baslinjen. Den andra attackerar nätet. Publiken väljer sida med ljudet.",
     "Ett tiebreak som inte vill ta slut. Siffrorna klättrar förbi det som brukar räcka för ett set.",
     "Ett beskuret arkivfoto från en herrfinal på gräs, utan namn i bildtexten.",
-    "En drömduell på Centre Court mellan två raka motsatser: den stoiske skandinaviske baslinjemästaren mot den eldige serve-och-volley-spelaren från New York.",
+    "En drömduell på huvudbanan mellan två raka motsatser: den stoiske skandinaviske baslinjespelaren mot den hetlevrade nätspelaren från andra sidan Atlanten.",
   ],
   "summit-series-1972": [
     "En serie som vägrar dö. Bortalagets hall är full, och klockan är nästan slut.",
