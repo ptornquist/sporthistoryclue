@@ -31,7 +31,7 @@ describe("ScoutPublicCard", () => {
     expect(html).toContain(">6<");
     expect(html).toContain("⚔️ Utmana scout");
     expect(html).toContain("Följ i nätverket");
-    expect(html).toContain("Den här scouten har inga utmärkelser ännu.");
+    expect(html).toContain("Den här scouten har inga medaljer ännu.");
   });
 
   it("lists unlocked badge icons and names", () => {
@@ -46,8 +46,8 @@ describe("ScoutPublicCard", () => {
         ]),
       }),
     );
-    expect(html).toContain("📌 NYBÖRJARNÅL");
-    expect(html).toContain("🏮 ARKIVLYKTA");
+    expect(html).toContain("🥉 BRONSMEDALJ");
+    expect(html).toContain("🥈 SILVERMEDALJ");
     expect(html).not.toContain("⚔️ Utmana scout");
   });
 

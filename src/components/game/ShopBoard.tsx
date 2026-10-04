@@ -32,7 +32,7 @@ export function ShopBoard({
         </p>
       </div>
 
-      <h2 className="mb-4 mt-10 text-xl font-black uppercase tracking-tight">Utmärkelser</h2>
+      <h2 className="mb-4 mt-10 text-xl font-black uppercase tracking-tight">Medaljer</h2>
       <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {badges.map((badge) => {
           const owned = ownedIds.has(badge.id);

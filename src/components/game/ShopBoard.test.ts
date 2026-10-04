@@ -16,12 +16,13 @@ describe("ShopBoard", () => {
     );
 
     expect(html).toContain("40,000 poäng");
-    expect(html).toContain("📌");
-    expect(html).toContain("NYBÖRJARNÅL");
-    expect(html).toContain("ARKIVLYKTA");
-    expect(html).toContain("GULDPIPA");
-    expect(html).toContain("HALL OF FAME-SKÄRP");
-    expect(html).toContain("UNDERRÄTTELSEVAPNET");
+    expect(html).toContain("Medaljer");
+    expect(html).toContain("🥉");
+    expect(html).toContain("BRONSMEDALJ");
+    expect(html).toContain("SILVERMEDALJ");
+    expect(html).toContain("GULDMEDALJ");
+    expect(html).toContain("MÄSTARSKAPSPOKAL");
+    expect(html).toContain("HALL OF FAME-TROFÉN");
     expect(html).toContain("✓ ÄGD");
     expect(html).toContain("LÅS UPP FÖR 35,000 poäng");
     expect(html).toContain("KRÄVER 75,000 poäng");

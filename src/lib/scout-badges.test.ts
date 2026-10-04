@@ -11,10 +11,10 @@ describe("resolveUnlockedBadges", () => {
 
     expect(badges.map((badge) => badge.id)).toEqual(["rookie_pin", "chief_intel"]);
     expect(badges[0]).toMatchObject({
-      name: "NYBÖRJARNÅL",
-      icon: "📌",
-      desc: "Avklarade de första matcherna",
+      name: "BRONSMEDALJ",
+      icon: "🥉",
+      desc: "För de första avklarade matcherna.",
     });
-    expect(badges[1]?.icon).toBe("👑");
+    expect(badges[1]?.icon).toBe("🏅");
   });
 });

@@ -4,8 +4,8 @@ import { findCase } from "@/lib/case-files";
 import { caseClues } from "@/lib/case-clues";
 import { solvedMatchup } from "@/lib/case-solutions";
 import { canonicalSport } from "@/lib/decoy-options";
+import { publishDailyClues } from "@/lib/daily-clue-copy";
 import { fixtureIdForSportDay, sportDailyKey, type DailySportId } from "@/lib/daily-sport";
-import { localizeDailyClue } from "@/lib/swedish-clues";
 import { ensureFourDailyOptions, gradesDailyOption } from "@/lib/sport-options";
 import { puzzles } from "@/lib/catalog";
 import {
@@ -54,7 +54,7 @@ export function toPublicDaily(fixture: SecretDaily): PublicDaily {
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: fixture.clues.map((clue) => localizeDailyClue(clue)),
+    clues: publishDailyClues(fixture.id, fixture.clues, fixture.category),
     options: fixture.options,
   };
 }
@@ -68,6 +68,7 @@ export async function loadSportDaily(sport: DailySportId, dateKey: string): Prom
     ...fixture,
     id: sportDailyKey(dateKey, sport),
     date_key: dateKey,
+    clues: publishDailyClues(sourceId, fixture.clues, fixture.category),
   };
 }
 
@@ -345,7 +346,11 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: (fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."]).map((clue) => localizeDailyClue(clue)),
+    clues: publishDailyClues(
+      fixture.id,
+      fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."],
+      fixture.category,
+    ),
     options: ensureFourDailyOptions([...generated, ...options], fixture.category, fixture.id),
   };
 }

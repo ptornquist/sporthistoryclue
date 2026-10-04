@@ -14,8 +14,6 @@ describe("localizeDailyClue", () => {
     ).toBe(
       "En drömduell på huvudbanan mellan två raka motsatser: den stoiske baslinjemästaren mot spelaren från andra sidan Atlanten.",
     );
-    expect(localizeDailyClue("Amateurs against a professional machine. Olympic Field House, Lake Placid.")).not.toMatch(
-      /Lake Placid|Amateurs|against|Field House/i,
-    );
+    expect(localizeDailyClue("Amateurs against a professional machine. Olympic Field House, Lake Placid.")).toBe("");
   });
 });

@@ -26,6 +26,10 @@ const SPORT_FIXTURES: Record<DailySportId, readonly string[]> = {
   athletics: ["owens-1936", "fosbury-1968", "bolt-2008", "super-saturday-2012"],
 };
 
+export function dailyFixtureSources(): string[] {
+  return DAILY_SPORT_IDS.flatMap((sport) => [...SPORT_FIXTURES[sport]]);
+}
+
 export function isDailySportId(value: string | null | undefined): value is DailySportId {
   return DAILY_SPORT_IDS.includes(value as DailySportId);
 }
