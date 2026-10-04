@@ -63,7 +63,25 @@ describe("publishDailyClues", () => {
     expect(new Set(clues).size).toBe(5);
     expect(clues[0]).toMatch(/Pucken ligger still/);
     expect(clues.join(" ")).not.toMatch(/mittcirkeln|avspark|volley|nickmål|gräset|special teams|nhl/i);
-    expect(clues.join(" ")).toMatch(/puck|ishall|byte|blålinje|siren/i);
+    expect(clues.join(" ")).toMatch(/puck|ishall|byte|blålinje|siren|sarg|period/i);
+  });
+
+  it("writes every hockey classic in rink Swedish and drops football or English lines", () => {
+    const hockey = dailyFixtureSources().filter((id) => sportForFixture(id) === "ice_hockey");
+    expect(hockey.length).toBeGreaterThan(0);
+    for (const id of hockey) {
+      const text = publishDailyClues(
+        id,
+        ["8,500 roaring spectators pack the rink.", "Domaren pekar mot mittcirkeln innan avspark och ett inlägg på bollen."],
+        "Football",
+      ).join(" ");
+      expect(text).toMatch(/puck/i);
+      expect(text).toMatch(/sarg/i);
+      expect(text).toMatch(/period/i);
+      expect(text).toMatch(/blålinj/i);
+      expect(text).toMatch(/utvisningsbås/i);
+      expect(text).not.toMatch(/avspark|mittcirkel|inlägg|\bboll|roaring|spectators|\brink\b|nhl|8-matchers/i);
+    }
   });
 
   it("keeps a written ladder when the id later becomes a dated sport key", () => {

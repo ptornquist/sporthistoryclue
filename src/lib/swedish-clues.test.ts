@@ -15,5 +15,6 @@ describe("localizeDailyClue", () => {
       "En drömduell på huvudbanan mellan två raka motsatser: den stoiske baslinjemästaren mot spelaren från andra sidan Atlanten.",
     );
     expect(localizeDailyClue("Amateurs against a professional machine. Olympic Field House, Lake Placid.")).toBe("");
+    expect(localizeDailyClue("8,500 roaring spectators")).toBe("");
   });
 });

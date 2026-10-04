@@ -13,38 +13,38 @@ const ALIASES: Record<string, string> = {
 
 const LADDERS: Record<string, Ladder> = {
   "miracle-1980": [
-    "En olympisk ishall i en bergsby. Publiken viftar med en flagga som inte vill ligga still, och favoriten har tränat året runt.",
-    "Det är semifinal, men stämningen är redan som i en final. Ett universitetslag möter en supermakts sammansvetsade maskin.",
-    "Bänken är ung. Den andra sidan byter i färdiga formationer. En kapten får det sista bytet när klockan sinar.",
-    "Radion skriker rakt in i en mikrofon. Kameran fastnar på en målvakt som vägrar titta bort.",
+    "Pucken studsar i sargen i en olympisk ishall. Favoriten har tränat året runt, och flaggan på läktaren vill inte ligga still.",
+    "Det är semifinal på isen, men stämningen är redan som i en final. Ett universitetslag möter en maskin som rullar i långa perioder.",
+    "Blålinjen håller. Utvisningsbåset står tomt. Kaptenen får det sista bytet när klockan i perioden sinar.",
+    "Radion skriker rakt in i en mikrofon. Målvakten vägrar titta bort när pucken ligger fri framför kassen.",
     "Miraklet på isen, 1980. USA:s universitetslag slår Sovjetunionen med 4–3 och tar sedan OS-guld mot Finland.",
   ],
   "summit-series-1972": [
-    "En landskampsserie som vägrar dö. Bortalagets hall är full, och klockan är nästan slut.",
-    "Två hockeysystem som länge levt åtskilda möts när proffsen äntligen släpps in i landslaget.",
-    "Ett lag är byggt för en klubbliga. Det andra samlas året runt. Serien står lika inför sista matchen.",
-    "Ett skott från slottet, en målvakt som är sen, och en hall som exploderar med sekunder kvar.",
+    "Bortalagets hall är full. Pucken slår i sargen, och klockan i tredje perioden är nästan slut.",
+    "Två hockeysystem som länge levt åtskilda möts när proffsen äntligen släpps in på isen.",
+    "Ett lag är byggt för en klubbliga. Det andra samlas året runt. Blålinjen är den gräns de inte får ge bort.",
+    "Ett skott från slottet. Målvakten är sen. Utvisningsbåset är tomt, och hallen exploderar med sekunder kvar.",
     "Toppmötesserien 1972. Kanadas proffs möter det sovjetiska landslaget i åtta matcher, och sista minuten i Moskva avgör.",
   ],
   "turin-gold-2006": [
-    "En nybyggd OS-hall. Två lag som kan varandras skridskoskär möts om den tyngsta medaljen.",
+    "En nybyggd OS-hall. Skridskorna skär isen, och pucken letar sig längs sargen innan första bytet.",
     "Ledningen byter ägare. När sista perioden börjar är ställningen inte längre den som öppnade matchen.",
     "En back kliver upp mot blålinjen nästan innan bänken hunnit sätta sig. Skottet går högt.",
-    "Ribban sjunger, och ett helt land hör det i tv-rutan innan hallen hinner resa sig.",
+    "Ribban sjunger. Utvisningsbåset är tomt, det är fem mot fem, och hallen hör träffen innan ögonen hinner med.",
     "OS-finalen 2006 i Turin. Tre Kronor slår Finland med 3–2 efter Nicklas Lidströms slagskott i tredje perioden.",
   ],
   "slaget-i-sudden": [
-    "En slutspelskväll som vägrar ta slut. Tre perioder räcker inte, och bänkarna ser ut att vänta på en ny match.",
-    "Första perioden ger var sitt mål. Sedan tystnar tavlan, period efter period, medan målvakterna vägrar släppa något.",
-    "En tredje förlängning. Benen är tunga, och ett skott som inte ens är rent räcker för att hallen ska brista.",
-    "Klockan har passerat midnatt. En styrning vid kassen, mer än ett skott, och plötsligt är semifinalen över.",
+    "En slutspelskväll som vägrar ta slut. Tre perioder räcker inte, sargen är märkt av slag, och bänkarna väntar.",
+    "Första perioden ger var sitt mål. Sedan tystnar tavlan, period efter period, medan målvakterna täcker pucken.",
+    "En tredje förlängning. Utvisningsbåset är tomt, benen är tunga, och ett skott som tar i ett benskydd räcker för att hallen ska brista.",
+    "Klockan har passerat midnatt. Pucken kommer över blålinjen, en styrning vid kassen, och semifinalen är över.",
     "SM-semifinalen 2015. Växjö slår Frölunda med 2–1 efter 104 minuter, när Tuomas Kiiskinen styr in pucken i sjätte perioden.",
   ],
   "guldkampen-i-norr": [
-    "En finalserie mellan två lag från samma landsände. Guldmedaljen har varit borta från den här stan i en hel generation.",
+    "En finalserie mellan två lag från samma landsände. Isen är nyspolad, sargen darrar av sång, och guldet har varit borta i en generation.",
     "Bortalaget leder serien redan innan sista matchen. Hemmaisen är full, men chanserna fastnar framför kassen.",
-    "Ett tidigt mål sätter tonen. Sedan kommer ett till, och ett till, tills motståndet tar ut målvakten.",
-    "En tom kasse, ett avslut till, och en generation som väntat sedan 1970-talet får äntligen sjunga.",
+    "Ett tidigt mål i första perioden sätter tonen. Sedan kommer ett till, tills motståndet tar ut målvakten.",
+    "Utvisningsbåset är tomt. Pucken får fritt över blålinjen mot den tomma kassen, och en generation får äntligen sjunga.",
     "Den 18 april 2013 vinner Skellefteå med 4–0 borta mot Luleå i fjärde finalen och tar sitt första SM-guld sedan 1978.",
   ],
   "montevideo-1930": [
@@ -184,11 +184,11 @@ const LADDERS: Record<string, Ladder> = {
 
 const SPORT_BANKS: Record<DailySportId, Ladder> = {
   ice_hockey: [
-    "En ishall där andetagen syns. Publikens slag mot plexit följer pucken, inte klockan.",
-    "Två hockeylag med olika tålamod. Det ena jagar avslutet, det andra väntar på misstaget.",
-    "Ett numerärt överläge och ett byte som dröjer en sekund för länge. Målvakten ser pucken sent.",
-    "En blålinje, ett skott som tar på ett benskydd, och en retur som ingen back hinner täcka.",
-    "Sista bytet fäller avgörandet: ett mål, en siren, och en hall som inte sätter sig igen.",
+    "En ishall där andetagen syns. Pucken slår i sargen, och publiken följer den, inte klockan.",
+    "Första perioden är ett sökande. Det ena laget jagar avslutet, det andra väntar bakom blålinjen.",
+    "Utvisningsbåset står tomt. Ett byte dröjer en sekund för länge, och målvakten ser pucken sent.",
+    "En back kliver upp mot blålinjen. Skottet tar på ett benskydd, och returen dör vid sargen.",
+    "Sista perioden fäller avgörandet: ett mål, en siren, och en is som inte får vila.",
   ],
   football: [
     "Ett gräs som redan är upprivet vid mittcirkeln. Läktaren sjunger innan domaren ens blåst igång.",
@@ -224,14 +224,14 @@ const GENERIC =
   /avgörandet sparas till det sista kortet|ett beskuret arkivfoto|en detalj ur arkivet|uppställningen bär favoritens börda|en arena som redan är full innan startskottet/i;
 
 const ENGLISH_FRAGMENT =
-  /\b(the|and|with|winner|amateurs|against|scoreboard|versus|defeats|summit series|nhl|special teams|champions league|battle of the sexes|super saturday|tiebreak|hardcourt|premier league|centre court|lake placid|field house|collegelag|college|knockar|knockout|floppen|cape|game|jab|volley|momentum)\b/i;
+  /\b(the|and|with|winner|amateurs|against|scoreboard|versus|defeats|summit series|nhl|special teams|champions league|battle of the sexes|super saturday|tiebreak|hardcourt|premier league|centre court|lake placid|field house|collegelag|college|knockar|knockout|floppen|cape|game|jab|volley|momentum|roaring|spectators?|crowd|packed|cheers|cheering|rink|face-?off|8-matchers)\b/i;
 
 /** Words that belong to another sport and must not survive on this fixture. */
 const FOREIGN: Record<DailySportId, RegExp> = {
   ice_hockey:
-    /\b(mittcirkeln|avspark(?:en)?|volley|nickmål|inlägg(?:et)?|bollen|gräset|offside|hörnan|straffläggning|särspel|hårdbanan|högstaligan|ronden|startblock|längdhopp|sprinter)\b/i,
+    /\b(mittcirkeln?|avspark(?:en)?|volley|nickmål|inlägg(?:et)?|boll(?:en|ar|arna)?|gräset|gräsplan(?:en)?|offside|hörnan|planhalva(?:n)?|straffläggning|straffspark(?:en)?|särspel|hårdbanan|högstaligan|ronden|startblock|längdhopp|sprinter)\b/i,
   football:
-    /\b(pucken|puck|ishallen|ishall|blålinjen|skridsk\w*|plexit|slagskott|kassen|ronden|särspel|startblock|längdhopp|serven|perioden|perioder)\b/i,
+    /\b(pucken|puck|ishallen|ishall|blålinjen|skridsk\w*|plexit|slagskott|kassen|sarg(?:en)?|utvisningsbås(?:et)?|ronden|särspel|startblock|längdhopp|serven|perioden|perioder)\b/i,
   boxing:
     /\b(pucken|puck|mittcirkeln|avspark(?:en)?|volley|blålinjen|ishallen|särspel|startblock|längdhopp|nickmål|högstaligan|perioden)\b/i,
   tennis:
@@ -276,26 +276,33 @@ function uniqueLines(lines: readonly string[]): string[] {
   return kept;
 }
 
+function fillToFive(lines: string[], sportId: DailySportId | null): string[] {
+  if (lines.length >= 5) return lines.slice(0, 5);
+  const bank = SPORT_BANKS[sportId ?? "football"];
+  const filled = [...lines];
+  for (const line of bank) {
+    if (filled.length >= 5) break;
+    if (!filled.includes(line)) filled.push(line);
+  }
+  return filled.slice(0, 5);
+}
+
 /** Five distinct Swedish cards for one daily fixture. Known matches use their own ladder. */
 export function publishDailyClues(
   fixtureId: string,
   clues: readonly string[] | null | undefined,
   sport?: string | null,
 ): string[] {
-  const written = ladderFor(fixtureId);
-  if (written) return [...written];
-
   const sportId = sportForFixture(fixtureId) ?? sportKey(sport);
+  const written = ladderFor(fixtureId);
+  if (written) {
+    return fillToFive(
+      written.filter((line) => lineFitsSport(line, sportId)),
+      sportId,
+    );
+  }
   const cleaned = uniqueLines((clues ?? []).map((clue) => localizeDailyClue(clue))).filter((line) =>
     lineFitsSport(line, sportId),
   );
-  if (cleaned.length >= 5) return cleaned.slice(0, 5);
-
-  const bank = SPORT_BANKS[sportId ?? "football"];
-  const filled = [...cleaned];
-  for (const line of bank) {
-    if (filled.length >= 5) break;
-    if (!filled.includes(line)) filled.push(line);
-  }
-  return filled.slice(0, 5);
+  return fillToFive(cleaned, sportId);
 }

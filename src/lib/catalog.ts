@@ -649,7 +649,7 @@ export const puzzles: Puzzle[] = [
     clues: [
       {
         kind: "image",
-        kicker: "Beskuren bild: en isrink och en flagga i rörelse.",
+        kicker: "Beskuren bild: en is och en flagga i rörelse.",
         image: { plateId: "ice-rink", scale: 3.15, x: 70, y: 75 },
       },
       {
@@ -681,7 +681,7 @@ export const puzzles: Puzzle[] = [
       {
         kind: "text",
         kicker: "Slutbrief",
-        body: "Ett collegelag. Ett avgörande från en kapten. En semifinal som ett helt land minns som en final.",
+        body: "Ett universitetslag. Ett avgörande från en kapten. En semifinal som ett helt land minns som en final.",
       },
     ],
   },

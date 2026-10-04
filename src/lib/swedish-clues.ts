@@ -12,10 +12,14 @@ const REPLACEMENTS: Array<[RegExp, string]> = [
   [/Premier League/gi, "den engelska högstaligan"],
 ];
 
+const ENGLISH_MARK =
+  /\b(the|and|with|winner|amateurs|against|scoreboard|field house|defeats|versus|roaring|spectators?|crowd|packed|cheers|cheering|rink|face-?off)\b/i;
+
 function isEnglishProse(text: string): boolean {
+  if (ENGLISH_MARK.test(text) && !/[åäöÅÄÖ]/.test(text)) return true;
   if (/[åäöÅÄÖ]/.test(text)) return false;
   if (/\b(och|en|ett|som|från|mot|den|det|inte|redan|utan)\b/i.test(text)) return false;
-  return /\b(the|and|with|winner|amateurs|against|scoreboard|field house|defeats|versus)\b/i.test(text);
+  return ENGLISH_MARK.test(text);
 }
 
 /** Phrase fixes for stored English names. A fully English sentence is dropped, not replaced by one shared line. */

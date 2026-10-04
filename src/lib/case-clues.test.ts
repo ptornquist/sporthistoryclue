@@ -23,8 +23,9 @@ describe("caseClues", () => {
     });
     expect(clues[0]).not.toMatch(/NHL|Röd Maskinen|1972|Sovjet|Kanada/);
     expect(clues[4]).toBe(
-      "En enastående 8-matchers interkontinental drabbning som ställde NHL-superstjärnor mot den hemlighetsfulla Röd Maskinen.",
+      "Toppmötesserien 1972. Kanadas proffs möter det sovjetiska landslaget i åtta matcher, och sista minuten i Moskva avgör.",
     );
+    expect(clues.join(" ")).not.toMatch(/NHL|8-matchers|Röd Maskinen|roaring|spectators|avspark|mittcirkel|\bboll\b/i);
   });
 
   it("keeps the Pasadena bronze cryptic until the last card", () => {
