@@ -23,6 +23,14 @@ const MATCHUPS: Record<string, string> = {
   "guldkampen-i-norr": "Skellefteå mot Luleå (2013)",
   "sondagsmorgonen-stockholms-stad": "Hammarby mot Djurgården (2018)",
   "guldstriden-sista-omgangen": "IFK Göteborg mot Trelleborg (2007)",
+  "farjestad-skelleftea-2011": "Färjestad mot Skellefteå (2011)",
+  "brynas-skelleftea-2012": "Brynäs mot Skellefteå (2012)",
+  "skelleftea-farjestad-2014": "Skellefteå mot Färjestad (2014)",
+  "frolunda-skelleftea-2016": "Frölunda mot Skellefteå (2016)",
+  "aik-djurgarden-2017": "AIK mot Djurgården (2017)",
+  "malmo-ifk-2015": "Malmö FF mot IFK Göteborg (2015)",
+  "elfsborg-djurgarden-2006": "Elfsborg mot Djurgården (2006)",
+  "hammarby-aik-2016": "Hammarby mot AIK (2016)",
 };
 
 export function solvedMatchup(id: string): string | null {

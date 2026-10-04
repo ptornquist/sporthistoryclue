@@ -19,7 +19,14 @@ const DEFINITIONS: Array<Omit<Storyline, "matches"> & { matchSlugs: string[] }> 
     accent: "text-sky-600",
     description:
       "Avgörande ögonblick, nagelbitare och klassiska rivaliteter från den svenska hockeyscenen.",
-    matchSlugs: ["slaget-i-sudden", "guldkampen-i-norr"],
+    matchSlugs: [
+      "slaget-i-sudden",
+      "guldkampen-i-norr",
+      "farjestad-skelleftea-2011",
+      "brynas-skelleftea-2012",
+      "skelleftea-farjestad-2014",
+      "frolunda-skelleftea-2016",
+    ],
   },
   {
     id: "allsvenska-derbyn",
@@ -28,7 +35,14 @@ const DEFINITIONS: Array<Omit<Storyline, "matches"> & { matchSlugs: string[] }> 
     icon: "⚽",
     accent: "text-emerald-600",
     description: "Känslor, läktarfest och oförglömliga guldstrider i Allsvenskan.",
-    matchSlugs: ["sondagsmorgonen-stockholms-stad", "guldstriden-sista-omgangen"],
+    matchSlugs: [
+      "sondagsmorgonen-stockholms-stad",
+      "guldstriden-sista-omgangen",
+      "aik-djurgarden-2017",
+      "malmo-ifk-2015",
+      "elfsborg-djurgarden-2006",
+      "hammarby-aik-2016",
+    ],
   },
 ];
 

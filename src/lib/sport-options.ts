@@ -10,6 +10,38 @@ export const SHL_MATCHUPS = [
   "Skellefteå mot Luleå (2013)",
 ] as const;
 
+/** Four buttons for Färjestad's 2011 final. The first string is the graded answer. */
+export const FARJESTAD_SKELLEFTEA_2011_OPTIONS = [
+  "Färjestad mot Skellefteå (2011)",
+  "Färjestad mot HV71 (2011)",
+  "Brynäs mot Leksand (2016)",
+  "Skellefteå mot Luleå (2013)",
+] as const;
+
+/** Four buttons for Brynäs' 2012 final. The first string is the graded answer. */
+export const BRYNAS_SKELLEFTEA_2012_OPTIONS = [
+  "Brynäs mot Skellefteå (2012)",
+  "Brynäs mot Leksand (2016)",
+  "Växjö mot Frölunda (2015)",
+  "Färjestad mot HV71 (2011)",
+] as const;
+
+/** Four buttons for Skellefteå's 2014 sweep. The first string is the graded answer. */
+export const SKELLEFTEA_FARJESTAD_2014_OPTIONS = [
+  "Skellefteå mot Färjestad (2014)",
+  "Skellefteå mot Luleå (2013)",
+  "Färjestad mot HV71 (2011)",
+  "Växjö mot Frölunda (2015)",
+] as const;
+
+/** Four buttons for Frölunda's 2016 away gold. The first string is the graded answer. */
+export const FROLUNDA_SKELLEFTEA_2016_OPTIONS = [
+  "Frölunda mot Skellefteå (2016)",
+  "Växjö mot Frölunda (2015)",
+  "Brynäs mot Leksand (2016)",
+  "Skellefteå mot Luleå (2013)",
+] as const;
+
 /** Allsvenskan club matchups. Used as the whole option set for the football campaign. */
 export const ALLSVENSKAN_MATCHUPS = [
   "Hammarby mot Djurgården (2018)",
@@ -17,6 +49,38 @@ export const ALLSVENSKAN_MATCHUPS = [
   "Malmö FF mot IFK Göteborg (2015)",
   "Elfsborg mot AIK (2006)",
   "IFK Göteborg mot Trelleborg (2007)",
+] as const;
+
+/** Four buttons for the 2017 twin derby. The first string is the graded answer. */
+export const AIK_DJURGARDEN_2017_OPTIONS = [
+  "AIK mot Djurgården (2017)",
+  "Hammarby mot Djurgården (2018)",
+  "Malmö FF mot IFK Göteborg (2015)",
+  "IFK Göteborg mot Trelleborg (2007)",
+] as const;
+
+/** Four buttons for the 2015 title race. The first string is the graded answer. */
+export const MALMO_IFK_2015_OPTIONS = [
+  "Malmö FF mot IFK Göteborg (2015)",
+  "Hammarby mot Djurgården (2018)",
+  "AIK mot Djurgården (2017)",
+  "Elfsborg mot AIK (2006)",
+] as const;
+
+/** Four buttons for Elfsborg's 2006 gold match. The first string is the graded answer. */
+export const ELFSBORG_DJURGARDEN_2006_OPTIONS = [
+  "Elfsborg mot Djurgården (2006)",
+  "Elfsborg mot AIK (2006)",
+  "Hammarby mot Djurgården (2018)",
+  "IFK Göteborg mot Trelleborg (2007)",
+] as const;
+
+/** Four buttons for the 2016 derby decided before half-time. The first string is the graded answer. */
+export const HAMMARBY_AIK_2016_OPTIONS = [
+  "Hammarby mot AIK (2016)",
+  "Hammarby mot Djurgården (2018)",
+  "AIK mot Djurgården (2017)",
+  "Malmö FF mot IFK Göteborg (2015)",
 ] as const;
 
 /** Four buttons for the 1972 Summit Series. The first string is the graded answer. */
@@ -55,8 +119,16 @@ function recognizePinnedOptions(options: readonly string[]): readonly string[] |
 const DOMESTIC_LEAGUE_OPTIONS: Record<string, readonly string[]> = {
   "slaget-i-sudden": SHL_MATCHUPS,
   "guldkampen-i-norr": SHL_MATCHUPS,
+  "farjestad-skelleftea-2011": FARJESTAD_SKELLEFTEA_2011_OPTIONS,
+  "brynas-skelleftea-2012": BRYNAS_SKELLEFTEA_2012_OPTIONS,
+  "skelleftea-farjestad-2014": SKELLEFTEA_FARJESTAD_2014_OPTIONS,
+  "frolunda-skelleftea-2016": FROLUNDA_SKELLEFTEA_2016_OPTIONS,
   "sondagsmorgonen-stockholms-stad": ALLSVENSKAN_MATCHUPS,
   "guldstriden-sista-omgangen": ALLSVENSKAN_MATCHUPS,
+  "aik-djurgarden-2017": AIK_DJURGARDEN_2017_OPTIONS,
+  "malmo-ifk-2015": MALMO_IFK_2015_OPTIONS,
+  "elfsborg-djurgarden-2006": ELFSBORG_DJURGARDEN_2006_OPTIONS,
+  "hammarby-aik-2016": HAMMARBY_AIK_2016_OPTIONS,
 };
 
 /** Swedish club buttons for a league campaign fixture. Null for every other match. */
@@ -79,6 +151,10 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Kanada mot USA (1987)",
     "Miraklet på isen",
     ...SHL_MATCHUPS,
+    ...FARJESTAD_SKELLEFTEA_2011_OPTIONS,
+    ...BRYNAS_SKELLEFTEA_2012_OPTIONS,
+    ...SKELLEFTEA_FARJESTAD_2014_OPTIONS,
+    ...FROLUNDA_SKELLEFTEA_2016_OPTIONS,
   ],
   football: [
     "Sverige mot Bulgarien (1994)",
@@ -100,6 +176,10 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Leicester City vinner Premier League till 5000–1",
     "Messi vinner VM i Lusail",
     ...ALLSVENSKAN_MATCHUPS,
+    ...AIK_DJURGARDEN_2017_OPTIONS,
+    ...MALMO_IFK_2015_OPTIONS,
+    ...ELFSBORG_DJURGARDEN_2006_OPTIONS,
+    ...HAMMARBY_AIK_2016_OPTIONS,
   ],
   boxing: [
     "Muhammad Ali mot George Foreman (1974)",

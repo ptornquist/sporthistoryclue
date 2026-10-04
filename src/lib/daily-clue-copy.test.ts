@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { DAILY_SPORT_IDS, dailyFixtureSources, fixtureIdForSportDay, sportForFixture } from "./daily-sport";
-import { SUMMIT_SERIES_1972_CARDS, SVERIGE_SOVJET_1984_CARDS } from "./case-clues";
+import {
+  AIK_DJURGARDEN_2017_CARDS,
+  BRYNAS_SKELLEFTEA_2012_CARDS,
+  ELFSBORG_DJURGARDEN_2006_CARDS,
+  FARJESTAD_SKELLEFTEA_2011_CARDS,
+  FROLUNDA_SKELLEFTEA_2016_CARDS,
+  HAMMARBY_AIK_2016_CARDS,
+  MALMO_IFK_2015_CARDS,
+  SKELLEFTEA_FARJESTAD_2014_CARDS,
+  SUMMIT_SERIES_1972_CARDS,
+  SVERIGE_SOVJET_1984_CARDS,
+} from "./case-clues";
 import { dailyClueFitsSport, publishDailyClues } from "./daily-clue-copy";
 
 const BANNED = /Avgörandet sparas till det sista kortet|Ett beskuret arkivfoto|Lake Placid|Centre Court|Amateurs against/i;
@@ -96,6 +107,22 @@ describe("publishDailyClues", () => {
     expect(cards[2]).toMatch(/Mats Thelin/);
     expect(cards[4]).toMatch(/hockeyhistoria/);
     expect(publishDailyClues("daily-ice_hockey-2026-10-04", cards, "ice_hockey")).toEqual(cards);
+  });
+
+  it("publishes each new campaign ladder without falling back to the bank", () => {
+    const packs = [
+      ["farjestad-skelleftea-2011", FARJESTAD_SKELLEFTEA_2011_CARDS, "ice_hockey"],
+      ["brynas-skelleftea-2012", BRYNAS_SKELLEFTEA_2012_CARDS, "ice_hockey"],
+      ["skelleftea-farjestad-2014", SKELLEFTEA_FARJESTAD_2014_CARDS, "ice_hockey"],
+      ["frolunda-skelleftea-2016", FROLUNDA_SKELLEFTEA_2016_CARDS, "ice_hockey"],
+      ["aik-djurgarden-2017", AIK_DJURGARDEN_2017_CARDS, "football"],
+      ["malmo-ifk-2015", MALMO_IFK_2015_CARDS, "football"],
+      ["elfsborg-djurgarden-2006", ELFSBORG_DJURGARDEN_2006_CARDS, "football"],
+      ["hammarby-aik-2016", HAMMARBY_AIK_2016_CARDS, "football"],
+    ] as const;
+    for (const [id, cards, sport] of packs) {
+      expect(publishDailyClues(id, ["Amateurs against a machine."], sport)).toEqual([...cards]);
+    }
   });
 
   it("publishes the 1972 Summit Series cards in order", () => {

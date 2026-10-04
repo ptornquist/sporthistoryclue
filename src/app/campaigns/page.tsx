@@ -6,52 +6,8 @@ import Header from '@/components/Header';
 import { FixturePreview } from '@/components/game/FixturePreview';
 import { useSolvedFixtures } from '@/components/game/useSolvedFixtures';
 import Footer from '@/components/Footer';
-import { findCase, mysteryFixtureLabel, previewFromCase } from '@/lib/case-files';
-import { arenaHref, firstOpenMatch } from '@/lib/storylines';
-
-interface Campaign {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  accent: string;
-  matchSlugs: string[];
-}
-
-const CAMPAIGNS: Campaign[] = [
-  {
-    id: 'shl-klassiker',
-    title: 'SHL-KLASSIKER & RIVALER',
-    icon: '🏒',
-    accent: 'text-sky-600',
-    description:
-      'Avgörande ögonblick, nagelbitare och klassiska rivaliteter från den svenska hockeyscenen.',
-    matchSlugs: ['slaget-i-sudden', 'guldkampen-i-norr'],
-  },
-  {
-    id: 'allsvenska-derbyn',
-    title: 'ALLSVENSKA DERBYN & DRAMAT',
-    icon: '⚽',
-    accent: 'text-emerald-600',
-    description: 'Känslor, läktarfest och oförglömliga guldstrider i Allsvenskan.',
-    matchSlugs: ['sondagsmorgonen-stockholms-stad', 'guldstriden-sista-omgangen'],
-  },
-];
-
-const CATEGORY_HINTS: Record<string, string> = {
-  'slaget-i-sudden': 'Klassisk ishockeymatch',
-  'guldkampen-i-norr': 'Klassisk ishockeymatch',
-  'sondagsmorgonen-stockholms-stad': 'Historisk fotbollsmatch',
-  'guldstriden-sista-omgangen': 'Historisk fotbollsmatch',
-};
-
-const STORYLINES = CAMPAIGNS.map((campaign) => ({
-  ...campaign,
-  matches: campaign.matchSlugs.flatMap((slug) => {
-    const file = findCase(slug);
-    return file ? [previewFromCase(file)] : [];
-  }),
-}));
+import { findCase, mysteryFixtureLabel } from '@/lib/case-files';
+import { arenaHref, firstOpenMatch, STORYLINES } from '@/lib/storylines';
 
 export default function CampaignsPage() {
   const solved = useSolvedFixtures(
@@ -113,9 +69,7 @@ export default function CampaignsPage() {
                         context={match.context}
                         solvedScore={record?.score ?? null}
                         matchup={record?.score != null ? record.matchup : null}
-                        mysteryLabel={
-                          CATEGORY_HINTS[match.key] ?? mysteryFixtureLabel(findCase(match.key)?.sport)
-                        }
+                        mysteryLabel={mysteryFixtureLabel(findCase(match.key)?.sport)}
                         href={arenaHref(match.key, campaign.id)}
                         clueCount={false}
                         showYear={false}

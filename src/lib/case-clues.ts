@@ -12,6 +12,70 @@ export const SUMMIT_SERIES_1972_CARDS = [
   "Med bara 34 sekunder kvar av sista perioden kliver Paul Henderson fram och slår in den historiska segerpucken som får hela Kanada att explodera i jubel.",
 ] as const;
 
+export const FARJESTAD_SKELLEFTEA_2011_CARDS = [
+  "En finalkväll på hemmaplan. Isen är nyspolad, sargen tar emot sången, och serien kan stängas i den här hallen.",
+  "Gästerna har redan tagit en seger i serien. Hemmalaget behöver vinna för att lyfta bucklan inför egen publik.",
+  "Första perioden ger ledningen. Fler puckar hittar nätet, och målvakten i andra änden får inget andrum.",
+  "När klockan sinar tas målvakten ut. En sista puck i tom kasse sätter punkt på kvällen.",
+  "Den 14 april 2011 vinner Färjestad med 4–1 mot Skellefteå i femte finalen och tar sitt nionde SM-guld. Matchserien slutar 4–1.",
+] as const;
+
+export const BRYNAS_SKELLEFTEA_2012_CARDS = [
+  "En jubileumssäsong som ska avgöras i sista matchen. Hallen är full, och guldet har varit borta i mer än ett decennium.",
+  "Serien är inte färdig. Ett lag kan stänga hemma, det andra jagar en chans till.",
+  "Ett tidigt mål sätter tonen. Sedan kommer ett till från blålinjen, och tavlan står still resten av kvällen.",
+  "Inget mål i retur. Målvakten håller nollan, och jubileet får sitt guld.",
+  "Den 20 april 2012 vinner Brynäs med 2–0 mot Skellefteå i sjätte finalen. Jakob Silfverberg och Ryan Gunderson gör målen, och klubben tar sitt trettonde SM-guld.",
+] as const;
+
+export const SKELLEFTEA_FARJESTAD_2014_CARDS = [
+  "En finalserie där samma lag vinner varje kväll. Den sista matchen spelas hemma, och gästerna har inte fått in en seger.",
+  "Tre segrar är redan inne. En fjärde stänger guldet utan att serien behöver vända.",
+  "Målen kommer i varje period. Blålinjen hålls kort, och motståndet hittar inte kassen.",
+  "Sista matchen slutar utan retur. Pucken ligger i nätet, och serien är över.",
+  "SM-finalen 2014. Skellefteå slår Färjestad i fyra raka matcher och tar guldet hemma. Serien slutar 4–0.",
+] as const;
+
+export const FROLUNDA_SKELLEFTEA_2016_CARDS = [
+  "En final som avgörs på bortais. Sargen darrar av sång, och guldet har varit borta ur klubben i mer än tio år.",
+  "Serien kan stängas i den här matchen. Bortalaget leder redan, och hemmapubliken behöver en vändning.",
+  "Två tidiga mål sätter tonen. Hemmalaget hämtar in under kvällen, men ledningen kommer tillbaka.",
+  "Sista perioden ger ett mål till. Inget mer i retur, och bortalaget kan lyfta bucklan.",
+  "Den 24 april 2016 vinner Frölunda med 5–3 borta mot Skellefteå i femte finalen. Artturi Lehkonen gör två tidiga mål, och klubben tar sitt första SM-guld sedan 2005.",
+] as const;
+
+export const AIK_DJURGARDEN_2017_CARDS = [
+  "Ett derby mellan två klubbar från samma stad. Läktarna är delade i färger, och starten dröjer i sången.",
+  "Ingen sida får dra ifrån. Varje anfall möts av en backlinje som vägrar släppa ytor.",
+  "Ett mål från straffpunkten ger ledningen. Efter paus kommer en nick i målområdet som kvitterar.",
+  "Tavlan står still resten av kvällen. Derbyt slutar lika, och båda läktarna sjunger ändå.",
+  "Den 27 augusti 2017 slutar AIK och Djurgården 1–1. Chinedu Obasi sätter en straff, och Aliou Badji kvitterar med en nick.",
+] as const;
+
+export const MALMO_IFK_2015_CARDS = [
+  "En toppmatch på hemmaplan. Gräset är nyslaget, och båda lagen jagar samma del av tabellen.",
+  "Första halvlek ger ett nickmål. Straffpunkten får sedan vara med två gånger.",
+  "Ett nickmål ger ledningen. En straff utökar, och en straff i retur reducerar bara.",
+  "Tavlan stannar på en målskillnad. Hemmalaget tar poängen i toppstriden.",
+  "Den 9 augusti 2015 vinner Malmö FF med 2–1 mot IFK Göteborg. Kári Árnason öppnar, Markus Rosenberg och Emil Salomonsson sätter var sin straff.",
+] as const;
+
+export const ELFSBORG_DJURGARDEN_2006_CARDS = [
+  "Sista omgången. Ett lag kan ta ett guld som varit borta i en generation, om de vinner hemma.",
+  "En parallell match kan fortfarande störa. Hemma krävs seger, oavsett vad som händer i den andra staden.",
+  "Ett nickmål skapar läget. Strax efteråt sitter avslutet, och tavlan rör sig inte mer.",
+  "Slutsignalerna går nästan samtidigt. Konkurrenten vinner sin match, men det räcker inte.",
+  "Allsvenskans sista omgång 2006. Elfsborg slår Djurgården med 1–0 genom Joakim Sjöhage och tar SM-guldet för första gången på 45 år.",
+] as const;
+
+export const HAMMARBY_AIK_2016_CARDS = [
+  "Ett derby med fulla läktare. Färgerna är delade redan före start, och tempot är högt från första minuten.",
+  "Bortalaget hittar ytor tidigt. Ett mål, sedan ett till, och backlinjen hinner inte ställa om.",
+  "Före pausen kommer ett tredje mål. Hemmaanfallet får aldrig sista avslutet.",
+  "Andra halvlek ändrar inte tavlan. Derbyt är avgjort långt före slutsignalen.",
+  "Den 24 juli 2016 vinner AIK med 3–0 borta mot Hammarby. Haukur Hauksson, Eero Markkanen och Ebenezer Ofori gör målen före paus.",
+] as const;
+
 export const SVERIGE_SOVJET_1984_CARDS = [
   "Ljuset strålar över isen i ett kokande Scandinavium. Den mäktiga stämningen från läktarna vittnar om en historisk drabbning.",
   "Det är turneringen där världens absolut bästa hockeyspelare ställs mot varandra under intensiva höstkvällar på 1980-talet.",
@@ -93,6 +157,14 @@ const CASE_CLUES: Record<string, readonly string[]> = {
     "Ett beskuret arkivfoto från en avslutningsomgång, utan namn i bildtexten.",
     "Guldstriden i sista omgången. Den 28 oktober 2007 vinner IFK Göteborg med 2–0 mot Trelleborg på Ullevi, efter mål av Thomas Olsson och Pontus Wernbloom, och tar SM-guldet före Kalmar.",
   ],
+  "farjestad-skelleftea-2011": FARJESTAD_SKELLEFTEA_2011_CARDS,
+  "brynas-skelleftea-2012": BRYNAS_SKELLEFTEA_2012_CARDS,
+  "skelleftea-farjestad-2014": SKELLEFTEA_FARJESTAD_2014_CARDS,
+  "frolunda-skelleftea-2016": FROLUNDA_SKELLEFTEA_2016_CARDS,
+  "aik-djurgarden-2017": AIK_DJURGARDEN_2017_CARDS,
+  "malmo-ifk-2015": MALMO_IFK_2015_CARDS,
+  "elfsborg-djurgarden-2006": ELFSBORG_DJURGARDEN_2006_CARDS,
+  "hammarby-aik-2016": HAMMARBY_AIK_2016_CARDS,
   "pele-sweden-1958": [
     "VM-final. Arenakortet är värdens egen stadion, och nummer 10 är fortfarande tonåring.",
     "En sommar då ett ungt lag gjorde turneringen till en annan sport.",

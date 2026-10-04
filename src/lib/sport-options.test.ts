@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { distinctOptionValues } from "./option-text";
 import {
+  AIK_DJURGARDEN_2017_OPTIONS,
   ALLSVENSKAN_MATCHUPS,
+  BRYNAS_SKELLEFTEA_2012_OPTIONS,
+  ELFSBORG_DJURGARDEN_2006_OPTIONS,
+  FARJESTAD_SKELLEFTEA_2011_OPTIONS,
+  FROLUNDA_SKELLEFTEA_2016_OPTIONS,
+  HAMMARBY_AIK_2016_OPTIONS,
+  MALMO_IFK_2015_OPTIONS,
+  SKELLEFTEA_FARJESTAD_2014_OPTIONS,
   domesticLeagueOptions,
   ensureFourDailyOptions,
   gradesDailyOption,
@@ -65,6 +73,28 @@ describe("domestic league campaign options", () => {
     expect(options.join(" | ")).not.toMatch(INTERNATIONAL);
     expect(options.every((option) => optionSport(option) === sport)).toBe(true);
     expect(scopeOptionsToSport(options, sport)).toEqual(options);
+  });
+
+  it.each([
+    ["farjestad-skelleftea-2011", "Färjestad mot Skellefteå", 2011, "ice_hockey", FARJESTAD_SKELLEFTEA_2011_OPTIONS],
+    ["brynas-skelleftea-2012", "Brynäs mot Skellefteå", 2012, "ice_hockey", BRYNAS_SKELLEFTEA_2012_OPTIONS],
+    ["skelleftea-farjestad-2014", "Skellefteå mot Färjestad", 2014, "ice_hockey", SKELLEFTEA_FARJESTAD_2014_OPTIONS],
+    ["frolunda-skelleftea-2016", "Frölunda mot Skellefteå", 2016, "ice_hockey", FROLUNDA_SKELLEFTEA_2016_OPTIONS],
+    ["aik-djurgarden-2017", "AIK mot Djurgården", 2017, "football", AIK_DJURGARDEN_2017_OPTIONS],
+    ["malmo-ifk-2015", "Malmö FF mot IFK Göteborg", 2015, "football", MALMO_IFK_2015_OPTIONS],
+    ["elfsborg-djurgarden-2006", "Elfsborg mot Djurgården", 2006, "football", ELFSBORG_DJURGARDEN_2006_OPTIONS],
+    ["hammarby-aik-2016", "Hammarby mot AIK", 2016, "football", HAMMARBY_AIK_2016_OPTIONS],
+  ] as const)("%s grades its own four club buttons", (slug, subject, year, sport, pool) => {
+    expect(domesticLeagueOptions(slug)).toEqual(pool);
+    const correct = pool[0];
+    const options = ensureFourDailyOptions([correct], sport, slug, () => 0);
+    expect([...options].sort()).toEqual([...pool].sort());
+    expect(options).toContain(correct);
+    expect(gradesDailyOption(correct, subject, year, sport)).toBe(true);
+    for (const decoy of pool.slice(1)) {
+      expect(gradesDailyOption(decoy, subject, year, sport)).toBe(false);
+    }
+    expect(options.every((option) => optionSport(option) === sport)).toBe(true);
   });
 });
 
