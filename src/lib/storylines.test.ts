@@ -29,26 +29,44 @@ describe("storyline routing", () => {
 
   it("walks to the next fixture in the storyline", () => {
     expect(nextStorylineMatch("shl-klassiker", "slaget-i-sudden")?.key).toBe("guldkampen-i-norr");
-    expect(nextStorylineMatch("shl-klassiker", "guldkampen-i-norr")).toBeNull();
+    expect(nextStorylineMatch("shl-klassiker", "guldkampen-i-norr")?.key).toBe("farjestad-skelleftea-2011");
+    expect(nextStorylineMatch("shl-klassiker", "frolunda-skelleftea-2016")).toBeNull();
     expect(nextStorylineMatch("allsvenska-derbyn", "sondagsmorgonen-stockholms-stad")?.key).toBe(
       "guldstriden-sista-omgangen",
     );
-    expect(nextStorylineMatch("allsvenska-derbyn", "guldstriden-sista-omgangen")).toBeNull();
+    expect(nextStorylineMatch("allsvenska-derbyn", "guldstriden-sista-omgangen")?.key).toBe("aik-djurgarden-2017");
+    expect(nextStorylineMatch("allsvenska-derbyn", "hammarby-aik-2016")).toBeNull();
     expect(storylineById("shl-klassiker")?.matches.map((match) => match.title)).toEqual([
       "Mysteriet på isen #1",
       "Mysteriet på isen #2",
+      "Mysteriet på isen #3",
+      "Mysteriet på isen #4",
+      "Mysteriet på isen #5",
+      "Mysteriet på isen #6",
     ]);
     expect(storylineById("shl-klassiker")?.matches.map((match) => `${match.year} · ${match.context}`)).toEqual([
       "2015 · Slutspelsdrama",
       "2013 · Finalserie",
+      "2011 · Guldnatt när hemmaplan sjunger",
+      "2012 · Jubileumsguld i sista matchen",
+      "2014 · Finalsvep utan en enda retur",
+      "2016 · Bortaguld efter lång väntan",
     ]);
     expect(storylineById("allsvenska-derbyn")?.matches.map((match) => match.title)).toEqual([
       "Mysteriet på gräset #1",
       "Mysteriet på gräset #2",
+      "Mysteriet på gräset #3",
+      "Mysteriet på gräset #4",
+      "Mysteriet på gräset #5",
+      "Mysteriet på gräset #6",
     ]);
     expect(storylineById("allsvenska-derbyn")?.matches.map((match) => `${match.year} · ${match.context}`)).toEqual([
       "2018 · Derbyklassiker",
       "2007 · Guldstrid",
+      "2017 · Tvillingderby som väger jämnt",
+      "2015 · Rivalmöte i toppstriden",
+      "2006 · Guld efter en hel generation",
+      "2016 · Derby avgjort före paus",
     ]);
     expect(arenaHref("slaget-i-sudden", "shl-klassiker")).toBe("/play/slaget-i-sudden?campaign=shl-klassiker");
     expect(campaignHeadline(null)).toBe("Historisk match");

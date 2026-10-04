@@ -1,4 +1,15 @@
-import { SUMMIT_SERIES_1972_CARDS, SVERIGE_SOVJET_1984_CARDS } from "@/lib/case-clues";
+import {
+  AIK_DJURGARDEN_2017_CARDS,
+  BRYNAS_SKELLEFTEA_2012_CARDS,
+  ELFSBORG_DJURGARDEN_2006_CARDS,
+  FARJESTAD_SKELLEFTEA_2011_CARDS,
+  FROLUNDA_SKELLEFTEA_2016_CARDS,
+  HAMMARBY_AIK_2016_CARDS,
+  MALMO_IFK_2015_CARDS,
+  SKELLEFTEA_FARJESTAD_2014_CARDS,
+  SUMMIT_SERIES_1972_CARDS,
+  SVERIGE_SOVJET_1984_CARDS,
+} from "@/lib/case-clues";
 import { sportForFixture, type DailySportId } from "@/lib/daily-sport";
 import { localizeDailyClue } from "@/lib/swedish-clues";
 
@@ -37,6 +48,10 @@ const LADDERS: Record<string, Ladder> = {
     "Efter 104 minuter kommer pucken över blålinjen. En styrning vid kassen i sjätte perioden räcker.",
     "SM-semifinalen 2015. Växjö slår Frölunda med 2–1 när Tuomas Kiiskinen styr in pucken i sjätte perioden.",
   ],
+  "farjestad-skelleftea-2011": FARJESTAD_SKELLEFTEA_2011_CARDS,
+  "brynas-skelleftea-2012": BRYNAS_SKELLEFTEA_2012_CARDS,
+  "skelleftea-farjestad-2014": SKELLEFTEA_FARJESTAD_2014_CARDS,
+  "frolunda-skelleftea-2016": FROLUNDA_SKELLEFTEA_2016_CARDS,
   "guldkampen-i-norr": [
     "En finalhall i norr. Isen är nyspolad, sargen tar emot sången, och pucken släpps till seriens sista match.",
     "Gästerna leder matchserien med 3–0. Guldet har varit borta ur klubben sedan 1978, och hemmapubliken behöver en vändning.",
@@ -107,6 +122,10 @@ const LADDERS: Record<string, Ladder> = {
     "Två mål, inget i retur. Slutsignalerna går nästan samtidigt, och konkurrenten hinner inte ikapp.",
     "Den 28 oktober 2007 vinner IFK Göteborg med 2–0 mot Trelleborg på Ullevi. Thomas Olsson och Pontus Wernbloom gör målen, och SM-guldet går före Kalmar.",
   ],
+  "aik-djurgarden-2017": AIK_DJURGARDEN_2017_CARDS,
+  "malmo-ifk-2015": MALMO_IFK_2015_CARDS,
+  "elfsborg-djurgarden-2006": ELFSBORG_DJURGARDEN_2006_CARDS,
+  "hammarby-aik-2016": HAMMARBY_AIK_2016_CARDS,
   "sondagsmorgonen-stockholms-stad": [
     "Derby på en betongarena. Läktarna är delade i färger före avspark, och sången går genom taket.",
     "Söndag förmiddag, två klubbar från samma stad. Avsparken dröjer tills läktaren lugnat sig.",

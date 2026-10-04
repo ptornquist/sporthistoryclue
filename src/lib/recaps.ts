@@ -125,6 +125,78 @@ const RECAPS: Record<string, HistoricalRecap> = {
     story:
       "Söndagen den 2 september 2018 försenades Stockholmsderbyt en halvtimme innan Hammarby och Djurgården kunde sparka igång på Tele2 Arena. Djurgården vann med 3–1 efter mål av Kerim Mrabti, Haris Radetinac och Aliou Badji, med Vladimir Rodićs reducering däremellan. Det var Djurgårdens första allsvenska derbyseger mot Hammarby på sju år.",
   },
+  "farjestad-skelleftea-2011": {
+    year: 2011,
+    venue: "Löfbergs Lila Arena, Karlstad",
+    finalScore: "Färjestad 4–1 Skellefteå",
+    decisivePlay: "Femte finalen stängs hemma, serien slutar 4–1",
+    videoUrl: null,
+    story:
+      "Den 14 april 2011 avgjordes SM-finalserien i femte matchen. Färjestad tog emot Skellefteå på Löfbergs Lila Arena och vann med 4–1. Serien slutade 4–1, och klubben tog sitt nionde SM-guld inför egen publik.",
+  },
+  "brynas-skelleftea-2012": {
+    year: 2012,
+    venue: "Läkerol Arena, Gävle",
+    finalScore: "Brynäs 2–0 Skellefteå",
+    decisivePlay: "Jakob Silfverberg och Ryan Gunderson i sjätte finalen",
+    videoUrl: null,
+    story:
+      "Brynäs hundraårsår slutade i en sjätte SM-final den 20 april 2012. Skellefteå hölls nollade på Läkerol Arena. Jakob Silfverberg gjorde 1–0 och Ryan Gunderson 2–0. Det blev klubbens trettonde SM-guld, det första sedan 1999.",
+  },
+  "skelleftea-farjestad-2014": {
+    year: 2014,
+    venue: "Skellefteå Kraft Arena",
+    finalScore: "Skellefteå 4–0 Färjestad i matcher",
+    decisivePlay: "Fyra raka finalsegrar",
+    videoUrl: null,
+    story:
+      "SM-finalen 2014 blev ett svep. Skellefteå slog Färjestad i fyra raka matcher och stängde guldet hemma. Serien slutade 4–0.",
+  },
+  "frolunda-skelleftea-2016": {
+    year: 2016,
+    venue: "Skellefteå Kraft Arena",
+    finalScore: "Skellefteå 3–5 Frölunda",
+    decisivePlay: "Artturi Lehkonen gör två tidiga mål",
+    videoUrl: null,
+    story:
+      "Den 24 april 2016 avgjordes SM-finalserien i femte matchen, borta för Frölunda. De vann med 5–3 mot Skellefteå. Artturi Lehkonen gjorde två tidiga mål, och klubben tog sitt första SM-guld sedan 2005.",
+  },
+  "aik-djurgarden-2017": {
+    year: 2017,
+    venue: "Friends Arena",
+    finalScore: "AIK 1–1 Djurgården",
+    decisivePlay: "Chinedu Obasis straff och Aliou Badjis kvittering",
+    videoUrl: null,
+    story:
+      "Den 27 augusti 2017 möttes AIK och Djurgården i tvillingderbyt. Chinedu Obasi satte en straff, och Aliou Badji kvitterade med en nick. Matchen slutade 1–1.",
+  },
+  "malmo-ifk-2015": {
+    year: 2015,
+    venue: "Swedbank Stadion, Malmö",
+    finalScore: "Malmö FF 2–1 IFK Göteborg",
+    decisivePlay: "Kári Árnason öppnar, två straffar avgör",
+    videoUrl: null,
+    story:
+      "Den 9 augusti 2015 tog Malmö FF emot IFK Göteborg i toppstriden och vann med 2–1. Kári Árnason öppnade, Markus Rosenberg utökade på straff och Emil Salomonsson reducerade på straff.",
+  },
+  "elfsborg-djurgarden-2006": {
+    year: 2006,
+    venue: "Borås Arena",
+    finalScore: "Elfsborg 1–0 Djurgården",
+    decisivePlay: "Joakim Sjöhage avgör sista omgången",
+    videoUrl: null,
+    story:
+      "Allsvenskans sista omgång 2006 gav Elfsborg guldet hemma mot Djurgården. Joakim Sjöhage gjorde 1–0. Det var klubbens första SM-guld på 45 år.",
+  },
+  "hammarby-aik-2016": {
+    year: 2016,
+    venue: "Tele2 Arena",
+    finalScore: "Hammarby 0–3 AIK",
+    decisivePlay: "Tre mål före paus",
+    videoUrl: null,
+    story:
+      "Den 24 juli 2016 var derbyt avgjort före paus. AIK vann med 3–0 borta mot Hammarby efter mål av Haukur Hauksson, Eero Markkanen och Ebenezer Ofori.",
+  },
   "guldstriden-sista-omgangen": {
     year: 2007,
     venue: "Ullevi, Göteborg",

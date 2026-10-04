@@ -69,12 +69,20 @@ describe("caseClues", () => {
   });
 
   it("keeps SHL and Allsvenskan campaigns cryptic until the last card", () => {
-    const secret = /Skellefteå|Luleå|Frölunda|Växjö|Hammarby|Djurgården|Trelleborg|Göteborg|Blåvitt|Kiiskinen|Wernbloom|Mrabti|Ullevi|Tele2|Kalmar|2013|2015|2018|2007|4–0|2–1|3–1|2–0|104/;
+    const secret = /Skellefteå|Luleå|Frölunda|Växjö|Färjestad|Brynäs|Hammarby|Djurgården|Trelleborg|Göteborg|Blåvitt|Elfsborg|Malmö|\bAIK\b|Kiiskinen|Wernbloom|Mrabti|Silfverberg|Gunderson|Lehkonen|Obasi|Badji|Árnason|Rosenberg|Salomonsson|Sjöhage|Hauksson|Markkanen|Ofori|Ullevi|Tele2|Kalmar|Friends|2011|2012|2013|2014|2015|2016|2017|2018|2006|2007|4–0|4–1|5–3|3–0|2–1|3–1|2–0|1–1|1–0|104/;
     for (const slug of [
       "slaget-i-sudden",
       "guldkampen-i-norr",
+      "farjestad-skelleftea-2011",
+      "brynas-skelleftea-2012",
+      "skelleftea-farjestad-2014",
+      "frolunda-skelleftea-2016",
       "sondagsmorgonen-stockholms-stad",
       "guldstriden-sista-omgangen",
+      "aik-djurgarden-2017",
+      "malmo-ifk-2015",
+      "elfsborg-djurgarden-2006",
+      "hammarby-aik-2016",
     ]) {
       const clues = caseClues({ slug, context: "Klassiker", year: 2015 });
       expect(clues).toHaveLength(5);
@@ -85,6 +93,14 @@ describe("caseClues", () => {
     expect(caseClues({ slug: "guldkampen-i-norr", context: "Klassiker", year: 2013 })[4]).toMatch(/Skellefteå/);
     expect(caseClues({ slug: "sondagsmorgonen-stockholms-stad", context: "Klassiker", year: 2018 })[4]).toMatch(/Hammarby/);
     expect(caseClues({ slug: "guldstriden-sista-omgangen", context: "Klassiker", year: 2007 })[4]).toMatch(/Trelleborg/);
+    expect(caseClues({ slug: "farjestad-skelleftea-2011", context: "Klassiker", year: 2011 })[4]).toMatch(/Färjestad/);
+    expect(caseClues({ slug: "brynas-skelleftea-2012", context: "Klassiker", year: 2012 })[4]).toMatch(/Brynäs/);
+    expect(caseClues({ slug: "skelleftea-farjestad-2014", context: "Klassiker", year: 2014 })[4]).toMatch(/4–0/);
+    expect(caseClues({ slug: "frolunda-skelleftea-2016", context: "Klassiker", year: 2016 })[4]).toMatch(/Frölunda/);
+    expect(caseClues({ slug: "aik-djurgarden-2017", context: "Klassiker", year: 2017 })[4]).toMatch(/1–1/);
+    expect(caseClues({ slug: "malmo-ifk-2015", context: "Klassiker", year: 2015 })[4]).toMatch(/Malmö FF/);
+    expect(caseClues({ slug: "elfsborg-djurgarden-2006", context: "Klassiker", year: 2006 })[4]).toMatch(/Elfsborg/);
+    expect(caseClues({ slug: "hammarby-aik-2016", context: "Klassiker", year: 2016 })[4]).toMatch(/Hammarby/);
   });
 
   it("keeps the other case ladders in Swedish", () => {
