@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from "./drop-dates";
+import { isGuestOpenDrop, isReleasedDrop, shiftUtcDateKey, utcDateKey } from "./drop-dates";
 
 describe("isGuestOpenDrop", () => {
   const now = new Date("2026-10-02T15:00:00.000Z");
@@ -9,6 +9,9 @@ describe("isGuestOpenDrop", () => {
     expect(isGuestOpenDrop("2026-10-02", now)).toBe(true);
     expect(isGuestOpenDrop("2026-10-01", now)).toBe(true);
     expect(isGuestOpenDrop("2026-09-30", now)).toBe(false);
+    expect(isReleasedDrop("2026-09-30", now)).toBe(true);
+    expect(isReleasedDrop("2026-10-02", now)).toBe(true);
+    expect(isReleasedDrop("2026-10-03", now)).toBe(false);
   });
 
   it("steps a date key without shifting the calendar day", () => {

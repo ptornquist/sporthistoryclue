@@ -28,7 +28,7 @@ export function DateSwitcher({ todayKey, activeKey, onYesterday, onToday, onForw
           &gt;
         </button>
       )}
-      <Link href="/archive" className={pill}>
+      <Link href="/calendar" className={pill}>
         📅 Kalender
       </Link>
     </div>

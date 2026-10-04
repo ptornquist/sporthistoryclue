@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { ArchiveMonth } from "./ArchiveMonth";
+import { DailyCalendar } from "./DailyCalendar";
 import { ClueStack } from "./ClueStack";
 import { DateSwitcher } from "./DateSwitcher";
 import { SolvedFixtureCard } from "./SolvedFixtureCard";
@@ -20,7 +20,8 @@ describe("DateSwitcher", () => {
     expect(today).toContain("&lt; Igår");
     expect(today).toContain("Idag");
     expect(today).toContain("📅 Kalender");
-    expect(today).toContain('href="/archive"');
+    expect(today).toContain('href="/calendar"');
+    expect(today).not.toContain('href="/archive"');
     expect(today).not.toContain("Gå fram till idag");
 
     const yesterday = renderToStaticMarkup(
@@ -89,12 +90,16 @@ describe("SolvedFixtureCard", () => {
   });
 });
 
-describe("ArchiveMonth", () => {
-  it("links the month, with today returning to the live drop", () => {
-    const html = renderToStaticMarkup(createElement(ArchiveMonth, { now: new Date("2026-10-02T12:00:00.000Z") }));
+describe("DailyCalendar", () => {
+  it("links released days to that day's kluring and leaves the sport library alone", () => {
+    const html = renderToStaticMarkup(createElement(DailyCalendar, { todayKey: "2026-10-04" }));
     expect(html).toContain("oktober 2026");
     expect(html).toContain('href="/"');
+    expect(html).toContain('href="/?date=2026-10-03"');
     expect(html).toContain('href="/?date=2026-10-01"');
-    expect(html).not.toContain('href="/?date=2026-10-03"');
+    expect(html).not.toContain('href="/?date=2026-10-05"');
+    expect(html).not.toContain('href="/archive"');
+    expect(html).toContain("Föregående");
+    expect(html).toContain("disabled");
   });
 });

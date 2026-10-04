@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import { ArchiveMonth } from "@/components/game/ArchiveMonth";
 import { SportArchive } from "@/components/game/SportArchive";
 import { ARCHIVE_SPORTS, archiveSportFromParam, loadArchiveIndex } from "@/lib/sport-archive";
 
@@ -29,9 +28,6 @@ export default async function ArchivePage({
       <Header />
       <main className="min-h-screen overflow-x-hidden bg-[#fafafa] px-4 py-8 text-zinc-900 sm:px-6 sm:py-10">
         <SportArchive selected={sport} fixtures={fixtures} />
-        <div className="mx-auto mt-12 w-full max-w-lg border-t border-zinc-200 pt-10">
-          <ArchiveMonth />
-        </div>
       </main>
     </>
   );
