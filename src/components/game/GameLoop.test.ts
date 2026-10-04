@@ -57,7 +57,7 @@ describe("ClueStack", () => {
     );
     expect(html).toContain("Kort #2: Epok &amp; sammanhang");
     expect(html).toContain("Kort #3: Laguppställning &amp; taktik");
-    expect(html).toContain("Kort #4: Arkivfoto");
+    expect(html).toContain("Kort #4: Det avgörande skedet");
     expect(html).toContain("Kort #5: Klimaxet");
     expect(html).not.toContain("VISA NÄSTA LEDTRÅD");
   });

@@ -84,6 +84,25 @@ describe("publishDailyClues", () => {
     }
   });
 
+  it("keeps the climax on the last card", () => {
+    const clues = publishDailyClues("hurst-1966", [], "football");
+    expect(clues[0]).toMatch(/arena|sidlinje|hemmaplan|Wembley/i);
+    expect(clues[3]).toMatch(/förlängning|ribban|linjedomaren/i);
+    expect(clues[4]).toMatch(/1966/);
+    expect(clues[4]).toMatch(/4–2/);
+    expect(clues[4]).toMatch(/Hurst/);
+    expect(clues.slice(0, 4).join(" ")).not.toMatch(/Geoff Hurst/);
+  });
+
+  it("saves the hockey result for the last card", () => {
+    const clues = publishDailyClues("miracle-1980", [], "ice_hockey");
+    expect(clues[0]).toMatch(/ishall|sarg|puck/i);
+    expect(clues[2]).toMatch(/blålinj|utvisningsbås/i);
+    expect(clues[4]).toMatch(/1980/);
+    expect(clues[4]).toMatch(/4–3/);
+    expect(clues.slice(0, 4).join(" ")).not.toMatch(/Sovjetunionen|4–3/);
+  });
+
   it("keeps a written ladder when the id later becomes a dated sport key", () => {
     const source = fixtureIdForSportDay("tennis", "2026-10-04");
     const first = publishDailyClues(source, ["Centre Court epic."], "Tennis");
