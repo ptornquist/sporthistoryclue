@@ -48,11 +48,23 @@ describe("sport archive", () => {
     }
     expect(html).toContain("Historisk fotbollsmatch");
 
+    expect(loadArchiveIndex("football")).toHaveLength(16);
+    expect(loadArchiveIndex("boxing")).toHaveLength(1);
+    expect(loadArchiveIndex("tennis")).toHaveLength(2);
+    expect(loadArchiveIndex("athletics")).toHaveLength(5);
+
     const hockey = loadArchiveIndex("ice_hockey");
     expect(hockey.map((fixture) => fixture.id)).toEqual([
       "sverige-sovjet-1984",
       "slaget-i-sudden",
       "guldkampen-i-norr",
+      "miracle-on-ice-1980",
+      "summit-series-1972",
+      "turin-gold-2006",
+      "farjestad-skelleftea-2011",
+      "brynas-skelleftea-2012",
+      "skelleftea-farjestad-2014",
+      "frolunda-skelleftea-2016",
     ]);
     expect(ARCHIVE_FIXTURES.find((fixture) => fixture.id === "sverige-sovjet-1984")).toEqual({
       id: "sverige-sovjet-1984",
@@ -71,7 +83,10 @@ describe("sport archive", () => {
     expect(hockeyHtml).toContain("Mysteriet på isen #1");
     expect(hockeyHtml).toContain("Mysteriet på isen #2");
     expect(hockeyHtml).toContain("Klassisk ishockeymatch");
-    expect(hockeyHtml).not.toContain("Sirenen");
+    expect(hockeyHtml).toContain("Sirenen i kylan");
+    expect(hockeyHtml).toContain("Sirenen före midnatt");
+    expect(hockeyHtml).toContain("Vintermorgonen i alperna");
+    expect(hockeyHtml).toContain("Mysteriet på isen #6");
     expect(hockeyHtml).not.toContain("Internationell");
     expect(hockeyHtml).not.toContain("USA");
     expect(hockeyHtml).not.toContain("Sovjet");

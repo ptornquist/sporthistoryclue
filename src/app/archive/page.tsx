@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import { ArchiveMonth } from "@/components/game/ArchiveMonth";
 import { SportArchive } from "@/components/game/SportArchive";
-import { archiveSportFromParam, loadArchiveIndex } from "@/lib/sport-archive";
+import { ARCHIVE_SPORTS, archiveSportFromParam, loadArchiveIndex } from "@/lib/sport-archive";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -22,7 +22,7 @@ export default async function ArchivePage({
 }) {
   const params = await searchParams;
   const sport = archiveSportFromParam(firstParam(params.sport));
-  const fixtures = loadArchiveIndex(sport);
+  const fixtures = ARCHIVE_SPORTS.flatMap((item) => loadArchiveIndex(item.id));
 
   return (
     <>

@@ -87,7 +87,7 @@ describe("mystery case files", () => {
     expect(publicCaseTitle("Slaget i sudden")).toBe("Mysteriet på isen #1");
     expect(publicCaseTitle("Söndagsmorgonen på Stockholms stad")).toBe("Mysteriet på gräset #1");
     expect(mysteryFixtureLabel("basketball")).toBe("Historisk mästerskapsfinal");
-    expect(mysteryFixtureLabel("tennis")).toBe("Historisk mästerskapsfinal");
+    expect(mysteryFixtureLabel("tennis")).toBe("Historisk tennismatch");
     expect(mysteryFixtureLabel("gymnastics")).toBe("Historiskt mästerskapsögonblick");
     expect(mysteryFixtureLabel("athletics")).toBe("Historiskt mästerskapsögonblick");
     expect(mysteryFixtureLabel("boxing")).toBe("Historisk titelmatch");
