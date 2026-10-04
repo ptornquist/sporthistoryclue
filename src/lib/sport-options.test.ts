@@ -5,6 +5,7 @@ import {
   domesticLeagueOptions,
   ensureFourDailyOptions,
   gradesDailyOption,
+  inferOptionSport,
   optionSport,
   scopeOptionsToSport,
   SHL_MATCHUPS,
@@ -133,6 +134,39 @@ describe("ensureFourDailyOptions", () => {
     expect(options).toHaveLength(4);
     expect(new Set(options).size).toBe(4);
     expect(options.join(" ")).not.toMatch(/\bvs\b|Olympics:/);
+  });
+
+  it("reads a general hockey button set as ice hockey", () => {
+    const options = [
+      "USA mot Sovjetunionen (1980)",
+      "Kanada mot Sovjetunionen (Summit Series) (1972)",
+      "Sverige mot Sovjetunionen (1984)",
+      "Tjeckoslovakien mot Sovjetunionen (1976)",
+    ];
+    expect(inferOptionSport(options)).toBe("ice_hockey");
+    const resolved = ensureFourDailyOptions(options, "general", null, stable);
+    expect(resolved).toHaveLength(4);
+    expect(resolved.every((option) => optionSport(option) === "ice_hockey" || /sovjet/i.test(option))).toBe(true);
+    expect(resolved.join(" ")).not.toMatch(/Hammarby|Hurst|Pelé|Italien|Allsvenskan/i);
+    expect(resolved.join(" ")).not.toMatch(/Summit Series/);
+  });
+
+  it("replaces hockey buttons when the sport is football", () => {
+    const options = ensureFourDailyOptions(
+      [
+        "USA mot Sovjetunionen (1980)",
+        "Kanada mot Sovjetunionen (1972)",
+        "Sverige mot Finland (2006)",
+        "Skellefteå mot Luleå (2013)",
+      ],
+      "football",
+      null,
+      stable,
+    );
+    expect(options).toHaveLength(4);
+    expect(options.every((option) => optionSport(option) === "football")).toBe(true);
+    expect(options.join(" ")).not.toMatch(/Sovjet|Skellefteå|Frölunda|Summit/i);
+    expect(SPORT_CHOICES.football.some((option) => option.includes("Sverige mot Italien"))).toBe(true);
   });
 
   it("still grades the Swedish wording of an international milestone", () => {

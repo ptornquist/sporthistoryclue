@@ -8,6 +8,7 @@ import {
   toPublicDaily,
   viewerCanOpenArchive,
 } from "@/lib/daily-drop";
+import { alignDailyPresentation } from "@/lib/daily-presentation";
 import { ensureFourDailyOptions } from "@/lib/sport-options";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +30,12 @@ export async function GET(request: Request) {
       return Response.json({ error: "That sport has no daily kluring." }, { status: 404 });
     }
     const payload = toPublicDaily(fixture);
+    const aligned = alignDailyPresentation({ ...payload, category: sport });
     return Response.json({
       ...payload,
-      options: ensureFourDailyOptions(payload.options, payload.category, payload.id),
+      category: aligned.category,
+      clues: aligned.clues,
+      options: aligned.options,
     });
   }
   if (match) {
