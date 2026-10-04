@@ -63,8 +63,15 @@ export function sportDailyKey(dateKey: string, sport: DailySportId): string {
   return `daily-${sport}-${dateKey}`;
 }
 
+/** Date-specific fixtures. Kluring #20730 is 2026-10-04. */
+const PINNED_SPORT_DAYS: Record<string, string> = {
+  "2026-10-04:ice_hockey": "sverige-sovjet-1984",
+};
+
 /** Which archived fixture is that sport's kluring on this date. */
 export function fixtureIdForSportDay(sport: DailySportId, dateKey: string): string {
+  const pinned = PINNED_SPORT_DAYS[`${dateKey}:${sport}`];
+  if (pinned && SPORT_FIXTURES[sport].includes(pinned)) return pinned;
   const pool = SPORT_FIXTURES[sport];
   return pool[hashString(`${dateKey}:${sport}`) % pool.length];
 }

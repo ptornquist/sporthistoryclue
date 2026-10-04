@@ -11,6 +11,7 @@ describe("daily sport fixtures", () => {
     expect(new Set(keys).size).toBe(DAILY_SPORT_IDS.length);
     expect(keys.every((key) => key.includes(date))).toBe(true);
     expect(keys.some((key) => key === date)).toBe(false);
+    expect(fixtureIdForSportDay("ice_hockey", date)).toBe("sverige-sovjet-1984");
   });
 
   it("keeps the same sport on the same date stable and can change on another date", () => {
