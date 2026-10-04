@@ -3,6 +3,8 @@ import { distinctOptionValues } from "./option-text";
 import {
   ALLSVENSKAN_MATCHUPS,
   domesticLeagueOptions,
+  ensureFourDailyOptions,
+  gradesDailyOption,
   optionSport,
   scopeOptionsToSport,
   SHL_MATCHUPS,
@@ -60,5 +62,92 @@ describe("domestic league campaign options", () => {
     expect(options.join(" | ")).not.toMatch(INTERNATIONAL);
     expect(options.every((option) => optionSport(option) === sport)).toBe(true);
     expect(scopeOptionsToSport(options, sport)).toEqual(options);
+  });
+});
+
+describe("ensureFourDailyOptions", () => {
+  const stable = () => 0;
+
+  it("turns one raw international hockey string into four Swedish choices", () => {
+    const options = ensureFourDailyOptions(
+      ["1980 Olympics: USA vs Soviet Union"],
+      "ice_hockey",
+      "miracle-on-ice-1980",
+      stable,
+    );
+    expect(domesticLeagueOptions("miracle-on-ice-1980")).toBeNull();
+    expect(options).toHaveLength(4);
+    expect(new Set(options).size).toBe(4);
+    expect(options.some((option) => option.includes("USA mot Sovjetunionen"))).toBe(true);
+    expect(options.join(" ")).not.toMatch(/\bvs\b|Olympics:|defeats/);
+    expect(options.every((option) => !SHL_MATCHUPS.includes(option as (typeof SHL_MATCHUPS)[number]))).toBe(true);
+  });
+
+  it("keeps a football milestone in Swedish and outside Allsvenskan", () => {
+    const options = ensureFourDailyOptions(["1999 football: Brandi Chastain"], "football", null, stable);
+    expect(options).toHaveLength(4);
+    expect(new Set(options).size).toBe(4);
+    expect(options.some((option) => option.includes("Brandi Chastain") && option.includes("1999"))).toBe(true);
+    expect(options.join(" ")).not.toMatch(/1999 football:|\bvs\b/);
+    expect(options.every((option) => !ALLSVENSKAN_MATCHUPS.includes(option as (typeof ALLSVENSKAN_MATCHUPS)[number]))).toBe(
+      true,
+    );
+  });
+
+  it.each([null, undefined, [] as string[]])("fills an empty %s football list from Allsvenskan", (input) => {
+    const options = ensureFourDailyOptions(input, "football", null, stable);
+    expect(options).toHaveLength(4);
+    expect(new Set(options).size).toBe(4);
+    expect(options.every((option) => ALLSVENSKAN_MATCHUPS.includes(option as (typeof ALLSVENSKAN_MATCHUPS)[number]))).toBe(
+      true,
+    );
+    expect(options.join(" ")).not.toMatch(/USA|Argentina/);
+  });
+
+  it("fills an empty hockey list from the SHL", () => {
+    const options = ensureFourDailyOptions([], "ice_hockey", null, stable);
+    expect(options).toHaveLength(4);
+    expect([...options].sort()).toEqual([...SHL_MATCHUPS].sort());
+    expect(options.join(" ")).not.toMatch(INTERNATIONAL);
+  });
+
+  it("keeps a league campaign on Swedish clubs", () => {
+    const options = ensureFourDailyOptions(
+      ["Växjö mot Frölunda (2015)"],
+      "ice_hockey",
+      "slaget-i-sudden",
+      stable,
+    );
+    expect(options).toHaveLength(4);
+    expect([...options].sort()).toEqual([...SHL_MATCHUPS].sort());
+    expect(options.join(" ")).not.toMatch(INTERNATIONAL);
+  });
+
+  it("pads an unknown sport without leaving a raw English singleton", () => {
+    const options = ensureFourDailyOptions(
+      ["1980 Olympics: USA vs Soviet Union"],
+      "Sports History",
+      null,
+      stable,
+    );
+    expect(options).toHaveLength(4);
+    expect(new Set(options).size).toBe(4);
+    expect(options.join(" ")).not.toMatch(/\bvs\b|Olympics:/);
+  });
+
+  it("still grades the Swedish wording of an international milestone", () => {
+    const chastain = ensureFourDailyOptions(["1999 football: Brandi Chastain"], "football", null, stable).find(
+      (option) => option.includes("Brandi Chastain"),
+    );
+    expect(gradesDailyOption(chastain ?? "", "Brandi Chastain", 1999, "football")).toBe(true);
+    expect(gradesDailyOption("Hammarby mot Djurgården (2018)", "Brandi Chastain", 1999, "football")).toBe(false);
+    const miracle = ensureFourDailyOptions(
+      ["1980 Olympics: USA vs Soviet Union"],
+      "ice_hockey",
+      null,
+      stable,
+    ).find((option) => option.includes("USA mot Sovjetunionen"));
+    expect(miracle).toBeTruthy();
+    expect(gradesDailyOption(miracle ?? "", "USA vs Soviet Union", 1980, "ice_hockey")).toBe(true);
   });
 });

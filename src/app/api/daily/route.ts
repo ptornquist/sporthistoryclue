@@ -1,12 +1,12 @@
 import { isGuestOpenDrop } from "@/lib/drop-dates";
 import {
-  fourDistinctOptions,
   loadDailyFixture,
   loadMatchFixture,
   parseDateKey,
   toPublicDaily,
   viewerCanOpenArchive,
 } from "@/lib/daily-drop";
+import { ensureFourDailyOptions } from "@/lib/sport-options";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,11 @@ export async function GET(request: Request) {
     if (!storyline) {
       return Response.json({ error: "That storyline match could not be opened." }, { status: 404 });
     }
-    return Response.json(toPublicDaily(storyline));
+    const payload = toPublicDaily(storyline);
+    return Response.json({
+      ...payload,
+      options: ensureFourDailyOptions(payload.options, payload.category, match),
+    });
   }
 
   const dateKey = parseDateKey(url.searchParams.get("date"));
@@ -32,9 +36,8 @@ export async function GET(request: Request) {
 
   const fixture = await loadDailyFixture(dateKey);
   const payload = toPublicDaily(fixture);
-  const rawOptions = Array.from(new Set(payload.options.filter(Boolean)));
   return Response.json({
     ...payload,
-    options: fourDistinctOptions(rawOptions, rawOptions[0] ?? "", rawOptions.slice(1)),
+    options: ensureFourDailyOptions(payload.options, payload.category, payload.id),
   });
 }

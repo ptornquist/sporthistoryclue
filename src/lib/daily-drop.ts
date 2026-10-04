@@ -4,7 +4,7 @@ import { findCase } from "@/lib/case-files";
 import { caseClues } from "@/lib/case-clues";
 import { solvedMatchup } from "@/lib/case-solutions";
 import { canonicalSport } from "@/lib/decoy-options";
-import { choiceSportKey, choicesForSport, domesticLeagueOptions, optionSport } from "@/lib/sport-options";
+import { ensureFourDailyOptions, gradesDailyOption } from "@/lib/sport-options";
 import { puzzles } from "@/lib/catalog";
 import {
   fetchDailyChallengeRow,
@@ -13,7 +13,6 @@ import {
   type ChallengeRow,
   type DailyChallengeClient,
 } from "@/lib/daily-challenge-query";
-import { distinctOptionValues } from "@/lib/option-text";
 import { resolveTacticalClueList } from "@/lib/tactical-clues";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
@@ -67,10 +66,6 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-export function fourDistinctOptions(rawOptions: string[], correct: string, decoys: string[]): string[] {
-  return shuffle(distinctOptionValues([correct, ...rawOptions, ...decoys], 4));
 }
 
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
@@ -167,29 +162,14 @@ async function withDistinctOptions(fixture: SecretDaily): Promise<SecretDaily> {
   const correct =
     fixture.options.find((option) => gradeOption(fixture, option)) ??
     `${fixture.subject} (${fixture.year})`;
-  const domestic = domesticLeagueOptions(fixture.id);
-  if (domestic) {
-    return {
-      ...fixture,
-      options: fourDistinctOptions([], correct, [...domestic]),
-    };
-  }
-  const sameSport = fixture.options.filter(
-    (option) => optionSport(option) === choiceSportKey(sport) || gradeOption(fixture, option),
-  );
   return {
     ...fixture,
-    options: fourDistinctOptions(sameSport, correct, choicesForSport(sport)),
+    options: ensureFourDailyOptions([correct, ...fixture.options], sport, fixture.id),
   };
 }
 
 export function gradeOption(fixture: SecretDaily, option: string): boolean {
-  const guess = option.trim().toLowerCase();
-  const subject = fixture.subject.trim().toLowerCase();
-  if (!guess || !subject) return false;
-  if (guess === subject) return true;
-  if (guess === `${subject} (${fixture.year})`) return true;
-  return guess.includes(subject) && guess.includes(String(fixture.year));
+  return gradesDailyOption(option, fixture.subject, fixture.year, fixtureSport(fixture));
 }
 
 function fromCatalog(dateKey: string): SecretDaily {
@@ -216,17 +196,6 @@ function clueLine(clue: Clue): string {
     return clue.stats.map((stat) => `${stat.label}: ${stat.value}`).join(" · ");
   }
   return clue.kicker ?? "En detalj ur arkivet.";
-}
-
-function shuffle(items: string[]): string[] {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(Math.random() * (index + 1));
-    const current = copy[index];
-    copy[index] = copy[swap];
-    copy[swap] = current;
-  }
-  return copy;
 }
 
 async function loadFromTable(
@@ -358,7 +327,7 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
     date_key: fixture.date_key,
     category: fixture.category,
     clues: fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."],
-    options: options.length > 0 ? options : generated,
+    options: ensureFourDailyOptions([...generated, ...options], fixture.category, fixture.id),
   };
 }
 
