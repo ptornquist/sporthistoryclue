@@ -33,3 +33,13 @@ export function prepareBetaFeedback(input: {
     },
   };
 }
+
+export function feedbackErrorText(error: unknown): string {
+  if (typeof error === "object" && error && "message" in error) {
+    const message = error.message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  return "Feedback kunde inte sparas.";
+}

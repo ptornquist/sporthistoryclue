@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { FEEDBACK_CATEGORIES, prepareBetaFeedback, type FeedbackCategory } from "@/lib/beta-feedback";
+import { FEEDBACK_CATEGORIES, feedbackErrorText, prepareBetaFeedback, type FeedbackCategory } from "@/lib/beta-feedback";
 import { supabaseClient } from "@/lib/supabase/client";
 
 export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -43,22 +43,27 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
       setErrorMsg(prepared.message);
       return;
     }
+    const categoryString = prepared.row.category;
+    const commentString = prepared.row.comment;
     setSaving(true);
     try {
       const { error } = await supabaseClient.from("beta_feedback").insert({
-        rating: prepared.row.rating,
-        category: prepared.row.category,
-        comment: prepared.row.comment,
+        rating: Number(rating),
+        category: categoryString,
+        comment: commentString,
       });
       if (error) {
-        console.error(error);
-        setErrorMsg("Feedback kunde inte sparas. Försök igen om en stund.");
+        console.error("Feedback error:", error);
+        setErrorMsg(feedbackErrorText(error));
         return;
       }
+      setRating(0);
+      setCategory("");
+      setComment("");
       setSuccess(true);
     } catch (error) {
-      console.error(error);
-      setErrorMsg("Feedback kunde inte sparas. Försök igen om en stund.");
+      console.error("Feedback error:", error);
+      setErrorMsg(feedbackErrorText(error));
     } finally {
       setSaving(false);
     }
@@ -163,7 +168,7 @@ export function BetaFeedbackModal({ open, onClose }: { open: boolean; onClose: (
               />
             </label>
 
-            {errorMsg ? <p className="text-xs font-medium text-rose-700">{errorMsg}</p> : null}
+            {errorMsg ? <p className="text-sm font-medium text-rose-700 break-words">{errorMsg}</p> : null}
 
             <button
               type="submit"
