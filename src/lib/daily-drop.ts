@@ -1,7 +1,7 @@
 import "server-only";
 
 import { findCase } from "@/lib/case-files";
-import { caseClues } from "@/lib/case-clues";
+import { caseClues, hasAuthoredCaseLadder } from "@/lib/case-clues";
 import { solvedMatchup } from "@/lib/case-solutions";
 import { canonicalSport } from "@/lib/decoy-options";
 import { publishDailyClues } from "@/lib/daily-clue-copy";
@@ -418,7 +418,7 @@ export async function loadPublicArchive(matchId: string): Promise<{
   return {
     challenge: {
       ...toPublicDaily(fixture),
-      optionsLocked: false,
+      optionsLocked: hasAuthoredCaseLadder(file?.slug),
     },
     optionSource: {
       id: fixture.id,
