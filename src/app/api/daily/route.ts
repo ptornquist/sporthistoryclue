@@ -1,12 +1,11 @@
 import { isDailySportId } from "@/lib/daily-sport";
-import { isGuestOpenDrop } from "@/lib/drop-dates";
+import { isReleasedDrop } from "@/lib/drop-dates";
 import {
   loadDailyFixture,
   loadMatchFixture,
   loadSportDaily,
   parseDateKey,
   toPublicDaily,
-  viewerCanOpenArchive,
 } from "@/lib/daily-drop";
 import { alignDailyPresentation } from "@/lib/daily-presentation";
 import { ensureFourDailyOptions } from "@/lib/sport-options";
@@ -22,8 +21,8 @@ export async function GET(request: Request) {
     if (!dateKey) {
       return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });
     }
-    if (!isGuestOpenDrop(dateKey) && !(await viewerCanOpenArchive())) {
-      return Response.json({ error: "Sign in to open past drops." }, { status: 401 });
+    if (!isReleasedDrop(dateKey)) {
+      return Response.json({ error: "That drop has not opened yet." }, { status: 403 });
     }
     const fixture = await loadSportDaily(sport, dateKey);
     if (!fixture) {
@@ -55,8 +54,8 @@ export async function GET(request: Request) {
     return Response.json({ error: "Use a YYYY-MM-DD date." }, { status: 400 });
   }
 
-  if (!isGuestOpenDrop(dateKey) && !(await viewerCanOpenArchive())) {
-    return Response.json({ error: "Sign in to open past drops." }, { status: 401 });
+  if (!isReleasedDrop(dateKey)) {
+    return Response.json({ error: "That drop has not opened yet." }, { status: 403 });
   }
 
   const fixture = await loadDailyFixture(dateKey);

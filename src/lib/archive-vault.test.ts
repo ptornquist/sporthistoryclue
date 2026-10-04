@@ -72,6 +72,8 @@ describe("archive routes", () => {
     expect(archive).toContain("export const dynamic = 'force-dynamic';");
     expect(archive).toContain("export const revalidate = 0;");
     expect(archive).toContain("loadArchiveIndex");
+    expect(archive).not.toContain("ArchiveMonth");
+    expect(archive).not.toContain("DailyCalendar");
 
     const home = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
     expect(home).toContain("loadPublicChallengeById");

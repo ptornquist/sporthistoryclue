@@ -23,7 +23,7 @@ import { creditCareerSolve } from '@/lib/career-ledger';
 import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve, recordFixtureWin } from '@/lib/fixture-solves';
 import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
-import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
+import { isDateKey, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
 import { formatOptionText } from '@/lib/option-text';
 import { choiceSportKey, ensureFourDailyOptions } from '@/lib/sport-options';
 import { arenaHref, campaignHeadline, nextStorylineMatch, storylineById } from '@/lib/storylines';
@@ -82,8 +82,6 @@ export function DailyDropArena(props: {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('Scout');
   const [streak, setStreak] = useState(1);
-  const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
-  const [authReady, setAuthReady] = useState(false);
   const [authGateOpen, setAuthGateOpen] = useState(false);
   const [soundMuted, setSoundMuted] = useState(true);
   const whistled = useRef(false);
@@ -104,14 +102,12 @@ export function DailyDropArena(props: {
         if (saved) setPlayerName(saved);
         const savedStreak = parseInt(localStorage.getItem('shc_streak') || '1', 10);
         setStreak(savedStreak);
-        setAuthReady(true);
         return;
       }
 
       try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (user) {
-          setCurrentUser({ id: user.id, email: user.email });
           const { data: profile } = await supabaseClient
             .from('profiles')
             .select('username, streak')
@@ -131,8 +127,6 @@ export function DailyDropArena(props: {
       } catch {
         const saved = localStorage.getItem('shc_handle');
         if (saved) setPlayerName(saved);
-      } finally {
-        setAuthReady(true);
       }
     };
 
@@ -248,10 +242,7 @@ export function DailyDropArena(props: {
   };
 
   const openDate = (dateKey: string) => {
-    if (!isGuestOpenDrop(dateKey) && (!authReady || !currentUser)) {
-      setAuthGateOpen(true);
-      return;
-    }
+    if (!isDateKey(dateKey) || dateKey > utcDateKey()) return;
     const params = new URLSearchParams(window.location.search);
     params.delete('match');
     params.delete('sport');

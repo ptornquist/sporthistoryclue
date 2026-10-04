@@ -20,3 +20,8 @@ export function isGuestOpenDrop(dateKey: string, now = new Date()): boolean {
   const today = utcDateKey(now);
   return dateKey === today || dateKey === shiftUtcDateKey(today, -1);
 }
+
+/** A daily kluring is playable once its UTC date has arrived. */
+export function isReleasedDrop(dateKey: string, now = new Date()): boolean {
+  return isDateKey(dateKey) && dateKey <= utcDateKey(now);
+}
