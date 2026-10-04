@@ -31,6 +31,10 @@ describe("sport archive", () => {
     const html = renderToStaticMarkup(
       createElement(SportArchive, { selected: "football", fixtures: football }),
     );
+    expect(html).toContain("Biblioteket");
+    expect(html).toContain(">Historik<");
+    expect(html).not.toContain("Utmaningar");
+    expect(html).not.toContain("Starta utmaning");
     expect(html).toContain("Ishockey");
     expect(html).toContain("Fotboll");
     expect(html).toContain("Boxning");

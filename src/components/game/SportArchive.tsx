@@ -37,7 +37,7 @@ export function SportArchive({
   return (
     <section className="mx-auto w-full max-w-3xl">
       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">
-        {embedded ? "Hela biblioteket" : "Utmaningar & Historik"}
+        {embedded ? "Hela biblioteket" : "Biblioteket"}
       </span>
       {embedded ? (
         <h2 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Alla matcher</h2>

@@ -33,6 +33,11 @@ describe("storylines layout", () => {
     expect(html).toContain("Starta utmaning");
     expect(html).toContain("Utmaningar &amp; epoker");
     expect(html).toContain("Historiska utmaningar");
+    expect(html).toContain('href="/campaigns"');
+    expect(html).toContain('href="/archive"');
+    expect(html).not.toContain("Sju sporter i ett bibliotek");
+    expect(html).not.toContain("Hela biblioteket");
+    expect(html).not.toContain('id="bibliotek-');
     expect(html).toContain("SHL-KLASSIKER &amp; RIVALER");
     expect(html).toContain("Avgörande ögonblick, nagelbitare och klassiska rivaliteter från den svenska hockeyscenen.");
     expect(html).toContain("ALLSVENSKA DERBYN &amp; DRAMAT");
