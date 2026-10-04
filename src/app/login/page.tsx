@@ -1,76 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { AuthForm } from '@/components/auth/AuthForm';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabaseClient } from '@/lib/supabase/client';
 import { safeReturnPath } from '@/lib/clubs';
 
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
-
-  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [successMsg, setSuccessMsg] = useState('');
-
-  useEffect(() => {
-    if (searchParams.get('mode') === 'signup') {
-      setMode('signup');
-    }
-  }, [searchParams]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-    setLoading(true);
-
-    try {
-      if (mode === 'signup') {
-        const { data, error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { username: username || email.split('@')[0] },
-          },
-        });
-
-        if (error) throw error;
-
-        if (data.user) {
-          if (username) {
-            await supabaseClient.from('profiles').upsert({
-              id: data.user.id,
-              username: username.trim(),
-            });
-            localStorage.setItem('shc_handle', username.trim());
-          }
-          setSuccessMsg('Konto skapat! Loggar in...');
-          const next = safeReturnPath(searchParams.get('next')) ?? '/';
-          setTimeout(() => router.push(next), 1200);
-        }
-      } else {
-        const { error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-        router.push(safeReturnPath(searchParams.get('next')) ?? '/');
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Något gick fel vid inloggningen.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const next = safeReturnPath(searchParams.get('next')) ?? '/';
 
   return (
     <div className="max-w-md w-full bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
@@ -79,104 +20,10 @@ function AuthContent() {
           Sports<span className="text-blue-600">History</span>Clue
         </Link>
         <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mt-3">
-          {mode === 'login' ? 'Scoutinloggning' : 'Gå med i ligan'}
+          {initialMode === 'login' ? 'Scoutinloggning' : 'Gå med i ligan'}
         </h1>
-        <p className="text-xs text-zinc-500 mt-1">
-          {mode === 'login'
-            ? 'Se din matchhistorik och följ den dagliga sviten.'
-            : 'Tävla i tabellen och utmana vänner.'}
-        </p>
       </div>
-
-      {/* Tabs */}
-      <div className="flex p-1 bg-zinc-100 rounded-xl mb-6">
-        <button
-          type="button"
-          onClick={() => { setMode('login'); setErrorMsg(''); }}
-          className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
-            mode === 'login' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
-          }`}
-        >
-          Logga in
-        </button>
-        <button
-          type="button"
-          onClick={() => { setMode('signup'); setErrorMsg(''); }}
-          className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
-            mode === 'signup' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
-          }`}
-        >
-          Gå med gratis
-        </button>
-      </div>
-
-      {errorMsg && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium rounded-xl">
-          {errorMsg}
-        </div>
-      )}
-
-      {successMsg && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium rounded-xl">
-          {successMsg}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-3.5">
-        {mode === 'signup' && (
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-              Scoutnamn
-            </label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="t.ex. PeterT, PuckScout"
-              className="w-full px-4 py-2.5 rounded-xl text-zinc-900 font-medium bg-white border border-zinc-300 !border-zinc-300 focus:border-blue-600 focus:!border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none placeholder:text-zinc-400 [&:-webkit-autofill]:[text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_white_inset]"
-            />
-          </div>
-        )}
-
-        <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-            E-post
-          </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="scout@sportshistoryclue.com"
-            className="w-full px-4 py-2.5 rounded-xl text-zinc-900 font-medium bg-white border border-zinc-300 !border-zinc-300 focus:border-blue-600 focus:!border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none placeholder:text-zinc-400 [&:-webkit-autofill]:[text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_white_inset]"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-            Lösenord
-          </label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full px-4 py-2.5 rounded-xl text-zinc-900 font-medium bg-white border border-zinc-300 !border-zinc-300 focus:border-blue-600 focus:!border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none placeholder:text-zinc-400 [&:-webkit-autofill]:[text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0px_1000px_white_inset]"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full mt-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm"
-        >
-          {loading ? 'Bearbetar...' : mode === 'login' ? 'Logga in →' : 'Skapa gratis konto →'}
-        </button>
-      </form>
-
+      <AuthForm initialMode={initialMode} onAuthenticated={() => router.push(next)} />
       <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
         <Link href="/" className="text-xs text-zinc-400 hover:text-black font-medium">
           ← Tillbaka till Dagens Kluring

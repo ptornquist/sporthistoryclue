@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { BetaFeedbackButton } from '@/components/feedback/BetaFeedbackModal';
 
 const SOCIAL_LINKS = [
   {
@@ -57,6 +58,7 @@ export default function Footer() {
 
         {/* Contact + Social Channels */}
         <div className="flex items-center gap-3 order-1 md:order-2">
+          <BetaFeedbackButton />
           <a
             href="mailto:contact@sportshistoryclue.com?subject=SportsHistoryClue%20Inquiry"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-200 text-zinc-700 hover:text-blue-600 hover:border-blue-600 text-xs font-bold uppercase tracking-wider transition-colors"
