@@ -21,6 +21,15 @@ export interface ArchiveSportFixture {
 /** Public case names only. Match ids open in the daily solver. */
 export const ARCHIVE_FIXTURES: ArchiveSportFixture[] = [
   {
+    id: "sverige-sovjet-1984",
+    sport: "ice_hockey",
+    title: "Klassisk drabbning i Scandinavium",
+    year: 1984,
+    context: "Internationell klassiker",
+    difficulty: 2,
+    clueCount: 5,
+  },
+  {
     id: "slaget-i-sudden",
     sport: "ice_hockey",
     title: "Mysteriet på isen #1",
