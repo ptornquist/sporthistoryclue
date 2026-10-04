@@ -1,5 +1,22 @@
 import { findCase } from "@/lib/case-files";
 import { canonicalSport, fisherYates } from "@/lib/decoy-options";
+import {
+  BORG_MCENROE_1981_OPTIONS,
+  CLAY_LISTON_1964_OPTIONS,
+  DUJARDIN_2012_OPTIONS,
+  EDBERG_BECKER_1988_OPTIONS,
+  FEDERER_NADAL_2008_OPTIONS,
+  HAGLER_LEONARD_1987_OPTIONS,
+  HANDBOLL_EM_1994_OPTIONS,
+  HANDBOLL_EM_2022_OPTIONS,
+  HANDBOLL_VM_1999_OPTIONS,
+  LOUIS_SCHMELING_1938_OPTIONS,
+  SAINT_CYR_1956_OPTIONS,
+  THRILLA_MANILA_1975_OPTIONS,
+  TOKYO_HOPP_2021_OPTIONS,
+  TYSON_HOLYFIELD_1996_OPTIONS,
+  WILANDER_1982_OPTIONS,
+} from "@/lib/extended-klassiker";
 import { distinctOptionValues, formatOptionText, optionIdentity } from "@/lib/option-text";
 
 /** SHL club matchups. Used as the whole option set for the hockey campaign. */
@@ -102,6 +119,21 @@ export const SVERIGE_SOVJET_1984_OPTIONS = [
 const PINNED_DAILY_OPTIONS: Record<string, readonly string[]> = {
   "summit-series-1972": SUMMIT_SERIES_1972_OPTIONS,
   "sverige-sovjet-1984": SVERIGE_SOVJET_1984_OPTIONS,
+  "tyson-holyfield-1996": TYSON_HOLYFIELD_1996_OPTIONS,
+  "thrilla-manila-1975": THRILLA_MANILA_1975_OPTIONS,
+  "clay-liston-1964": CLAY_LISTON_1964_OPTIONS,
+  "hagler-leonard-1987": HAGLER_LEONARD_1987_OPTIONS,
+  "louis-schmeling-1938": LOUIS_SCHMELING_1938_OPTIONS,
+  "federer-nadal-2008": FEDERER_NADAL_2008_OPTIONS,
+  "borg-mcenroe-1981": BORG_MCENROE_1981_OPTIONS,
+  "edberg-becker-1988": EDBERG_BECKER_1988_OPTIONS,
+  "wilander-1982": WILANDER_1982_OPTIONS,
+  "saint-cyr-1956": SAINT_CYR_1956_OPTIONS,
+  "tokyo-hopp-2021": TOKYO_HOPP_2021_OPTIONS,
+  "dujardin-2012": DUJARDIN_2012_OPTIONS,
+  "handboll-vm-1999": HANDBOLL_VM_1999_OPTIONS,
+  "handboll-em-1994": HANDBOLL_EM_1994_OPTIONS,
+  "handboll-em-2022": HANDBOLL_EM_2022_OPTIONS,
 };
 
 function recognizePinnedOptions(options: readonly string[]): readonly string[] | null {
@@ -187,6 +219,11 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Joe Frazier mot George Foreman (1973)",
     "Mike Tyson mot Buster Douglas (1990)",
     "Ali besegrar Foreman i Djungelns dån",
+    ...TYSON_HOLYFIELD_1996_OPTIONS,
+    ...THRILLA_MANILA_1975_OPTIONS,
+    ...CLAY_LISTON_1964_OPTIONS,
+    ...HAGLER_LEONARD_1987_OPTIONS,
+    ...LOUIS_SCHMELING_1938_OPTIONS,
   ],
   tennis: [
     "Björn Borg mot John McEnroe (1980)",
@@ -195,6 +232,20 @@ export const SPORT_CHOICES: Record<string, readonly string[]> = {
     "Chris Evert mot Martina Navratilova (1984)",
     "Billie Jean King mot Bobby Riggs (1973)",
     "Billie Jean King vinner Kampen mellan könen",
+    ...FEDERER_NADAL_2008_OPTIONS,
+    ...BORG_MCENROE_1981_OPTIONS,
+    ...EDBERG_BECKER_1988_OPTIONS,
+    ...WILANDER_1982_OPTIONS,
+  ],
+  equestrian: [
+    ...SAINT_CYR_1956_OPTIONS,
+    ...TOKYO_HOPP_2021_OPTIONS,
+    ...DUJARDIN_2012_OPTIONS,
+  ],
+  handball: [
+    ...HANDBOLL_VM_1999_OPTIONS,
+    ...HANDBOLL_EM_1994_OPTIONS,
+    ...HANDBOLL_EM_2022_OPTIONS,
   ],
   athletics: [
     "Armand Duplantis (2026)",

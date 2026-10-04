@@ -11,6 +11,23 @@ import {
   SUMMIT_SERIES_1972_CARDS,
   SVERIGE_SOVJET_1984_CARDS,
 } from "@/lib/case-clues";
+import {
+  BORG_MCENROE_1981_CARDS,
+  CLAY_LISTON_1964_CARDS,
+  DUJARDIN_2012_CARDS,
+  EDBERG_BECKER_1988_CARDS,
+  FEDERER_NADAL_2008_CARDS,
+  HAGLER_LEONARD_1987_CARDS,
+  HANDBOLL_EM_1994_CARDS,
+  HANDBOLL_EM_2022_CARDS,
+  HANDBOLL_VM_1999_CARDS,
+  LOUIS_SCHMELING_1938_CARDS,
+  SAINT_CYR_1956_CARDS,
+  THRILLA_MANILA_1975_CARDS,
+  TOKYO_HOPP_2021_CARDS,
+  TYSON_HOLYFIELD_1996_CARDS,
+  WILANDER_1982_CARDS,
+} from "@/lib/extended-klassiker";
 import { sportForFixture, type DailySportId } from "@/lib/daily-sport";
 import { localizeDailyClue } from "@/lib/swedish-clues";
 
@@ -191,6 +208,21 @@ const LADDERS: Record<string, Ladder> = {
     "Han är fri långt före bandet och slår ut armarna innan linjen. Klockan hinner ändå före firandet.",
     "OS-finalen på 100 meter i Peking 2008. Usain Bolt springer 9,69 i bana 4, utan medvind, och firar före mållinjen.",
   ],
+  "tyson-holyfield-1996": TYSON_HOLYFIELD_1996_CARDS,
+  "thrilla-manila-1975": THRILLA_MANILA_1975_CARDS,
+  "clay-liston-1964": CLAY_LISTON_1964_CARDS,
+  "hagler-leonard-1987": HAGLER_LEONARD_1987_CARDS,
+  "louis-schmeling-1938": LOUIS_SCHMELING_1938_CARDS,
+  "federer-nadal-2008": FEDERER_NADAL_2008_CARDS,
+  "borg-mcenroe-1981": BORG_MCENROE_1981_CARDS,
+  "edberg-becker-1988": EDBERG_BECKER_1988_CARDS,
+  "wilander-1982": WILANDER_1982_CARDS,
+  "saint-cyr-1956": SAINT_CYR_1956_CARDS,
+  "tokyo-hopp-2021": TOKYO_HOPP_2021_CARDS,
+  "dujardin-2012": DUJARDIN_2012_CARDS,
+  "handboll-vm-1999": HANDBOLL_VM_1999_CARDS,
+  "handboll-em-1994": HANDBOLL_EM_1994_CARDS,
+  "handboll-em-2022": HANDBOLL_EM_2022_CARDS,
   "super-saturday-2012": [
     "Hemmastadion en lördagskväll. Tre finaler ska avgöras inom samma timme.",
     "Först en sjukamp som stängs med 800 meter. Sedan en längdhoppsgrop som väntar på ett guldhopp.",
@@ -236,6 +268,20 @@ const SPORT_BANKS: Record<DailySportId, Ladder> = {
     "Klockan, målfotot eller måttbandet hinner före firandet.",
     "Ett mästerskapsavgörande: ett rekord, ett guld, och en tid som står sig.",
   ],
+  equestrian: [
+    "En bana med bommar, eller en fyrkant med bokstäver. Hästen är redan sadlad.",
+    "Ryttaren rider in ensam. Domarna sitter stilla, och klockan är inte den vanliga matchklockan.",
+    "Ett hinder rivs, eller en piruett sitter. Poängen skrivs innan nästa ekipage kommer.",
+    "Sista ritten bär laget eller den enskilda medaljen. Tid eller procent skiljer pallen.",
+    "Ett mästerskap avgörs i sadeln: ett guld, en häst, och en siffra som står sig.",
+  ],
+  handball: [
+    "En hall med klibbigt golv. Bollen är redan i spel innan sången hunnit sätta sig.",
+    "Final. Målvakten täcker det första hörnet, och kantspelaren väntar på luckan.",
+    "Ett tvåminutersstraff töms. Bänken hittar en annan hand, och tavlan rör sig ett mål.",
+    "Sista minuten är ett skott. Signalen och nätet kommer nästan samtidigt.",
+    "Slutsignalen låser ett mål mer än motståndaren. Hallen byter ägare.",
+  ],
 };
 
 const GENERIC =
@@ -256,6 +302,10 @@ const FOREIGN: Record<DailySportId, RegExp> = {
     /\b(pucken|puck|mittcirkeln|avspark(?:en)?|volley|nickmål|blålinjen|ishallen|ronden|slagskott|startblock|längdhopp|perioden|högstaligan)\b/i,
   athletics:
     /\b(pucken|puck|mittcirkeln|avspark(?:en)?|volley|nickmål|blålinjen|ishallen|ronden|slagskott|särspel|perioden|högstaligan)\b/i,
+  equestrian:
+    /\b(pucken|puck|mittcirkeln|avspark(?:en)?|volley|nickmål|blålinjen|ishallen|ronden|särspel|startblock|längdhopp|slagskott|högstaligan|perioden|bollen|handboll)\b/i,
+  handball:
+    /\b(pucken|puck|ishallen|blålinjen|ronden|särspel|startblock|längdhopp|slagskott|volley|dressyr|hinder|hästen|ryttaren|avspark(?:en)?|nickmål|högstaligan)\b/i,
 };
 
 function sportKey(sport: string | null | undefined): DailySportId | null {
@@ -265,6 +315,10 @@ function sportKey(sport: string | null | undefined): DailySportId | null {
   if (text.includes("box")) return "boxing";
   if (text.includes("tennis")) return "tennis";
   if (text.includes("athletic") || text.includes("friidrott") || text.includes("track")) return "athletics";
+  if (text.includes("equestrian") || text.includes("ridsport") || text.includes("dressyr") || text.includes("dressage")) {
+    return "equestrian";
+  }
+  if (text.includes("handball") || text.includes("handboll")) return "handball";
   return null;
 }
 

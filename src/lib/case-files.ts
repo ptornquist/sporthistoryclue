@@ -10,6 +10,8 @@ export interface CaseFile {
     | "boxing"
     | "tennis"
     | "athletics"
+    | "equestrian"
+    | "handball"
     | "gymnastics"
     | "basketball";
 }
@@ -224,6 +226,126 @@ export const CASE_FILES: CaseFile[] = [
     context: "Derby avgjort före paus",
     sport: "football",
   },
+  {
+    slug: "tyson-holyfield-1996",
+    ids: ["tyson-holyfield-1996"],
+    title: "Natten i öknen",
+    year: 1996,
+    context: "Titelmatch",
+    sport: "boxing",
+  },
+  {
+    slug: "thrilla-manila-1975",
+    ids: ["thrilla-manila-1975"],
+    title: "Hettan i huvudstaden",
+    year: 1975,
+    context: "Titelmatch",
+    sport: "boxing",
+  },
+  {
+    slug: "clay-liston-1964",
+    ids: ["clay-liston-1964"],
+    title: "Kvällen då namnet väntade",
+    year: 1964,
+    context: "Titelmatch",
+    sport: "boxing",
+  },
+  {
+    slug: "hagler-leonard-1987",
+    ids: ["hagler-leonard-1987"],
+    title: "Korten som inte enades",
+    year: 1987,
+    context: "Titelmatch",
+    sport: "boxing",
+  },
+  {
+    slug: "louis-schmeling-1938",
+    ids: ["louis-schmeling-1938"],
+    title: "Revanchen före pausen",
+    year: 1938,
+    context: "Titelmatch",
+    sport: "boxing",
+  },
+  {
+    slug: "federer-nadal-2008",
+    ids: ["federer-nadal-2008"],
+    title: "Skymningen på gräset",
+    year: 2008,
+    context: "Gräsfinal",
+    sport: "tennis",
+  },
+  {
+    slug: "borg-mcenroe-1981",
+    ids: ["borg-mcenroe-1981"],
+    title: "Svitens sista final",
+    year: 1981,
+    context: "Gräsfinal",
+    sport: "tennis",
+  },
+  {
+    slug: "edberg-becker-1988",
+    ids: ["edberg-becker-1988"],
+    title: "Måndagen efter regnet",
+    year: 1988,
+    context: "Gräsfinal",
+    sport: "tennis",
+  },
+  {
+    slug: "wilander-1982",
+    ids: ["wilander-1982"],
+    title: "Tonåringen på gruset",
+    year: 1982,
+    context: "Grusfinal",
+    sport: "tennis",
+  },
+  {
+    slug: "saint-cyr-1956",
+    ids: ["saint-cyr-1956"],
+    title: "Sommaren som flyttades",
+    year: 1956,
+    context: "Olympisk dressyr",
+    sport: "equestrian",
+  },
+  {
+    slug: "tokyo-hopp-2021",
+    ids: ["tokyo-hopp-2021"],
+    title: "Klockan över bommarna",
+    year: 2021,
+    context: "Laghoppning",
+    sport: "equestrian",
+  },
+  {
+    slug: "dujardin-2012",
+    ids: ["dujardin-2012"],
+    title: "Musiken i parken",
+    year: 2012,
+    context: "Fristil",
+    sport: "equestrian",
+  },
+  {
+    slug: "handboll-vm-1999",
+    ids: ["handboll-vm-1999"],
+    title: "Underläget i hettan",
+    year: 1999,
+    context: "VM-final",
+    sport: "handball",
+  },
+  {
+    slug: "handboll-em-1994",
+    ids: ["handboll-em-1994"],
+    title: "Den första europeiska kvällen",
+    year: 1994,
+    context: "EM-final",
+    sport: "handball",
+  },
+  {
+    slug: "handboll-em-2022",
+    ids: ["handboll-em-2022"],
+    title: "Straffen efter signalen",
+    year: 2022,
+    context: "EM-final",
+    sport: "handball",
+  },
 ];
 
 export const SPORT_NAME: Record<CaseFile["sport"], string> = {
@@ -232,6 +354,8 @@ export const SPORT_NAME: Record<CaseFile["sport"], string> = {
   boxing: "Boxing",
   tennis: "Tennis",
   athletics: "Athletics",
+  equestrian: "Equestrian",
+  handball: "Handball",
   gymnastics: "Gymnastics",
   basketball: "Basketball",
 };
@@ -242,6 +366,8 @@ const SPORT_LABELS: Record<string, string[]> = {
   boxing: ["boxing", "boxning"],
   tennis: ["tennis"],
   athletics: ["athletics", "track and field", "track", "friidrott"],
+  equestrian: ["equestrian", "ridsport", "dressyr", "dressage"],
+  handball: ["handball", "handboll"],
   gymnastics: ["gymnastics"],
   basketball: ["basketball"],
 };
@@ -322,6 +448,10 @@ export function mysteryFixtureLabel(sport: CaseFile["sport"] | string | undefine
       return "Historisk titelmatch";
     case "tennis":
       return "Historisk tennismatch";
+    case "equestrian":
+      return "Historisk ridsportstriumf";
+    case "handball":
+      return "Historisk handbollsmatch";
     case "athletics":
     case "gymnastics":
       return "Historiskt mästerskapsögonblick";

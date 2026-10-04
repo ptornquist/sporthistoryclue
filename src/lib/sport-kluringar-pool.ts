@@ -19,6 +19,21 @@ export const SPORT_KLURING_POOL = [
   { id: "owens-1936", sport: "athletics" },
   { id: "duplantis-2026", sport: "athletics" },
   { id: "fosbury-1968", sport: "athletics" },
+  { id: "tyson-holyfield-1996", sport: "boxing" },
+  { id: "thrilla-manila-1975", sport: "boxing" },
+  { id: "clay-liston-1964", sport: "boxing" },
+  { id: "hagler-leonard-1987", sport: "boxing" },
+  { id: "louis-schmeling-1938", sport: "boxing" },
+  { id: "federer-nadal-2008", sport: "tennis" },
+  { id: "borg-mcenroe-1981", sport: "tennis" },
+  { id: "edberg-becker-1988", sport: "tennis" },
+  { id: "wilander-1982", sport: "tennis" },
+  { id: "saint-cyr-1956", sport: "equestrian" },
+  { id: "tokyo-hopp-2021", sport: "equestrian" },
+  { id: "dujardin-2012", sport: "equestrian" },
+  { id: "handboll-vm-1999", sport: "handball" },
+  { id: "handboll-em-1994", sport: "handball" },
+  { id: "handboll-em-2022", sport: "handball" },
 ] as const;
 
 export type PoolSport = (typeof SPORT_KLURING_POOL)[number]["sport"];

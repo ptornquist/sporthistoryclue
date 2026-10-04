@@ -1,6 +1,14 @@
 import { kluringForDay, kluringIdsForSport, type PoolSport } from "@/lib/sport-kluringar-pool";
 
-export const DAILY_SPORT_IDS = ["ice_hockey", "football", "boxing", "tennis", "athletics"] as const;
+export const DAILY_SPORT_IDS = [
+  "ice_hockey",
+  "football",
+  "boxing",
+  "tennis",
+  "athletics",
+  "equestrian",
+  "handball",
+] as const;
 
 export type DailySportId = (typeof DAILY_SPORT_IDS)[number];
 
@@ -11,6 +19,8 @@ const SPORT_FIXTURES: Record<DailySportId, readonly string[]> = {
   boxing: kluringIdsForSport("boxing"),
   tennis: kluringIdsForSport("tennis"),
   athletics: kluringIdsForSport("athletics"),
+  equestrian: kluringIdsForSport("equestrian"),
+  handball: kluringIdsForSport("handball"),
 };
 
 const FIXTURE_ALIASES: Record<string, string> = {
