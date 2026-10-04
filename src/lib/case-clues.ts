@@ -13,11 +13,11 @@ export const SUMMIT_SERIES_1972_CARDS = [
 ] as const;
 
 export const SVERIGE_SOVJET_1984_CARDS = [
-  "Ljuset strålar över isen i Scandinavium. Den klassiska klangen av skridskoskär mot den vita ytan ackompanjeras av ett kokande hemmapublikstryck.",
-  "Det är mitten av 1980-talet. Tre Kronor ställs mot den röda maskinen från öst i en gastkramande uppgörelse som betyder så mycket mer än bara poäng.",
-  "Svenska stjärnor kämpar heroiskt mot det sovjetiska lagets skoningslösa passningskavalkad och tekniska överlägsenhet.",
-  "Matchen står och väger in i sista perioden. Varje duell vid sargen och varje tekning avgör om Sverige kan stå emot stormen.",
-  "Slutsignalen ljuder efter en heroisk insats som etsar sig fast i den svenska idrottshistorien för all framtid.",
+  "Ljuset strålar över isen i ett kokande Scandinavium. Den mäktiga stämningen från läktarna vittnar om en historisk drabbning.",
+  "Det är turneringen där världens absolut bästa hockeyspelare ställs mot varandra under intensiva höstkvällar på 1980-talet.",
+  "Tre Kronor med Tomas Sandström och Mats Thelin i spetsen tar upp kampen mot den röda maskinens skoningslösa passningsspel.",
+  "Spänningen är på tiotusendels nivå när matchen väger fram och tillbaka in i sista periodens dramatiska slutminuter.",
+  "En heroisk svensk insats som pressar giganten från öst till det yttersta och skriver ett omistligt kapitel i svensk hockeyhistoria.",
 ] as const;
 
 const CASE_CLUES: Record<string, readonly string[]> = {
