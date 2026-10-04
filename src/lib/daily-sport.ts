@@ -6,7 +6,14 @@ export type DailySportId = (typeof DAILY_SPORT_IDS)[number];
 
 /** Playable fixtures for one sport. The same date always picks the same row. */
 const SPORT_FIXTURES: Record<DailySportId, readonly string[]> = {
-  ice_hockey: ["miracle-1980", "summit-series-1972", "turin-gold-2006", "slaget-i-sudden", "guldkampen-i-norr"],
+  ice_hockey: [
+    "miracle-1980",
+    "summit-series-1972",
+    "sverige-sovjet-1984",
+    "turin-gold-2006",
+    "slaget-i-sudden",
+    "guldkampen-i-norr",
+  ],
   football: [
     "montevideo-1930",
     "bern-1954",

@@ -1,4 +1,4 @@
-import { SUMMIT_SERIES_1972_CARDS } from "@/lib/case-clues";
+import { SUMMIT_SERIES_1972_CARDS, SVERIGE_SOVJET_1984_CARDS } from "@/lib/case-clues";
 import { sportForFixture, type DailySportId } from "@/lib/daily-sport";
 import { localizeDailyClue } from "@/lib/swedish-clues";
 
@@ -22,6 +22,7 @@ const LADDERS: Record<string, Ladder> = {
     "Miraklet på isen, den 22 februari 1980. USA:s universitetslag slår Sovjetunionen med 4–3 och tar två dagar senare OS-guld mot Finland, 4–2.",
   ],
   "summit-series-1972": SUMMIT_SERIES_1972_CARDS,
+  "sverige-sovjet-1984": SVERIGE_SOVJET_1984_CARDS,
   "turin-gold-2006": [
     "En ny OS-hall med omkring 12 000 platser. Pucken glider längs sargen före första tekningen.",
     "Final mellan två nordiska grannar. Ledningen har växlat, och tredje perioden inleds oavgjort.",

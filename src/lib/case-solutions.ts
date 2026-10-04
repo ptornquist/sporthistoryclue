@@ -5,6 +5,7 @@ const MATCHUPS: Record<string, string> = {
   "miracle-on-ice-1980": "USA mot Sovjetunionen (1980)",
   "miracle-1980": "USA mot Sovjetunionen (1980)",
   "summit-series-1972": "Kanada mot Sovjetunionen (1972)",
+  "sverige-sovjet-1984": "Sverige mot Sovjetunionen (1984)",
   "comaneci-1976": "Nadia Comăneci (1976)",
   "dream-team-1992": "USA:s uppvisningslag mot Kroatien (1992)",
   "bolt-beijing-2008": "Usain Bolt (2008)",

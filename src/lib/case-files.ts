@@ -41,6 +41,14 @@ export const CASE_FILES: CaseFile[] = [
     sport: "ice_hockey",
   },
   {
+    slug: "sverige-sovjet-1984",
+    ids: ["sverige-sovjet-1984"],
+    title: "Klassisk drabbning i Scandinavium",
+    year: 1984,
+    context: "Hemmamatch",
+    sport: "ice_hockey",
+  },
+  {
     slug: "comaneci-1976",
     ids: ["comaneci-1976"],
     title: "Siffran som inte fick plats",

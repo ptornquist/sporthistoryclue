@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { caseClues } from "./case-clues";
+import { caseClues, SVERIGE_SOVJET_1984_CARDS } from "./case-clues";
 
 describe("caseClues", () => {
   it("opens the 1980 Wimbledon final in Swedish", () => {
@@ -13,6 +13,16 @@ describe("caseClues", () => {
       "En drömduell på huvudbanan mellan två raka motsatser: den stoiske skandinaviske baslinjespelaren mot den hetlevrade nätspelaren från andra sidan Atlanten.",
     );
     expect(clues.join(" ")).not.toMatch(/\b(the|and|with|winner|scoreboard)\b/i);
+  });
+
+  it("opens the 1984 Scandinavium game in Swedish", () => {
+    const clues = caseClues({
+      slug: "sverige-sovjet-1984",
+      context: "Hemmamatch",
+      year: 1984,
+    });
+    expect(clues).toEqual([...SVERIGE_SOVJET_1984_CARDS]);
+    expect(clues.join(" ")).not.toMatch(/\b(the|and|with|winner|scoreboard|clue)\b/i);
   });
 
   it("opens the 1972 Summit Series in Swedish", () => {

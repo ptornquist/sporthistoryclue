@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DAILY_SPORT_IDS, dailyFixtureSources, fixtureIdForSportDay, sportForFixture } from "./daily-sport";
-import { SUMMIT_SERIES_1972_CARDS } from "./case-clues";
+import { SUMMIT_SERIES_1972_CARDS, SVERIGE_SOVJET_1984_CARDS } from "./case-clues";
 import { dailyClueFitsSport, publishDailyClues } from "./daily-clue-copy";
 
 const BANNED = /Avgörandet sparas till det sista kortet|Ett beskuret arkivfoto|Lake Placid|Centre Court|Amateurs against/i;
@@ -69,7 +69,8 @@ describe("publishDailyClues", () => {
 
   it("writes every hockey classic in rink Swedish and drops football or English lines", () => {
     const hockey = dailyFixtureSources().filter(
-      (id) => sportForFixture(id) === "ice_hockey" && id !== "summit-series-1972",
+      (id) =>
+        sportForFixture(id) === "ice_hockey" && id !== "summit-series-1972" && id !== "sverige-sovjet-1984",
     );
     expect(hockey.length).toBeGreaterThan(0);
     for (const id of hockey) {
@@ -85,6 +86,15 @@ describe("publishDailyClues", () => {
       expect(text).toMatch(/utvisningsbås/i);
       expect(text).not.toMatch(/avspark|mittcirkel|inlägg|\bboll|roaring|spectators|\brink\b|nhl|8-matchers/i);
     }
+  });
+
+  it("publishes the Scandinavium 1984 cards in order", () => {
+    const cards = publishDailyClues("sverige-sovjet-1984", ["Amateurs against a machine."], "ice_hockey");
+    expect(cards).toEqual([...SVERIGE_SOVJET_1984_CARDS]);
+    expect(cards[0]).toMatch(/Scandinavium/);
+    expect(cards[3]).toMatch(/sargen/);
+    expect(cards[4]).toMatch(/Slutsignalen/);
+    expect(publishDailyClues("daily-ice_hockey-2026-10-04", cards, "ice_hockey")).toEqual(cards);
   });
 
   it("publishes the 1972 Summit Series cards in order", () => {

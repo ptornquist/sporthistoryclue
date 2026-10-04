@@ -12,6 +12,14 @@ export const SUMMIT_SERIES_1972_CARDS = [
   "Med bara 34 sekunder kvar av sista perioden kliver Paul Henderson fram och slår in den historiska segerpucken som får hela Kanada att explodera i jubel.",
 ] as const;
 
+export const SVERIGE_SOVJET_1984_CARDS = [
+  "Ljuset strålar över isen i Scandinavium. Den klassiska klangen av skridskoskär mot den vita ytan ackompanjeras av ett kokande hemmapublikstryck.",
+  "Det är mitten av 1980-talet. Tre Kronor ställs mot den röda maskinen från öst i en gastkramande uppgörelse som betyder så mycket mer än bara poäng.",
+  "Svenska stjärnor kämpar heroiskt mot det sovjetiska lagets skoningslösa passningskavalkad och tekniska överlägsenhet.",
+  "Matchen står och väger in i sista perioden. Varje duell vid sargen och varje tekning avgör om Sverige kan stå emot stormen.",
+  "Slutsignalen ljuder efter en heroisk insats som etsar sig fast i den svenska idrottshistorien för all framtid.",
+] as const;
+
 const CASE_CLUES: Record<string, readonly string[]> = {
   "wimbledon-epic-1980": [
     "Gräs, en herrfinal som kan kräva fem set, och två spelare som vägrar likna varandra.",
@@ -21,6 +29,7 @@ const CASE_CLUES: Record<string, readonly string[]> = {
     "En drömduell på huvudbanan mellan två raka motsatser: den stoiske skandinaviske baslinjespelaren mot den hetlevrade nätspelaren från andra sidan Atlanten.",
   ],
   "summit-series-1972": SUMMIT_SERIES_1972_CARDS,
+  "sverige-sovjet-1984": SVERIGE_SOVJET_1984_CARDS,
   "miracle-on-ice-1980": [
     "Pucken studsar i sargen i en olympisk ishall. Favoriten har tränat året runt, och flaggan på läktaren vill inte ligga still.",
     "Det är semifinal på isen, men stämningen är redan som i en final. Ett universitetslag möter en maskin som rullar i långa perioder.",
@@ -92,6 +101,10 @@ const CASE_CLUES: Record<string, readonly string[]> = {
     "Det avgörande ögonblicket är det sista kortet i akten, när en pojke gråter i kaptens tröja.",
   ],
 };
+
+export function hasAuthoredCaseLadder(slug: string | undefined): boolean {
+  return Boolean(slug && Object.prototype.hasOwnProperty.call(CASE_CLUES, slug));
+}
 
 export function caseClues(file: CaseClueSource): string[] {
   const specific = file.slug ? CASE_CLUES[file.slug] : undefined;
