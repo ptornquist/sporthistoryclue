@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DAILY_SPORT_IDS, dailyFixtureSources, fixtureIdForSportDay, sportForFixture } from "./daily-sport";
+import { SUMMIT_SERIES_1972_CARDS } from "./case-clues";
 import { dailyClueFitsSport, publishDailyClues } from "./daily-clue-copy";
 
 const BANNED = /Avgörandet sparas till det sista kortet|Ett beskuret arkivfoto|Lake Placid|Centre Court|Amateurs against/i;
@@ -67,7 +68,9 @@ describe("publishDailyClues", () => {
   });
 
   it("writes every hockey classic in rink Swedish and drops football or English lines", () => {
-    const hockey = dailyFixtureSources().filter((id) => sportForFixture(id) === "ice_hockey");
+    const hockey = dailyFixtureSources().filter(
+      (id) => sportForFixture(id) === "ice_hockey" && id !== "summit-series-1972",
+    );
     expect(hockey.length).toBeGreaterThan(0);
     for (const id of hockey) {
       const text = publishDailyClues(
@@ -82,6 +85,12 @@ describe("publishDailyClues", () => {
       expect(text).toMatch(/utvisningsbås/i);
       expect(text).not.toMatch(/avspark|mittcirkel|inlägg|\bboll|roaring|spectators|\brink\b|nhl|8-matchers/i);
     }
+  });
+
+  it("publishes the 1972 Summit Series cards in order", () => {
+    const cards = publishDailyClues("summit-series-1972", ["Amateurs against a machine."], "ice_hockey");
+    expect(cards).toEqual([...SUMMIT_SERIES_1972_CARDS]);
+    expect(publishDailyClues("daily-ice_hockey-2026-10-04", cards, "ice_hockey")).toEqual(cards);
   });
 
   it("keeps the climax on the last card", () => {

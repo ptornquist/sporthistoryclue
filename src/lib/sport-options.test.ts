@@ -5,6 +5,7 @@ import {
   domesticLeagueOptions,
   ensureFourDailyOptions,
   gradesDailyOption,
+  SUMMIT_SERIES_1972_OPTIONS,
   inferOptionSport,
   optionSport,
   scopeOptionsToSport,
@@ -110,6 +111,28 @@ describe("ensureFourDailyOptions", () => {
     expect(options).toHaveLength(4);
     expect([...options].sort()).toEqual([...SHL_MATCHUPS].sort());
     expect(options.join(" ")).not.toMatch(INTERNATIONAL);
+  });
+
+  it("keeps the 1972 Summit Series on its four hockey buttons", () => {
+    const options = ensureFourDailyOptions(
+      ["Kanada mot Sovjetunionen (1972)"],
+      "ice_hockey",
+      "summit-series-1972",
+      stable,
+    );
+    expect([...options].sort()).toEqual([...SUMMIT_SERIES_1972_OPTIONS].sort());
+    const again = ensureFourDailyOptions(options, "ice_hockey", "daily-ice_hockey-2026-10-04", stable);
+    expect([...again].sort()).toEqual([...SUMMIT_SERIES_1972_OPTIONS].sort());
+    expect(gradesDailyOption("Kanada mot Sovjetunionen (1972)", "Kanada mot Sovjetunionen", 1972, "ice_hockey")).toBe(
+      true,
+    );
+    expect(gradesDailyOption("Sverige mot Sovjetunionen (1977)", "Kanada mot Sovjetunionen", 1972, "ice_hockey")).toBe(
+      false,
+    );
+    expect(gradesDailyOption("Kanada mot USA (1980)", "Kanada mot Sovjetunionen", 1972, "ice_hockey")).toBe(false);
+    expect(
+      gradesDailyOption("Tjeckoslovakien mot Sovjetunionen (1976)", "Kanada mot Sovjetunionen", 1972, "ice_hockey"),
+    ).toBe(false);
   });
 
   it("keeps a league campaign on Swedish clubs", () => {

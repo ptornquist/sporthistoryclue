@@ -19,6 +19,30 @@ export const ALLSVENSKAN_MATCHUPS = [
   "IFK Göteborg mot Trelleborg (2007)",
 ] as const;
 
+/** Four buttons for the 1972 Summit Series. The first string is the graded answer. */
+export const SUMMIT_SERIES_1972_OPTIONS = [
+  "Kanada mot Sovjetunionen (1972)",
+  "Sverige mot Sovjetunionen (1977)",
+  "Kanada mot USA (1980)",
+  "Tjeckoslovakien mot Sovjetunionen (1976)",
+] as const;
+
+const PINNED_DAILY_OPTIONS: Record<string, readonly string[]> = {
+  "summit-series-1972": SUMMIT_SERIES_1972_OPTIONS,
+};
+
+function recognizePinnedOptions(options: readonly string[]): readonly string[] | null {
+  const incoming = distinctOptionValues([...options], 4);
+  if (incoming.length < 4) return null;
+  for (const set of Object.values(PINNED_DAILY_OPTIONS)) {
+    const same =
+      incoming.length === set.length &&
+      incoming.every((option) => set.some((item) => optionIdentity(item) === optionIdentity(option)));
+    if (same) return set;
+  }
+  return null;
+}
+
 const DOMESTIC_LEAGUE_OPTIONS: Record<string, readonly string[]> = {
   "slaget-i-sudden": SHL_MATCHUPS,
   "guldkampen-i-norr": SHL_MATCHUPS,
@@ -311,6 +335,12 @@ export function ensureFourDailyOptions(
   if (campaign) {
     const lead = localized.find((option) => campaign.some((item) => sameMatchup(item, option)));
     return fisherYates(distinctOptionValues([...(lead ? [lead] : []), ...campaign], 4), random);
+  }
+
+  const pinnedKey = findCase(matchId ?? "")?.slug ?? matchId ?? "";
+  const pinned = PINNED_DAILY_OPTIONS[pinnedKey] ?? recognizePinnedOptions(options ?? []);
+  if (pinned) {
+    return fisherYates(distinctOptionValues([...pinned], 4), random);
   }
 
   const sportKnown = Boolean(SPORT_CHOICES[key]);
