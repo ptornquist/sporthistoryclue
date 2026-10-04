@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DAILY_SPORT_IDS, dailyFixtureSources, fixtureIdForSportDay } from "./daily-sport";
-import { publishDailyClues } from "./daily-clue-copy";
+import { DAILY_SPORT_IDS, dailyFixtureSources, fixtureIdForSportDay, sportForFixture } from "./daily-sport";
+import { dailyClueFitsSport, publishDailyClues } from "./daily-clue-copy";
 
 const BANNED = /Avgörandet sparas till det sista kortet|Ett beskuret arkivfoto|Lake Placid|Centre Court|Amateurs against/i;
 
@@ -13,6 +13,11 @@ describe("publishDailyClues", () => {
       expect(new Set(clues).size).toBe(5);
       expect(clues.join(" ")).not.toMatch(BANNED);
       packs.push(clues.join(" | "));
+      const sport = sportForFixture(id);
+      expect(sport).toBeTruthy();
+      for (const clue of clues) {
+        expect(dailyClueFitsSport(clue, sport!)).toBe(true);
+      }
     }
     expect(new Set(packs).size).toBe(packs.length);
   });
@@ -39,6 +44,26 @@ describe("publishDailyClues", () => {
     expect(new Set(clues).size).toBe(5);
     expect(clues.join(" ")).not.toMatch(BANNED);
     expect(clues.join(" ")).toMatch(/ishall|hockey|puck|byte|siren/i);
+    expect(clues.join(" ")).not.toMatch(/mittcirkeln|avspark|volley|nickmål|bollen/i);
+  });
+
+  it("drops football wording from a hockey row and fills with rink language", () => {
+    const clues = publishDailyClues(
+      "okand-hockeykvall",
+      [
+        "Pucken ligger still i ishallen innan första perioden.",
+        "Domaren pekar mot mittcirkeln innan avspark.",
+        "Ett inlägg möts på volley.",
+        "Nickmålet avgör på gräset.",
+        "Special teams avgör mot NHL.",
+      ],
+      "Ishockey",
+    );
+    expect(clues).toHaveLength(5);
+    expect(new Set(clues).size).toBe(5);
+    expect(clues[0]).toMatch(/Pucken ligger still/);
+    expect(clues.join(" ")).not.toMatch(/mittcirkeln|avspark|volley|nickmål|gräset|special teams|nhl/i);
+    expect(clues.join(" ")).toMatch(/puck|ishall|byte|blålinje|siren/i);
   });
 
   it("keeps a written ladder when the id later becomes a dated sport key", () => {

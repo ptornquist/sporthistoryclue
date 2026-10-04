@@ -1,4 +1,4 @@
-import type { DailySportId } from "@/lib/daily-sport";
+import { sportForFixture, type DailySportId } from "@/lib/daily-sport";
 import { localizeDailyClue } from "@/lib/swedish-clues";
 
 type Ladder = readonly [string, string, string, string, string];
@@ -14,17 +14,17 @@ const ALIASES: Record<string, string> = {
 const LADDERS: Record<string, Ladder> = {
   "miracle-1980": [
     "En olympisk ishall i en bergsby. Publiken viftar med en flagga som inte vill ligga still, och favoriten har tränat året runt.",
-    "Det är semifinal, men stämningen är redan som i en final. Ett collegelag möter en supermakts sammansvetsade maskin.",
+    "Det är semifinal, men stämningen är redan som i en final. Ett universitetslag möter en supermakts sammansvetsade maskin.",
     "Bänken är ung. Den andra sidan byter i färdiga formationer. En kapten får det sista bytet när klockan sinar.",
     "Radion skriker rakt in i en mikrofon. Kameran fastnar på en målvakt som vägrar titta bort.",
-    "Miraklet på isen, 1980. USA:s collegelag slår Sovjetunionen med 4–3 och tar sedan OS-guld mot Finland.",
+    "Miraklet på isen, 1980. USA:s universitetslag slår Sovjetunionen med 4–3 och tar sedan OS-guld mot Finland.",
   ],
   "summit-series-1972": [
     "En landskampsserie som vägrar dö. Bortalagets hall är full, och klockan är nästan slut.",
     "Två hockeysystem som länge levt åtskilda möts när proffsen äntligen släpps in i landslaget.",
     "Ett lag är byggt för en klubbliga. Det andra samlas året runt. Serien står lika inför sista matchen.",
     "Ett skott från slottet, en målvakt som är sen, och en hall som exploderar med sekunder kvar.",
-    "Summit Series 1972. NHL-proffsen möter det sovjetiska landslaget i åtta matcher, och sista minuten i Moskva avgör.",
+    "Toppmötesserien 1972. Kanadas proffs möter det sovjetiska landslaget i åtta matcher, och sista minuten i Moskva avgör.",
   ],
   "turin-gold-2006": [
     "En nybyggd OS-hall. Två lag som kan varandras skridskoskär möts om den tyngsta medaljen.",
@@ -57,7 +57,7 @@ const LADDERS: Record<string, Ladder> = {
   "bern-1954": [
     "Ett radiomöte mer än en tv-final. Regnet ligger kvar på gräset, och favoriten har redan krossat samma motståndare i gruppspelet.",
     "Underskattade gäster i vita tröjor jagar en ledning som tabellen säger att de inte får ta.",
-    "Ställningen vänder mer än en gång. Ett sent avgörande, och en speaker som tappar andan i mikrofonen.",
+    "Ställningen vänder mer än en gång. Ett sent avgörande, och en referent som tappar andan i mikrofonen.",
     "Hemma i ett sönderbombat land sitter folk kvar vid apparaterna långt efter slutsignalen.",
     "Undret i Bern, VM-finalen 1954. Västtyskland vänder 2–0 till 3–2 mot Ungerns guldlag.",
   ],
@@ -76,7 +76,7 @@ const LADDERS: Record<string, Ladder> = {
     "VM-finalen 1966 på Wembley. Geoff Hurst gör hattrick när England slår Västtyskland med 4–2 efter förlängning.",
   ],
   "maradona-1986": [
-    "Hettan ligger kvar på hög höjd. En nummer 10 tar bollen på egen planhalva och bestämmer sig för att ingen ska få stoppa honom.",
+    "Hettan ligger kvar på hög höjd. Ett nummer 10 tar bollen på egen planhalva och bestämmer sig för att ingen ska få stoppa honom.",
     "Samma kvartsfinal har redan ett mål som reglerna knappt rymmer. Fyra minuter senare kommer ett annat.",
     "Fem spelare passeras. Målvakten kommer ut. Avslutningen är nästan stillsam.",
     "Kommentatorn frågar vilken planet spelaren kommer från. Kameran följer en löptur som aldrig klipps kort.",
@@ -94,10 +94,10 @@ const LADDERS: Record<string, Ladder> = {
     "Två inhoppare väntar vid sidlinjen. Det första anfallet efter deras entré ändrar inte tavlan. Det andra gör det.",
     "Ett nickmål, och nästan direkt ett till. Motståndaren hinner inte ens ta avspark.",
     "En trippel ligger på spel: ligan, cupen hemma, och nu den största kvällen i Barcelona.",
-    "Champions League-finalen 1999. Manchester United vänder 0–1 till 2–1 mot Bayern München i tilläggstid.",
+    "Finalen i Europas klubbturnering 1999. Manchester United vänder 0–1 till 2–1 mot Bayern München i tilläggstid.",
   ],
   "chastain-1999": [
-    "En straffläggning under kalifornisk kvällssol. Hela ett land har stannat vid tv:n för en final som inte ville avgöras i spel.",
+    "En straffläggning under kalifornisk kvällssol. Ett helt land har stannat vid tv:n för en final som inte ville avgöras i spel.",
     "Den sista straffen är vänsterfotad. Skytten springer redan innan bollen landat i nätet.",
     "Tröjan åker av. En svart sport-bh blir bilden som tidningarna inte kan lägga undan.",
     "Skålformad arena, fulla läktare, och ett lag som just tagit sitt andra raka stora guld.",
@@ -128,7 +128,7 @@ const LADDERS: Record<string, Ladder> = {
     "En final som vägrar bli en vanlig kväll. Ledningen ser avgjord ut, tills ett hattrick vänder allting.",
     "Förlängning. Lika igen. En skål som glänser ovanför straffpunkten.",
     "Två nummer 10. Den ena har väntat ett helt liv på den här straffen. Den andra har redan gjort tre mål.",
-    "Straffläggningen slutar 4–2. Kaptenen gråter i en cape, och en första stjärna sys på tröjan.",
+    "Straffläggningen slutar 4–2. Kaptenen gråter i en mantel, och en första stjärna sys på tröjan.",
     "VM-finalen 2022 i Lusail. Argentina slår Frankrike på straffar efter 3–3, och Lionel Messi tar sitt första VM.",
   ],
   "ali-1974": [
@@ -136,21 +136,21 @@ const LADDERS: Record<string, Ladder> = {
     "Den äldre mannen väntar mot repen, rond efter rond, och låter kraften i den obesegrade ta slut.",
     "En hel stad vid floden har varit vaken sedan natten. Publiken ropar ett namn i takt.",
     "I åttonde ronden kommer högern. Den obesegrade mästaren går i däck, och promotorn får sitt oväsen.",
-    "Djungelns dån, 30 oktober 1974 i Kinshasa. Muhammad Ali knockar George Foreman och tar tillbaka tungviktstiteln.",
+    "Djungelns dån, 30 oktober 1974 i Kinshasa. Muhammad Ali golvar George Foreman och tar tillbaka tungviktstiteln.",
   ],
   "king-1973": [
     "En inomhusbana under en kupol, större än någon tennishall brukar vara. En hel kontinent har satt sig vid tv:n.",
     "Utmanaren är betydligt äldre och har redan slagit den som rankas högst. I kväll bärs han in på en bår.",
     "Det spelas bäst av fem, men det är inte seten folk kom för. En symbolisk gris får följa med den som förlorar.",
     "Raka set under taket. Vinnaren lämnar banan med ett leende som tidningarna sparar.",
-    "Battle of the Sexes, 1973 under kupolen i Houston. Billie Jean King slår Bobby Riggs med 6–4, 6–3, 6–3.",
+    "Könsduellen 1973 under kupolen i Houston. Billie Jean King slår Bobby Riggs med 6–4, 6–3, 6–3.",
   ],
   "wimbledon-epic-1980": [
     "Gräs, en herrfinal som kan kräva fem set, och två spelare som vägrar likna varandra.",
     "Den ena håller bollen i spel från baslinjen, tyst och jämn. Den andra attackerar nätet och bråkar med linjen.",
-    "Ett tiebreak vägrar ta slut. Siffrorna klättrar långt förbi det som brukar räcka för ett set.",
+    "Ett särspel vägrar ta slut. Siffrorna klättrar långt förbi det som brukar räcka för ett set.",
     "Publiken byter sida med ljudet: först en applåd, sedan ett bu. Gräset blir grönare ju längre de håller på.",
-    "Wimbledonfinalen 1980. Björn Borg slår John McEnroe i fem set, efter ett tiebreak i fjärde som slutar 18–16.",
+    "Wimbledonfinalen 1980. Björn Borg slår John McEnroe i fem set, efter ett särspel i fjärde set som slutar 18–16.",
   ],
   "owens-1936": [
     "En kolstybbana och en längdhoppsgrop. Propagandaspelen har redan skrivit manus, och en sprinter från andra sidan havet håller inte med.",
@@ -161,10 +161,10 @@ const LADDERS: Record<string, Ladder> = {
   ],
   "fosbury-1968": [
     "En höjdhoppare vänder ryggen mot ribban. Tränarna grimaserar. Fotograferna har aldrig sett någon titta mot himlen i luften.",
-    "Han är sist i hoppordningen, mer ingenjör än stylt. Höjden han klarar ritar om vad som är möjligt.",
+    "Han är sist i hoppordningen, mer ingenjör än akrobat. Höjden han klarar ritar om vad som är möjligt.",
     "Varje försök ser ut som ett misstag tills ribban ligger kvar. Landningen är en mjuk kudde, inte en sandgrop.",
     "Segerhöjden är 2,24. Tekniken får snart hans namn, och hela fältet börjar hoppa baklänges.",
-    "OS i Mexico City 1968. Dick Fosbury tar guld i höjd med floppen, ryggen före över ribban.",
+    "OS i Mexiko City 1968. Dick Fosbury tar guld i höjd med rygghoppet, ryggen före över ribban.",
   ],
   "bolt-2008": [
     "OS-final på den korta banan. Vinden är stilla, och en lång löpare är fri långt före bandet.",
@@ -178,7 +178,7 @@ const LADDERS: Record<string, Ladder> = {
     "Först en mångkampare som stänger sjukampen. Sedan en längdhoppare som landar i guldgropen.",
     "Den tredje finalen är den långa löpningen. Ett hemmastöd som ljuder om, och en löpare som drar ifrån på sista varvet.",
     "Tre guld, samma kväll, samma arena. Tidningarna hinner knappt byta rubrik.",
-    "Super Saturday, 4 augusti 2012. Jessica Ennis-Hill, Greg Rutherford och Mo Farah tar OS-guld inom en timme i London.",
+    "Superlördagen den 4 augusti 2012. Jessica Ennis-Hill, Greg Rutherford och Mo Farah tar OS-guld inom en timme i London.",
   ],
 };
 
@@ -186,30 +186,30 @@ const SPORT_BANKS: Record<DailySportId, Ladder> = {
   ice_hockey: [
     "En ishall där andetagen syns. Publikens slag mot plexit följer pucken, inte klockan.",
     "Två hockeylag med olika tålamod. Det ena jagar avslutet, det andra väntar på misstaget.",
-    "Special teams och ett byte som dröjer en sekund för länge. Målvakten ser pucken sent.",
+    "Ett numerärt överläge och ett byte som dröjer en sekund för länge. Målvakten ser pucken sent.",
     "En blålinje, ett skott som tar på ett benskydd, och en retur som ingen back hinner täcka.",
-    "Avgörandet sitter i ett sista byte: ett mål, en siren, och en hall som inte sätter sig igen.",
+    "Sista bytet fäller avgörandet: ett mål, en siren, och en hall som inte sätter sig igen.",
   ],
   football: [
     "Ett gräs som redan är upprivet vid mittcirkeln. Läktaren sjunger innan domaren ens blåst igång.",
     "En matchbild med mycket boll i sidled, tills en kant plötsligt får yta att springa i.",
-    "Ett inlägg som inte ska vara farligt. En anfallare kommer före backen och möter på volley.",
+    "Ett inlägg som inte ska vara farligt. En anfallare kommer före backen och möter bollen i luften.",
     "Tavlan ändras en gång, sedan en gång till. Bänken står upp innan avsparken hunnit tas.",
     "Slutsignalen fryser ett resultat som tabellen får leva med: ett mål mer, och kvällen byter ägare.",
   ],
   boxing: [
     "Rep, harts och en ring som luktar tidig morgon. Den ena boxaren dansar, den andra sparar.",
-    "Jabben räknar avståndet. Den andra handen väntar tills motståndaren andas ut.",
+    "Stöten räknar avståndet. Den andra handen väntar tills motståndaren andas ut.",
     "En rond där gardet sjunker. Publiken hör träffen innan de ser den.",
-    "Domaren stegar in. Den ene armen räknas, den andra vägrar lämna duken.",
+    "Domaren stegar in. Den ene räknas där han ligger, den andre vägrar lämna duken.",
     "En titelmatch som avgörs innan full tid: en träff, en räkning, och ett bälte som byter midja.",
   ],
   tennis: [
     "Ett underlag som låter olika under två par skor. Den ena stannar långt bak, den andra söker nätet.",
-    "Serven är ett vapen i ett game och en svaghet i nästa. Publiken vänder huvudet med bollen.",
-    "Ett game som borde varit slut för länge sedan. Varje boll träffar linjen och börjar om.",
-    "Ett tiebreak där siffrorna slutar se ut som tennis. Bänken torkar händerna mellan varje serve.",
-    "Finalen kräver ett sista set. Den som håller nerverna vinner, och gräset eller hardcourten minns längst.",
+    "Serven är ett vapen i ett gem och en svaghet i nästa. Publiken vänder huvudet med bollen.",
+    "Ett gem som borde varit slut för länge sedan. Varje boll träffar linjen och börjar om.",
+    "Ett särspel där siffrorna slutar se ut som tennis. Bänken torkar händerna mellan servarna.",
+    "Finalen kräver ett sista set. Den som håller nerverna vinner, och gräset eller hårdbanan minns längst.",
   ],
   athletics: [
     "Startblock, en stilla vindmätare och en stadion som håller andan innan skottet.",
@@ -222,6 +222,23 @@ const SPORT_BANKS: Record<DailySportId, Ladder> = {
 
 const GENERIC =
   /avgörandet sparas till det sista kortet|ett beskuret arkivfoto|en detalj ur arkivet|uppställningen bär favoritens börda|en arena som redan är full innan startskottet/i;
+
+const ENGLISH_FRAGMENT =
+  /\b(the|and|with|winner|amateurs|against|scoreboard|versus|defeats|summit series|nhl|special teams|champions league|battle of the sexes|super saturday|tiebreak|hardcourt|premier league|centre court|lake placid|field house|collegelag|college|knockar|knockout|floppen|cape|game|jab|volley|momentum)\b/i;
+
+/** Words that belong to another sport and must not survive on this fixture. */
+const FOREIGN: Record<DailySportId, RegExp> = {
+  ice_hockey:
+    /\b(mittcirkeln|avspark(?:en)?|volley|nickmål|inlägg(?:et)?|bollen|gräset|offside|hörnan|straffläggning|särspel|hårdbanan|högstaligan|ronden|startblock|längdhopp|sprinter)\b/i,
+  football:
+    /\b(pucken|puck|ishallen|ishall|blålinjen|skridsk\w*|plexit|slagskott|kassen|ronden|särspel|startblock|längdhopp|serven|perioden|perioder)\b/i,
+  boxing:
+    /\b(pucken|puck|mittcirkeln|avspark(?:en)?|volley|blålinjen|ishallen|särspel|startblock|längdhopp|nickmål|högstaligan|perioden)\b/i,
+  tennis:
+    /\b(pucken|puck|mittcirkeln|avspark(?:en)?|volley|nickmål|blålinjen|ishallen|ronden|slagskott|startblock|längdhopp|perioden|högstaligan)\b/i,
+  athletics:
+    /\b(pucken|puck|mittcirkeln|avspark(?:en)?|volley|nickmål|blålinjen|ishallen|ronden|slagskott|särspel|perioden|högstaligan)\b/i,
+};
 
 function sportKey(sport: string | null | undefined): DailySportId | null {
   const text = (sport ?? "").toLowerCase();
@@ -236,6 +253,16 @@ function sportKey(sport: string | null | undefined): DailySportId | null {
 function ladderFor(fixtureId: string): Ladder | null {
   const key = ALIASES[fixtureId] ?? fixtureId;
   return LADDERS[key] ?? null;
+}
+
+export function dailyClueFitsSport(line: string, sport: DailySportId): boolean {
+  return lineFitsSport(line, sport);
+}
+
+function lineFitsSport(line: string, sport: DailySportId | null): boolean {
+  if (ENGLISH_FRAGMENT.test(line)) return false;
+  if (sport && FOREIGN[sport].test(line)) return false;
+  return true;
 }
 
 function uniqueLines(lines: readonly string[]): string[] {
@@ -258,10 +285,13 @@ export function publishDailyClues(
   const written = ladderFor(fixtureId);
   if (written) return [...written];
 
-  const cleaned = uniqueLines((clues ?? []).map((clue) => localizeDailyClue(clue)));
+  const sportId = sportForFixture(fixtureId) ?? sportKey(sport);
+  const cleaned = uniqueLines((clues ?? []).map((clue) => localizeDailyClue(clue))).filter((line) =>
+    lineFitsSport(line, sportId),
+  );
   if (cleaned.length >= 5) return cleaned.slice(0, 5);
 
-  const bank = SPORT_BANKS[sportKey(sport) ?? "football"];
+  const bank = SPORT_BANKS[sportId ?? "football"];
   const filled = [...cleaned];
   for (const line of bank) {
     if (filled.length >= 5) break;
