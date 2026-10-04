@@ -1,7 +1,7 @@
 import "server-only";
 
 import { findCase } from "@/lib/case-files";
-import { caseClues, hasAuthoredCaseLadder } from "@/lib/case-clues";
+import { caseClues, hasAuthoredCaseLadder, SVERIGE_SOVJET_1984_CARDS } from "@/lib/case-clues";
 import { solvedMatchup } from "@/lib/case-solutions";
 import { canonicalSport } from "@/lib/decoy-options";
 import { publishDailyClues } from "@/lib/daily-clue-copy";
@@ -120,28 +120,32 @@ export async function loadMatchFixture(matchId: string, now = new Date()): Promi
   const subject = parsed?.subject || puzzle?.title || "";
   const resolvedYear = parsed?.year || year;
 
-  let clues: string[] = [];
-  for (const table of ["challenges", "puzzles"] as const) {
-    const row = await loadRowByIds(table, ids);
-    const tactical = resolveTacticalClueList(row?.tactical_clues);
-    if (tactical.some(Boolean)) {
-      clues = tactical;
-      break;
-    }
-  }
-  if (!clues.some(Boolean) && puzzle) clues = resolveTacticalClueList(puzzle.clues);
-  if (!clues.some(Boolean)) {
+  const scandinavium1984 =
+    trimmed === "sverige-sovjet-1984" || file?.slug === "sverige-sovjet-1984" || ids.includes("sverige-sovjet-1984");
+  let clues: string[] = scandinavium1984 ? [...SVERIGE_SOVJET_1984_CARDS] : [];
+  if (!scandinavium1984) {
     for (const table of ["challenges", "puzzles"] as const) {
       const row = await loadRowByIds(table, ids);
-      if (!row) continue;
-      const normalized = normalizeRow({ ...row, id: trimmed }, dateKey);
-      if (normalized?.clues.some(Boolean)) {
-        clues = normalized.clues;
+      const tactical = resolveTacticalClueList(row?.tactical_clues);
+      if (tactical.some(Boolean)) {
+        clues = tactical;
         break;
       }
     }
+    if (!clues.some(Boolean) && puzzle) clues = resolveTacticalClueList(puzzle.clues);
+    if (!clues.some(Boolean)) {
+      for (const table of ["challenges", "puzzles"] as const) {
+        const row = await loadRowByIds(table, ids);
+        if (!row) continue;
+        const normalized = normalizeRow({ ...row, id: trimmed }, dateKey);
+        if (normalized?.clues.some(Boolean)) {
+          clues = normalized.clues;
+          break;
+        }
+      }
+    }
+    if (!clues.some(Boolean) && file) clues = caseLadder(file);
   }
-  if (!clues.some(Boolean) && file) clues = caseLadder(file);
   if (!subject || !resolvedYear || clues.filter(Boolean).length === 0) return null;
 
   const category = file
