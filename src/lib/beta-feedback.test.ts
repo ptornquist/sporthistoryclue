@@ -2,24 +2,20 @@ import { describe, expect, it } from "vitest";
 import { prepareBetaFeedback } from "./beta-feedback";
 
 describe("prepareBetaFeedback", () => {
-  it("keeps a rated bug report", () => {
+  it("keeps a rated bug report with only the table columns", () => {
     const result = prepareBetaFeedback({
-      rating: 2,
+      rating: 2.2,
       category: "Bugg",
       comment: "  Knappen svarar inte.  ",
-      scoutName: "@PuckScout",
-      userId: "user-1",
-      pagePath: "/",
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.row).toMatchObject({
+      expect(result.row).toEqual({
         rating: 2,
         category: "Bugg",
         comment: "Knappen svarar inte.",
-        scout_name: "PuckScout",
-        user_id: "user-1",
       });
+      expect(Object.keys(result.row).sort()).toEqual(["category", "comment", "rating"]);
     }
   });
 

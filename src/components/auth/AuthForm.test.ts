@@ -35,6 +35,7 @@ describe("registration and beta feedback", () => {
     expect(html).toContain("Idé");
     expect(html).toContain("Övrigt");
     expect(html).toContain("Kommentar");
+    expect(html).toContain("Skicka feedback");
   });
 
   it("puts the feedback button in the footer", () => {
