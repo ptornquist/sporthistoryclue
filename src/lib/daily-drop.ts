@@ -7,6 +7,7 @@ import { canonicalSport } from "@/lib/decoy-options";
 import { publishDailyClues } from "@/lib/daily-clue-copy";
 import { alignDailyPresentation } from "@/lib/daily-presentation";
 import { fixtureIdForSportDay, sportDailyKey, type DailySportId } from "@/lib/daily-sport";
+import { kluringForDay } from "@/lib/sport-kluringar-pool";
 import { ensureFourDailyOptions, gradesDailyOption } from "@/lib/sport-options";
 import { puzzles } from "@/lib/catalog";
 import {
@@ -91,6 +92,12 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
 }
 
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
+  const picked = kluringForDay(dateKey);
+  const stamped = new Date(`${dateKey}T12:00:00.000Z`);
+  const pooled = await loadMatchFixture(picked.id, Number.isNaN(stamped.getTime()) ? new Date() : stamped);
+  if (pooled && pooled.clues.some(Boolean)) {
+    return { ...pooled, date_key: dateKey };
+  }
   const fromChallenges = await loadFromTable("challenges", dateKey);
   const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
   return withDistinctOptions(fixture);
@@ -362,6 +369,12 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
 }
 
 export async function loadDatedPublicDrop(dateKey: string): Promise<PublicDaily | null> {
+  try {
+    const pooled = toPublicDaily(await loadDailyFixture(dateKey));
+    if (pooled.clues.some(Boolean)) return pooled;
+  } catch {
+    // A stored challenge can still open the day if the pool fixture fails.
+  }
   const client = challengeClient();
   if (client) {
     try {

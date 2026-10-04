@@ -28,6 +28,7 @@ import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/d
 import { formatOptionText } from '@/lib/option-text';
 import { choiceSportKey, ensureFourDailyOptions } from '@/lib/sport-options';
 import { arenaHref, campaignHeadline, nextStorylineMatch, storylineById } from '@/lib/storylines';
+import { dayIndexFromKey } from '@/lib/sport-kluringar-pool';
 
 interface DailyFixture {
   id: string;
@@ -40,11 +41,6 @@ interface DailyFixture {
 interface Solution {
   subject: string;
   year: number;
-}
-
-function dayIndexFromKey(dateKey: string): number {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
 function setupOptions(options: string[], category: string, matchId?: string): string[] {
