@@ -7,6 +7,7 @@ import {
   HAMMARBY_AIK_2016_CARDS,
   MALMO_IFK_2015_CARDS,
   SKELLEFTEA_FARJESTAD_2014_CARDS,
+  DUPLANTIS_2026_CARDS,
   SUMMIT_SERIES_1972_CARDS,
   SVERIGE_SOVJET_1984_CARDS,
 } from "@/lib/case-clues";
@@ -182,6 +183,7 @@ const LADDERS: Record<string, Ladder> = {
     "Ribban ligger kvar på 2,24. Varje försök ser fel ut tills den inte faller.",
     "OS i Mexiko City 1968. Dick Fosbury tar guld i höjd med rygghoppet, ryggen före över ribban, på 2,24 meter.",
   ],
+  "duplantis-2026": DUPLANTIS_2026_CARDS,
   "bolt-2008": [
     "OS-final på 100 meter. Vindmätaren står stilla, och startblocken sitter i bana 4.",
     "Favoriten är känd för den längre sprintdistansen. Den korta banan ska inte vara hans.",

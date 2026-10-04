@@ -206,6 +206,15 @@ const RECAPS: Record<string, HistoricalRecap> = {
     story:
       "Allsvenskans sista omgång 2007 avgjordes den 28 oktober. IFK Göteborg tog emot Trelleborg inför 41 471 på Ullevi och vann med 2–0, efter mål av Thomas Olsson och Pontus Wernbloom redan före paus. Kalmar och Djurgården kunde inte gå förbi. Blåvitt tog SM-guldet med 49 poäng, en poäng före Kalmar.",
   },
+  "duplantis-2026": {
+    year: 2026,
+    venue: "IFU Arena, Uppsala",
+    finalScore: "6,31 meter",
+    decisivePlay: "Ett försök på 6,31 efter tre tidigare höjder",
+    videoUrl: null,
+    story:
+      "Den 12 mars 2026 höjde Armand Duplantis ribban till 6,31 meter på Mondo Classic i Uppsala. Han hade redan klarat tre höjder i första försöket. Ett hopp till räckte, och stavrekordet blev hans femtonde.",
+  },
   "wimbledon-epic-1980": {
     year: 1980,
     venue: "Centre Court, All England Club",

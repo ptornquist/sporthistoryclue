@@ -1,5 +1,5 @@
 /**
- * Ten authored classics. Day index picks one row so the daily never falls
+ * Authored classics. Day index picks one row so the daily never falls
  * through to the generic sport bank.
  * Order is stable: 2026-10-04 is day 20730, and that slot is Scandinavium 1984.
  */
@@ -9,11 +9,16 @@ export const SPORT_KLURING_POOL = [
   { id: "summit-series-1972", sport: "ice_hockey" },
   { id: "pele-1958", sport: "football" },
   { id: "maradona-1986", sport: "football" },
+  { id: "hurst-1966", sport: "football" },
+  { id: "bern-1954", sport: "football" },
+  { id: "messi-2022", sport: "football" },
   { id: "ali-1974", sport: "boxing" },
   { id: "wimbledon-epic-1980", sport: "tennis" },
   { id: "king-1973", sport: "tennis" },
   { id: "bolt-2008", sport: "athletics" },
   { id: "owens-1936", sport: "athletics" },
+  { id: "duplantis-2026", sport: "athletics" },
+  { id: "fosbury-1968", sport: "athletics" },
 ] as const;
 
 export type PoolSport = (typeof SPORT_KLURING_POOL)[number]["sport"];

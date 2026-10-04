@@ -10,6 +10,7 @@ const MATCHUPS: Record<string, string> = {
   "dream-team-1992": "USA:s uppvisningslag mot Kroatien (1992)",
   "bolt-beijing-2008": "Usain Bolt (2008)",
   "bolt-2008": "Usain Bolt (2008)",
+  "duplantis-2026": "Armand Duplantis (2026)",
   "pele-sweden-1958": "Brasilien mot Sverige (1958)",
   "pele-1958": "Brasilien mot Sverige (1958)",
   "hand-of-god-1986": "Argentina mot England (1986)",
