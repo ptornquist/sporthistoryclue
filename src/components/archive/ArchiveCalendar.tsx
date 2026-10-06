@@ -56,11 +56,11 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
       .then(async (response) => (response.ok ? response.json() : null))
       .then((payload: { story?: string } | null) => {
         if (!cancelled) {
-          setStory({ id: challengeId, text: payload?.story ?? "The solved dossier is filed in the archive." });
+          setStory({ id: challengeId, text: payload?.story ?? "Den lösta kluringen ligger i arkivet." });
         }
       })
       .catch(() => {
-        if (!cancelled) setStory({ id: challengeId, text: "The solved dossier is filed in the archive." });
+        if (!cancelled) setStory({ id: challengeId, text: "Den lösta kluringen ligger i arkivet." });
       });
     return () => {
       cancelled = true;
@@ -76,7 +76,7 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Daily Drop</p>
+            <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Dagens kluring</p>
             <h1 className="text-3xl font-black uppercase tracking-tight">{month.label}</h1>
           </div>
           <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
               onClick={() => setCursor((current) => shiftMonth(current.year, current.monthIndex, -1))}
               className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-700 hover:border-blue-600"
             >
-              &lt; Prev Month
+              &lt; Föregående månad
             </button>
             <button
               type="button"
@@ -93,15 +93,15 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
               disabled={!nextAllowed}
               className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-700 hover:border-blue-600 disabled:cursor-not-allowed disabled:text-zinc-300"
             >
-              Next Month &gt;
+              Nästa månad &gt;
             </button>
           </div>
         </div>
 
         <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Stat text={`Played: ${month.played}/${month.elapsed} Days`} />
-          <Stat text={`Accuracy: ${month.accuracy}%`} />
-          <Stat text={`Total Archive Score: ${month.totalScore.toLocaleString()} PTS`} />
+          <Stat text={`Spelade: ${month.played}/${month.elapsed} dagar`} />
+          <Stat text={`Träffsäkerhet: ${month.accuracy}%`} />
+          <Stat text={`Arkivpoäng: ${month.totalScore.toLocaleString("sv-SE")} poäng`} />
         </section>
 
         <section className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
@@ -126,31 +126,31 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
       {recap && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6">
           <div className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl">
-            <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700">Solved dossier</p>
+            <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700">Löst kluring</p>
             <h2 className="mt-1 text-xl font-black uppercase tracking-tight">{formatArchiveDate(recap.dateKey)}</h2>
             {recap.score != null && (
-              <p className="mt-2 font-mono text-sm font-black text-blue-600">{recap.score.toLocaleString()} PTS</p>
+              <p className="mt-2 font-mono text-sm font-black text-blue-600">{recap.score.toLocaleString("sv-SE")} poäng</p>
             )}
             <p className="mt-4 text-sm leading-relaxed text-zinc-600">
               {recap.challengeId
                 ? story?.id === recap.challengeId
                   ? story.text
-                  : "Opening the recap…"
-                : "The solved dossier is filed in the archive."}
+                  : "Öppnar sammanfattningen…"
+                : "Den lösta kluringen ligger i arkivet."}
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <Link
                 href={`/?date=${recap.dateKey}`}
                 className="rounded-xl border border-zinc-200 px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-700"
               >
-                Open dossier
+                Öppna kluringen
               </Link>
               <button
                 type="button"
                 onClick={() => setRecap(null)}
                 className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-700"
               >
-                Close
+                Stäng
               </button>
             </div>
           </div>
@@ -185,7 +185,7 @@ function DayTile({
       {cell.status === "future" && <span className="text-base">🔒</span>}
       {cell.status === "today" && (
         <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
-          Today
+          Idag
         </span>
       )}
       {cell.status === "solved" && (
@@ -198,7 +198,7 @@ function DayTile({
           )}
         </>
       )}
-      {cell.status === "failed" && <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Miss</span>}
+      {cell.status === "failed" && <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Missad</span>}
       {cell.status === "missed" && <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />}
       {cell.status === "unplayed" && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />}
     </>

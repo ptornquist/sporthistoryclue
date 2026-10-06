@@ -361,3 +361,81 @@ export function cluesForKluring(id: string): readonly string[] | null {
   const row = SPORT_KLURING_POOL.find((item) => item.id === id);
   return row ? row.clues : null;
 }
+
+/** Catalog fixtures that are not rows in the daily pool, still played in Swedish. */
+const EXTRA_SWEDISH_CLUES: Record<string, readonly string[]> = {
+  "athens-1896": [
+    "En amatör som bär vatten oftare än han springer får en sen plats i startfältet.",
+    "Distansen är ny. Målporten är en marmorbåge, och läktaren är full.",
+    "En röst skär genom stadion innan högtalaren hinner med.",
+    "Kronprinsen följer in segraren. Nationen tar återupplivningen till sig.",
+    "De första moderna spelen, 1896 i Aten. Spyridon Louis vinner det första maratonloppet.",
+  ],
+  "montevideo-1930": [
+    "En ny arena vid en flodmynning. Bara tretton lag har tagit sig dit.",
+    "Värdlandet har redan ett olympiskt guld på samma mark.",
+    "Finalen är ett grannmöte. Hemmapubliken är inte tyst.",
+    "Fyra mål mot två. Det första guldet i den här turneringen stannar hos värden.",
+    "Den 30 juli 1930 i Montevideo. Uruguay slår Argentina med 4–2 och blir första VM-mästare.",
+  ],
+  "comaneci-1976": [
+    "En siffra på tavlan som regelboken inte hade rum för. Apparaten hinner inte med.",
+    "En tonåring på barr. Domarna skriver en etta och två nollor.",
+    "Publiken förstår före högtalaren. Betyget är det högsta som går.",
+    "Samma vecka händer det igen. Perfektion blir en vana.",
+    "Den 18 juli 1976 i Montréal. Nadia Comăneci får den första perfekta tian i OS.",
+  ],
+  "dream-team-1992": [
+    "Ett landslag där klubbstjärnorna äntligen får spela tillsammans.",
+    "Motståndarna jagar autografer före avkast. Marginalerna är tvåsiffriga.",
+    "Finalen spelas vid Medelhavet. Motståndet är europeiskt och inte utan skott.",
+    "Guldet är aldrig hotat. Skillnaden i finalen är trettiotvå poäng.",
+    "OS-finalen den 8 augusti 1992 i Barcelona. USA slår Kroatien med 117–85.",
+  ],
+  "mandela-1995": [
+    "En rugbfinal. Värdlandet har en ny flagga och en president på läktaren.",
+    "Tröjan är grön. Motståndet kommer från en ögrupp i Stilla havet.",
+    "Det står lika efter ordinarie tid. Ett droppmål avgör.",
+    "Presidenten räcker över pokalen i en tröja som matchar vinnarna.",
+    "VM-finalen den 24 juni 1995 i Johannesburg. Sydafrika slår Nya Zeeland med 15–12.",
+  ],
+  "united-1999": [
+    "En europacupfinal. Laget i rött ligger under när klockan går in i tillägget.",
+    "Motståndet leder med ett mål och har redan ställt om till att hålla undan.",
+    "Två mål på några minuter. Hörnan och returen skriver om finalen.",
+    "Arenan är inte hemma. Pokalen lyfts ändå av gästerna.",
+    "Finalen den 26 maj 1999 i Barcelona. Manchester United vänder 0–1 till 2–1 mot Bayern München.",
+  ],
+  "chastain-1999": [
+    "En VM-final i fotboll där ordinarie tid och förlängning inte räcker.",
+    "Straffläggning. En ytterback kliver fram sent i kön.",
+    "Skottet går i mål. Tröjan åker av i firandet.",
+    "Det är damernas VM, och guldet stannar hos värdlandet.",
+    "Finalen den 10 juli 1999 i Pasadena. USA slår Kina efter straffar. Brandi Chastain sätter den avgörande.",
+  ],
+  "bolt-2008": [
+    "Startblock och en löpare som tittar åt sidan innan målsnöret.",
+    "Världsrekordet är redan hans. I kväll jagar han det igen, på en raksträcka.",
+    "Tiden börjar med en nia. Marginalen till tvåan är tydlig.",
+    "Guldet på den kortaste sprintdistansen, och armarna är redan ute.",
+    "OS-finalen den 16 augusti 2008 i Peking. Usain Bolt springer 100 meter på 9,69.",
+  ],
+  "super-saturday-2012": [
+    "En lördag på hemmaplan. Tre grenar, tre guld, samma nation.",
+    "Först en mångkamp. Sedan ett längdhopp. Sist ett långt lopp på banan.",
+    "Publiken hinner knappt sätta sig mellan segrarna.",
+    "Tre britter skriver samma kväll in sig i OS-protokollet.",
+    "Den 4 augusti 2012 i London. Jessica Ennis, Greg Rutherford och Mo Farah tar guld samma kväll.",
+  ],
+  "leicester-2016": [
+    "Ett ligalag som oddsen satte längst ner. Ingen räknar med en titel.",
+    "Tränaren skulle hålla kvar laget. I stället leder de tabellen.",
+    "En anfallare från en annan kontinent gör målen. Kaptenen är en försvarare.",
+    "Sista omgångarna är en formalitet. Titeln är säkrad före sista matchen.",
+    "Premier League 2015/16. Leicester City blir engelska mästare.",
+  ],
+};
+
+export function publishedSwedishClues(id: string): readonly string[] | null {
+  return cluesForKluring(id) ?? EXTRA_SWEDISH_CLUES[id] ?? null;
+}

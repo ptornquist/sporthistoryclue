@@ -15,7 +15,7 @@ interface AuthGateModalProps {
 export default function AuthGateModal({
   isOpen,
   onClose,
-  featureName = 'the Match Archive',
+  featureName = 'matcharkivet',
   returnTo,
 }: AuthGateModalProps) {
   // Close on Escape for keyboard users.
@@ -45,7 +45,7 @@ export default function AuthGateModal({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="Stäng"
           className="absolute top-5 right-5 text-zinc-400 hover:text-black text-xl font-bold w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"
         >
           ✕
@@ -55,35 +55,35 @@ export default function AuthGateModal({
           🔓
         </span>
         <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[10px] font-bold uppercase rounded-full tracking-wider mb-2 inline-block">
-          Scout Access Required
+          Scoutkonto krävs
         </span>
 
         <h3
           id="auth-gate-title"
           className="text-2xl font-black uppercase tracking-tight text-zinc-900 mt-1"
         >
-          Unlock the Archive
+          Lås upp arkivet
         </h3>
 
         <p className="text-xs text-zinc-600 leading-relaxed mt-2 mb-5">
-          The <strong>Daily Drop</strong> is always free — no sign-up needed. But{' '}
-          <strong>{featureName}</strong> is part of the Scout archive. Create a free account to
-          play unlimited fixtures and keep your career streak across devices.
+          <strong>Dagens kluring</strong> är alltid gratis. Men{' '}
+          <strong>{featureName}</strong> ingår i scoutarkivet. Skapa ett gratiskonto för att
+          spela fler matcher och behålla sviten på alla enheter.
         </p>
 
         <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl px-4 py-3 mb-6 text-left">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-1.5">
-            A free Scout profile unlocks
+            Ett gratiskonto öppnar
           </span>
           <ul className="text-xs text-zinc-600 font-medium space-y-1">
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">✦</span> Storylines
+              <span className="text-blue-600 font-bold">✦</span> Utmaningar
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">✦</span> By Sport
+              <span className="text-blue-600 font-bold">✦</span> Grenar
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">✦</span> Play Another Match (unlimited archive)
+              <span className="text-blue-600 font-bold">✦</span> Fler matcher i arkivet
             </li>
           </ul>
         </div>
@@ -93,20 +93,20 @@ export default function AuthGateModal({
             href={returnTo ? `/login?mode=signup&next=${encodeURIComponent(returnTo)}` : '/login?mode=signup'}
             className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider block transition-all shadow-sm"
           >
-            Create Free Account →
+            Skapa gratiskonto →
           </Link>
           <Link
             href={returnTo ? `/login?next=${encodeURIComponent(returnTo)}` : '/login'}
             className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-xs font-bold uppercase tracking-wider block transition-all"
           >
-            Log In
+            Logga in
           </Link>
           <button
             type="button"
             onClick={onClose}
             className="w-full py-2 text-zinc-400 hover:text-zinc-600 text-xs font-medium transition-colors"
           >
-            Maybe later · Back to today&apos;s drop
+            Inte nu · Tillbaka till dagens kluring
           </button>
         </div>
       </div>

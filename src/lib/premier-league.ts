@@ -65,7 +65,8 @@ export function supporterLabel(club: PremierLeagueClub): string {
 }
 
 export function derbyContributionLine(score: number, clubName: string): string {
-  return `⚽ +${score.toLocaleString()} PTS bagged for ${clubName} in the Supporters Derby!`;
+  const points = Math.max(0, Math.floor(score)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `⚽ +${points} poäng till ${clubName} i supporterderbyt!`;
 }
 
 export function rankClubs(memberships: readonly ClubMembership[], mode: DerbyMode): ClubStanding[] {

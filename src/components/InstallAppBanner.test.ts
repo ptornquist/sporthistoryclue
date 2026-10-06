@@ -34,13 +34,13 @@ describe("InstallAppBannerCard", () => {
       }),
     );
     expect(html).toContain(SHEET);
-    expect(html).toContain("Install SportsHistoryClue");
-    expect(html).toContain("To install this app on your iPhone/iPad:");
-    expect(html).toContain("1. Tap the Share button in Safari toolbar");
+    expect(html).toContain("Installera SportsHistoryClue");
+    expect(html).toContain("Så installerar du appen på iPhone eller iPad:");
+    expect(html).toContain("1. Tryck på Dela i Safaris verktygsfält");
     expect(html).toContain("⎋");
-    expect(html).toContain("2. Scroll down and tap &#x27;Add to Home Screen&#x27; (+)");
+    expect(html).toContain("2. Skrolla ner och tryck på Lägg till på hemskärmen (+)");
     expect(html).toContain("✕");
-    expect(html).not.toContain("Install App");
+    expect(html).not.toContain("Installera appen");
   });
 
   it("offers Install App on Android and explains the browser menu when the prompt is missing", () => {
@@ -52,7 +52,7 @@ describe("InstallAppBannerCard", () => {
         onDismiss: () => undefined,
       }),
     );
-    expect(ready).toContain(">Install App<");
+    expect(ready).toContain(">Installera appen<");
     expect(ready).toContain("bg-blue-600");
     expect(ready).toContain("min-h-[48px]");
     expect(ready).toContain("active:scale-[0.98]");
@@ -68,7 +68,7 @@ describe("InstallAppBannerCard", () => {
       }),
     );
     expect(blocked).toContain(
-      "Tap the 3 dots menu in your browser, then tap &#x27;Install app&#x27; or &#x27;Add to Home screen&#x27;",
+      "Öppna menyn med tre prickar i webbläsaren och välj Installera app eller Lägg till på hemskärmen",
     );
   });
 });

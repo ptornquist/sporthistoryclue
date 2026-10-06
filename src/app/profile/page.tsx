@@ -372,7 +372,7 @@ export default function ProfilePage() {
 
           {matches.length === 0 ? (
             <div className="text-center py-8 text-zinc-400 text-xs font-medium">
-              No completed fixtures yet. Head over to the Arena to start solving.
+              Inga lösta matcher ännu. Börja med dagens kluring.
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">

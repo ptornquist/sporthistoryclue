@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "The Supporters Derby",
-  description: "Which football club has the sharpest sports minds on the planet?",
+  title: "Supporterderbyt",
+  description: "Vilken klubb har de skarpaste sportminnena?",
 };
 
 export default function DerbyLayout({ children }: { children: ReactNode }) {

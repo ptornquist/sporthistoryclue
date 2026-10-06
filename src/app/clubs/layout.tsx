@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Private Scout Clubs",
-  description: "Compete with friends and coworkers on a private sports-history table.",
+  title: "Klubbar",
+  description: "Tävla med vänner i en privat klubb.",
 };
 
 export default function ClubsLayout({ children }: { children: ReactNode }) {

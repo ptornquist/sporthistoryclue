@@ -28,7 +28,7 @@ describe("private scout clubs", () => {
         label: "today's Daily Drop",
         score: 8500,
       }),
-    ).toBe("@alex solved today's Daily Drop (8,500 PTS)");
+    ).toBe("@alex löste dagens kluring (8 500 poäng)");
     expect(safeReturnPath("/clubs?join=HOCKEY")).toBe("/clubs?join=HOCKEY");
     expect(safeReturnPath("https://evil.example")).toBeNull();
   });

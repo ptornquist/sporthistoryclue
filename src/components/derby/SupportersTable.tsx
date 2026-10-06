@@ -13,10 +13,10 @@ export function SupportersTable({
         <thead>
           <tr className="border-b border-zinc-200 text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
             <th className="px-3 py-3 font-bold">Rank</th>
-            <th className="px-3 py-3 font-bold">Club</th>
+            <th className="px-3 py-3 font-bold">Klubb</th>
             <th className="px-3 py-3 font-bold">Active Scouts</th>
-            <th className="px-3 py-3 font-bold">Total Club Points</th>
-            <th className="px-3 py-3 font-bold">Average PTS / Scout</th>
+            <th className="px-3 py-3 font-bold">Klubbens poäng</th>
+            <th className="px-3 py-3 font-bold">Snitt per scout</th>
           </tr>
         </thead>
         <tbody>

@@ -18,11 +18,11 @@ describe("club hub markup", () => {
         onJoin: () => undefined,
       }),
     );
-    expect(html).toContain("Create a Club");
-    expect(html).toContain("Create Club →");
-    expect(html).toContain("Join with Code");
-    expect(html).toContain("Join Club →");
-    expect(html).toContain("Locker Room Legends");
+    expect(html).toContain("Skapa en klubb");
+    expect(html).toContain("Skapa klubb →");
+    expect(html).toContain("Gå med med kod");
+    expect(html).toContain("Gå med →");
+    expect(html).toContain("Lagets legender");
   });
 
   it("lists ranked scouts and the invite code", () => {
@@ -65,7 +65,7 @@ describe("club hub markup", () => {
         userScore: 8500,
       }),
     );
-    expect(html).toContain("Share with your Club");
+    expect(html).toContain("Dela med klubben");
     expect(html).toContain("pts=8500");
   });
 });

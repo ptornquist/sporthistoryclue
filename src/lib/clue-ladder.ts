@@ -4,7 +4,7 @@ const SCOREBOARD =
 const NUMERIC_SCORE =
   /\b\d+\s*[–—-]\s*\d+\b|\bperfect 10\b|\b\d+\.\d{2}\b|\b(?:ko|tko)\b|\bround\s+\d+\b/i;
 
-const PADDED_CLUE = /^clue #\d+:/i;
+const PADDED_CLUE = /^(?:clue #\d+:|ledtråd \d+:)/i;
 
 const PERSON = /\b[A-Z][a-zà-ÿ]{2,}(?:\s+[A-Z][a-zà-ÿ]{2,})+\b/g;
 
@@ -34,13 +34,13 @@ export function arrangeClueLadder(
   const tournament = hints?.category?.trim().toLowerCase();
   const venueFill: [string, string] = [
     tournament
-      ? `The stage belongs to the ${tournament}, and the sport's own calendar has circled this date.`
-      : "The venue is a championship ground, and the tournament bracket is down to a deciding tie.",
-    "The setting narrows the map: a famous arena for this sport, not a friendly exhibition.",
+      ? `Scenen tillhör ${tournament}, och en känd arena är inringad i kalendern.`
+      : "Arenan är en mästerskapsplan, och turneringen är nere i ett avgörande.",
+    "Platsen smalnar av: en berömd arena för den här sporten, inte en träningsmatch.",
   ];
   const stakes = [
-    "The building is already on its feet. The next minute will be argued about for years.",
-    "One side carries the favorite's burden. The other only needs one swing of momentum.",
+    "Hela huset står upp. Nästa minut kommer att diskuteras i åratal.",
+    "Den ena bär favoritens börda. Den andra behöver bara ett skifte i matchbilden.",
   ];
   const [nameClue, scoreClue] = pickDecisive(decisive);
   const [venueClue, tournamentClue] = twoDistinct(venue, venueFill);
@@ -63,8 +63,8 @@ function twoDistinct(preferred: string[], fills: [string, string]): [string, str
 }
 
 function pickDecisive(decisive: string[]): [string, string] {
-  const fallbackName = "The decisive names stay with the final score, revealed only once the stage is clear.";
-  const fallbackScore = "The final score is the line that closed the record.";
+  const fallbackName = "De avgörande namnen kommer med slutsiffrorna, först när scenen är tydlig.";
+  const fallbackScore = "Slutsiffrorna är raden som stänger protokollet.";
   const numeric = decisive.find((clue) => NUMERIC_SCORE.test(clue));
   const named = decisive.find((clue) => clue !== numeric && isNamedResult(clue));
   const first = named ?? decisive.find((clue) => clue !== numeric) ?? fallbackName;

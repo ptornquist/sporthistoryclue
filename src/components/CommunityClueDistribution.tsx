@@ -10,13 +10,13 @@ import {
 } from "@/lib/clue-stats";
 
 const ROWS: { clue: number; label: string; key: keyof ClueDistribution }[] = [
-  { clue: 1, label: "Clue 1", key: "clue_1" },
-  { clue: 2, label: "Clue 2", key: "clue_2" },
-  { clue: 3, label: "Clue 3", key: "clue_3" },
-  { clue: 4, label: "Clue 4", key: "clue_4" },
-  { clue: 5, label: "Clue 5", key: "clue_5" },
-  { clue: 6, label: "Clue 6", key: "clue_6" },
-  { clue: 0, label: "Struck Out", key: "missed" },
+  { clue: 1, label: "Ledtråd 1", key: "clue_1" },
+  { clue: 2, label: "Ledtråd 2", key: "clue_2" },
+  { clue: 3, label: "Ledtråd 3", key: "clue_3" },
+  { clue: 4, label: "Ledtråd 4", key: "clue_4" },
+  { clue: 5, label: "Ledtråd 5", key: "clue_5" },
+  { clue: 6, label: "Ledtråd 6", key: "clue_6" },
+  { clue: 0, label: "Bom", key: "missed" },
 ];
 
 export function CommunityClueDistribution({
@@ -53,10 +53,10 @@ export function CommunityClueDistribution({
   const maxCount = Math.max(...counts, 1);
 
   return (
-    <section className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-5 text-left" aria-label="Community deduction spread">
+    <section className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-5 text-left" aria-label="Hur andra löste kluringen">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-        <h3 className="text-sm font-black uppercase tracking-tight text-zinc-900">Community Deduction Spread</h3>
-        <span className="font-mono text-xs font-bold text-zinc-500">{stats.total_solves.toLocaleString()} Scouts</span>
+        <h3 className="text-sm font-black uppercase tracking-tight text-zinc-900">Hur andra löste den</h3>
+        <span className="font-mono text-xs font-bold text-zinc-500">{stats.total_solves.toLocaleString("sv-SE")} scouter</span>
       </div>
       <div className="space-y-2">
         {ROWS.map((row) => {

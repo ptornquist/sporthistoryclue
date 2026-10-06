@@ -1,4 +1,3 @@
-import { arrangeClueLadder } from "@/lib/clue-ladder";
 import {
   isMatchKey,
   loadDailyFixture,
@@ -27,7 +26,7 @@ export async function GET(request: Request) {
       challenge: {
         ...challenge,
         options: selectChallengeOptions(optionSource),
-        clues: arrangeClueLadder(challenge.clues, { category: challenge.category }),
+        clues: challenge.clues,
       },
     });
   }
@@ -46,6 +45,6 @@ export async function GET(request: Request) {
   return Response.json({
     ...payload,
     options: fixture.optionSource ? selectChallengeOptions(fixture.optionSource) : payload.options,
-    clues: arrangeClueLadder(payload.clues, { category: payload.category }),
+    clues: payload.clues,
   });
 }

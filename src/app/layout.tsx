@@ -3,9 +3,9 @@ import { InstallAppBanner } from '@/components/InstallAppBanner';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SportsHistoryClue | Daily Mystery Match & Sports Deduction',
+  title: 'SportsHistoryClue | Dagens kluring',
   description:
-    '6 progressive clues. 10,000 points. Can you deduce iconic sporting fixtures from Olympic finals, World Cups, and legendary rivalries before Clue 6?',
+    'Sex ledtrådar. 10 000 poäng. Kan du knäcka ikoniska matcher från OS, VM och klassiska rivaliteter före den sjätte ledtråden?',
   metadataBase: new URL('https://sportshistoryclue.com'),
   appleWebApp: {
     capable: true,
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
   },
   openGraph: {
-    title: 'SportsHistoryClue | Can You Beat My Deduction Score?',
+    title: 'SportsHistoryClue | Kan du slå min poäng?',
     description:
-      '6 progressive clues. 10,000 points on the line. Deduce iconic fixtures across sports history in 60 seconds.',
+      'Sex ledtrådar. 10 000 poäng. Knäck ikoniska matcher ur sportens historia.',
     url: 'https://sportshistoryclue.com',
     siteName: 'SportsHistoryClue',
     images: [
@@ -32,16 +32,16 @@ export const metadata: Metadata = {
         url: '/og-preview.png',
         width: 1200,
         height: 630,
-        alt: 'SportsHistoryClue Arena',
+        alt: 'SportsHistoryClue',
       },
     ],
-    locale: 'en_US',
+    locale: 'sv_SE',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SportsHistoryClue | Daily Sports Deduction',
-    description: '6 clues. 10,000 points. Test your sports deduction IQ.',
+    title: 'SportsHistoryClue | Dagens kluring',
+    description: 'Sex ledtrådar. 10 000 poäng. Testa din sportkunskap.',
     creator: '@sportshistoryclue',
   },
 };
@@ -60,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="sv">
       <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white">
         {children}
         <InstallAppBanner />

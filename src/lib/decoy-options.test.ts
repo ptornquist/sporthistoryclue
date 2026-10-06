@@ -29,10 +29,10 @@ describe("selectChallengeOptions", () => {
 
     expect(options).toHaveLength(4);
     expect(options.every((option) => UNIFORM.test(option))).toBe(true);
-    expect(options).toContain("1972 Summit Series: Canada vs Soviet Union");
-    expect(options).toContain("1976 Summit Series: USA vs Finland");
-    expect(options).toContain("1980 Olympic Hockey: USA vs Soviet Union");
-    expect(options).toContain("1968 Summit Series: Soviet Union vs Czechoslovakia");
+    expect(options).toContain("1972 Summitserien: Kanada mot Sovjetunionen");
+    expect(options).toContain("1976 Summitserien: USA mot Finland");
+    expect(options).toContain("1980 OS-hockey: USA mot Sovjetunionen");
+    expect(options).toContain("1968 Summitserien: Sovjetunionen mot Tjeckoslovakien");
     expect(fisherYates(["a", "b", "c", "d"], () => 0)).toEqual(["b", "c", "d", "a"]);
   });
 
@@ -57,7 +57,7 @@ describe("selectChallengeOptions", () => {
 
     expect(options).toHaveLength(4);
     expect(options.join(" | ")).not.toMatch(/1896|-776|marathon|Brazil/);
-    expect(options.some((option) => option.includes("1980 Olympic Hockey: USA vs Soviet Union"))).toBe(true);
+    expect(options.some((option) => option.includes("1980 OS-hockey: USA mot Sovjetunionen"))).toBe(true);
     expect(options.every((option) => UNIFORM.test(option))).toBe(true);
     expect(options.every((option) => !isUnrelatedEra(1972, Number(option.match(/^-?\d+/)?.[0])))).toBe(true);
     expect(correctOptionLabel({
@@ -65,19 +65,19 @@ describe("selectChallengeOptions", () => {
       year: 1972,
       category: "Olympic Hockey",
       sport: "ice_hockey",
-    })).toBe("1972 Olympic Hockey: Canada vs Soviet Union");
+    })).toBe("1972 OS-hockey: Kanada mot Sovjetunionen");
     expect(correctOptionLabel({
       subject: "The Miracle on Ice",
       year: 1980,
       category: "Olympic Medal Round",
       sport: "ice_hockey",
-    })).toBe("1980 Olympic Hockey: USA vs Soviet Union");
+    })).toBe("1980 OS-hockey: USA mot Sovjetunionen");
     expect(correctOptionLabel({
       subject: "Ali defeats Foreman in the Rumble in the Jungle",
       year: 1974,
       category: "Heavyweight Title Fight",
       sport: "boxing",
-    })).toBe("1974 Heavyweight Title Fight: Ali vs Foreman");
+    })).toBe("1974 Tungviktstitel: Ali mot Foreman");
   });
 
   it("synthesizes same-sport rivals when the archive has no usable peers", () => {
@@ -90,11 +90,11 @@ describe("selectChallengeOptions", () => {
     });
 
     expect(options).toHaveLength(4);
-    expect(options.filter((option) => option !== "1972 Olympic Hockey: Canada vs Soviet Union")).toHaveLength(3);
+    expect(options.filter((option) => option !== "1972 OS-hockey: Kanada mot Sovjetunionen")).toHaveLength(3);
     expect(options.join(" ")).not.toMatch(/1896|-776/);
-    expect(options.every((option) => /Olympic Hockey: .+ vs .+/.test(option))).toBe(true);
+    expect(options.every((option) => /OS-hockey: .+ mot .+/.test(option))).toBe(true);
     expect(
-      optionMatchesChallenge("1972 Olympic Hockey: Canada vs Soviet Union", {
+      optionMatchesChallenge("1972 OS-hockey: Kanada mot Sovjetunionen", {
         subject: "Canada vs Soviet Union (1972)",
         year: 1972,
         category: "Olympic Hockey",
@@ -125,7 +125,7 @@ describe("selectChallengeOptions", () => {
 
     expect(options).toHaveLength(4);
     expect(options.join(" ")).not.toMatch(/1896|-776|marathon/);
-    expect(options.every((option) => /World Cup: .+ vs .+/.test(option))).toBe(true);
+    expect(options.every((option) => /VM: .+ mot .+/.test(option))).toBe(true);
   });
 
   it("fills a curated list that repeats the correct fixture", () => {
@@ -142,7 +142,7 @@ describe("selectChallengeOptions", () => {
 
     expect(options).toHaveLength(4);
     expect(new Set(options.map((option) => option.toLowerCase())).size).toBe(4);
-    expect(options).toContain("1976 Olympic Hockey: USA vs Finland");
+    expect(options).toContain("1976 OS-hockey: USA mot Finland");
     expect(options.join(" ")).not.toMatch(/1896|-776/);
   });
 });

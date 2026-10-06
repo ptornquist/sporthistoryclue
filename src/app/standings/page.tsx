@@ -209,8 +209,8 @@ export default function StandingsPage() {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">Scout Standings</h1>
-              <p className="mt-1 text-sm text-zinc-500">Global rankings, active streaks, and division status.</p>
+              <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">Tabellen</h1>
+              <p className="mt-1 text-sm text-zinc-500">Global ranking, sviter och divisioner.</p>
             </div>
             <div className="flex self-start rounded-2xl bg-zinc-100 p-1">
               <button
@@ -221,7 +221,7 @@ export default function StandingsPage() {
                   mode === "week" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
-                This Week
+                Den här veckan
               </button>
               <button
                 type="button"
@@ -231,7 +231,7 @@ export default function StandingsPage() {
                   mode === "all" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
-                All-Time Legends
+                Genom tiderna
               </button>
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function StandingsPage() {
                 href="/"
                 className="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white hover:bg-blue-700"
               >
-                Play Today&apos;s Drop
+                Spela dagens kluring
               </Link>
             )}
           </div>

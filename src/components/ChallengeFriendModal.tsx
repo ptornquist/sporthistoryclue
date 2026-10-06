@@ -48,7 +48,7 @@ export function ChallengeFriendModal({
 
   const link = buildChallengeLink({ matchSlug, username, userScore, campaignId });
   const shareText = userScore
-    ? `⚔️ Can you beat my ${userScore.toLocaleString()} PTS and crack "${matchTitle}"?`
+    ? `⚔️ Kan du slå mina ${userScore.toLocaleString("sv-SE")} poäng och knäcka "${matchTitle}"?`
     : `⚔️ Dare you to crack "${matchTitle}".`;
   const whatsApp = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${link}`)}`;
   const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${shareText} ${link}`)}`;
@@ -59,7 +59,7 @@ export function ChallengeFriendModal({
       setToast("📋 Challenge link copied to clipboard!");
       window.setTimeout(() => setToast(null), 2200);
     } catch {
-      setToast("Could not copy the challenge link.");
+      setToast("Kunde inte kopiera utmaningslänken.");
       window.setTimeout(() => setToast(null), 2200);
     }
   };
@@ -72,13 +72,13 @@ export function ChallengeFriendModal({
         body: JSON.stringify({ action: "share", matchTitle, matchSlug, userScore: userScore ?? 0 }),
       });
       if (response.status === 401) {
-        setToast("Sign in to share with your club.");
+        setToast("Logga in för att dela med klubben.");
       } else if (response.status === 404) {
         setToast("Join a club before sharing this match.");
       } else if (!response.ok) {
         setToast("Could not share with your club.");
       } else {
-        setToast("⚔️ Shared with your club.");
+        setToast("⚔️ Delat med klubben.");
       }
     } catch {
       setToast("Could not share with your club.");
@@ -110,20 +110,20 @@ export function ChallengeFriendModal({
         className="relative w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-6 text-left shadow-2xl sm:p-8"
         onClick={(event) => event.stopPropagation()}
       >
-        <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">{category || "Sports History"}</p>
+        <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">{category || "Sporthistoria"}</p>
         <h2 id="challenge-friend-title" className="mt-1 text-2xl font-black uppercase tracking-tight text-zinc-900">
-          ⚔️ Challenge a Scout
+          ⚔️ Utmana en scout
         </h2>
-        <p className="mt-2 text-sm text-zinc-500">Dare a rival or teammate to crack &quot;{matchTitle}&quot;.</p>
+        <p className="mt-2 text-sm text-zinc-500">Utmana en rival eller lagkamrat att knäcka &quot;{matchTitle}&quot;.</p>
 
         {userScore ? (
           <div className="mt-4 inline-flex rounded-full bg-blue-600 px-4 py-2 text-xs font-black uppercase tracking-wide text-white">
-            Your score to beat: {userScore.toLocaleString()} PTS
+            Poäng att slå: {userScore.toLocaleString("sv-SE")} poäng
           </div>
         ) : null}
 
         <label className="mt-5 block text-[10px] font-bold uppercase tracking-wider text-zinc-400" htmlFor="challenge-link">
-          Ready-to-share link
+          Länk att dela
         </label>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
@@ -138,7 +138,7 @@ export function ChallengeFriendModal({
             onClick={() => { void copyLink(); }}
             className="rounded-xl bg-zinc-900 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-black"
           >
-            Copy Link
+            Kopiera länk
           </button>
         </div>
 
@@ -149,14 +149,14 @@ export function ChallengeFriendModal({
             rel="noreferrer"
             className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center text-xs font-bold text-emerald-800 hover:border-emerald-400"
           >
-            🟢 Share on WhatsApp
+            🟢 Dela på WhatsApp
           </a>
           <button
             type="button"
             onClick={() => { void nativeShare(); }}
             className="rounded-xl border border-zinc-200 bg-white px-3 py-3 text-xs font-bold text-zinc-800 hover:border-blue-400 hover:text-blue-700"
           >
-            📱 Native Share / Messages
+            📱 Dela
           </button>
           <a
             href={twitter}
@@ -164,7 +164,7 @@ export function ChallengeFriendModal({
             rel="noreferrer"
             className="rounded-xl border border-zinc-200 bg-white px-3 py-3 text-center text-xs font-bold text-zinc-800 hover:border-zinc-400"
           >
-            ✖️ Post on X / Twitter
+            ✖️ Dela på X
           </a>
         </div>
 
@@ -173,7 +173,7 @@ export function ChallengeFriendModal({
           onClick={() => { void shareWithClub(); }}
           className="mt-3 w-full rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-xs font-bold text-blue-700 hover:border-blue-400"
         >
-          ⚔️ Share with your Club
+          ⚔️ Dela med klubben
         </button>
 
         <button
@@ -181,7 +181,7 @@ export function ChallengeFriendModal({
           onClick={onClose}
           className="mt-5 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-700"
         >
-          Close
+          Stäng
         </button>
       </div>
       {toast && (

@@ -22,7 +22,7 @@ export function cleanHandle(value: string): string {
 
 export function duelHandleName(name: string): string {
   const handle = cleanHandle(name);
-  if (!handle || /^scout$/i.test(handle)) return "Guest Scout";
+  if (!handle || /^scout$/i.test(handle)) return "Gästscout";
   return handle;
 }
 
@@ -63,16 +63,16 @@ export function sidesFor(viewer: string, duel: DuelRecord): { you: number; them:
 
 export function formatAgo(iso: string, now: Date): string {
   const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return "just now";
+  if (!Number.isFinite(then)) return "just nu";
   const seconds = Math.max(0, Math.round((now.getTime() - then) / 1000));
-  if (seconds < 45) return "just now";
+  if (seconds < 45) return "just nu";
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
+  if (minutes < 60) return minutes === 1 ? "1 minut sedan" : `${minutes} minuter sedan`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+  if (hours < 24) return hours === 1 ? "1 timme sedan" : `${hours} timmar sedan`;
   const days = Math.round(hours / 24);
-  if (days < 14) return days === 1 ? "1 day ago" : `${days} days ago`;
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  if (days < 14) return days === 1 ? "1 dag sedan" : `${days} dagar sedan`;
+  return new Date(iso).toLocaleDateString("sv-SE", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export function pickRematchSlug(playedIds: string[], random: () => number = Math.random): string {
@@ -84,17 +84,17 @@ export function pickRematchSlug(playedIds: string[], random: () => number = Math
 }
 
 export function rematchLink(username: string, score: number, slug: string): string {
-  const handle = cleanHandle(username) || "Guest Scout";
+  const handle = cleanHandle(username) || "Gästscout";
   const points = Math.max(0, Math.round(score));
   return `https://sportshistoryclue.com/?match=${encodeURIComponent(slug)}&duel=${encodeURIComponent(handle)}&pts=${points}`;
 }
 
 export function duelPrompt(opponent: string, playerScore: number, opponentScore: number): string {
   const handle = cleanHandle(opponent);
-  const diff = Math.abs(playerScore - opponentScore).toLocaleString();
-  if (playerScore > opponentScore) return `⚔️ You defeated @${handle} by +${diff} PTS!`;
-  if (playerScore < opponentScore) return `⚔️ Defeated by @${handle} (-${diff} PTS)`;
-  return `⚔️ Draw with @${handle}`;
+  const diff = Math.abs(playerScore - opponentScore).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (playerScore > opponentScore) return `⚔️ Du slog @${handle} med +${diff} poäng!`;
+  if (playerScore < opponentScore) return `⚔️ Förlust mot @${handle} (−${diff} poäng)`;
+  return `⚔️ Oavgjort mot @${handle}`;
 }
 
 export const DUEL_INBOX_KEY = "shc_duel_inbox";

@@ -16,18 +16,18 @@ export const SPORTS = [
 export type Sport = (typeof SPORTS)[number];
 
 export const SPORT_LABEL: Record<Sport, string> = {
-  football: "Football",
-  olympics: "Olympic Games",
-  athletics: "Athletics",
+  football: "Fotboll",
+  olympics: "Olympiska spel",
+  athletics: "Friidrott",
   tennis: "Tennis",
-  boxing: "Boxing",
-  "ice-hockey": "Ice hockey",
-  basketball: "Basketball",
+  boxing: "Boxning",
+  "ice-hockey": "Ishockey",
+  basketball: "Basket",
   rugby: "Rugby",
   motorsport: "Motorsport",
   cricket: "Cricket",
   golf: "Golf",
-  gymnastics: "Gymnastics",
+  gymnastics: "Gymnastik",
 };
 
 export type PlateId =

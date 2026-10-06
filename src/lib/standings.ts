@@ -24,10 +24,10 @@ export interface DivisionTier {
 }
 
 export const DIVISION_TIERS: DivisionTier[] = [
-  { id: "bronze", emoji: "🥉", name: "Bronze League", range: "0 - 9,999 PTS", min: 0, nextAt: 10000 },
-  { id: "silver", emoji: "🥈", name: "Silver League", range: "10,000 - 29,999 PTS", min: 10000, nextAt: 30000 },
-  { id: "gold", emoji: "🥇", name: "Gold Tactician", range: "30,000 - 59,999 PTS", min: 30000, nextAt: 60000 },
-  { id: "hall", emoji: "💎", name: "Hall of Fame", range: "60,000+ PTS", min: 60000, nextAt: null },
+  { id: "bronze", emoji: "🥉", name: "Bronsdivisionen", range: "0–9 999 poäng", min: 0, nextAt: 10000 },
+  { id: "silver", emoji: "🥈", name: "Silverdivisionen", range: "10 000–29 999 poäng", min: 10000, nextAt: 30000 },
+  { id: "gold", emoji: "🥇", name: "Guldstrategen", range: "30 000–59 999 poäng", min: 30000, nextAt: 60000 },
+  { id: "hall", emoji: "💎", name: "Hall of Fame", range: "60 000+ poäng", min: 60000, nextAt: null },
 ];
 
 export const LEGEND_SCOUTS: StandingRow[] = [
@@ -113,9 +113,10 @@ export function formatPositionLine(input: {
   pointsToNext: number | null;
 }): string {
   const title = input.title ? ` · ${input.title}` : "";
+  const points = (value: number) => Math.max(0, Math.floor(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   const next =
     input.pointsToNext == null
       ? " · Hall of Fame"
-      : ` · Next Tier in ${input.pointsToNext.toLocaleString()} PTS`;
-  return `YOUR RANK: #${input.rank} · @${input.username}${title} · ${input.score.toLocaleString()} PTS${next}`;
+      : ` · Nästa nivå om ${points(input.pointsToNext)} poäng`;
+  return `DIN PLATS: #${input.rank} · @${input.username}${title} · ${points(input.score)} poäng${next}`;
 }

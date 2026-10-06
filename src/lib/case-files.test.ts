@@ -31,10 +31,10 @@ describe("mystery case files", () => {
   it("uses thematic titles and a clue-count subtitle", () => {
     const perfectTen = CASE_FILES.find((file) => file.slug === "comaneci-1976");
     const bolt = CASE_FILES.find((file) => file.slug === "bolt-beijing-2008");
-    expect(perfectTen?.title).toBe("The 1.00 Scoreboard Anomaly");
-    expect(bolt?.title).toBe("The Golden Spikes");
-    expect(fixtureSubtitle(1994, "Olympic Final Shootout")).toBe(
-      "1994 · Olympic Final Shootout · 6 Clues",
+    expect(perfectTen?.title).toBe("Avvikelsen 1,00");
+    expect(bolt?.title).toBe("De gyllene spikarna");
+    expect(fixtureSubtitle(1994, "Olympisk straffläggning")).toBe(
+      "1994 · Olympisk straffläggning · 6 ledtrådar",
     );
   });
 
@@ -52,11 +52,11 @@ describe("mystery case files", () => {
     expect(isSpoilerHeading("Nadia Comăneci scores the first perfect 10")).toBe(true);
     expect(isSpoilerHeading("Usain Bolt 100m World Record")).toBe(true);
     expect(isSpoilerHeading("Sweden vs Canada 1994")).toBe(true);
-    expect(isSpoilerHeading("The Golden Spikes")).toBe(false);
-    expect(publicCaseTitle("The Masterpiece in Hamilton")).toBe("The 87th Symphony");
-    expect(publicCaseTitle("The Lake Placid Frequency")).toBe("The Frozen Miracle");
+    expect(isSpoilerHeading("De gyllene spikarna")).toBe(false);
+    expect(publicCaseTitle("The Masterpiece in Hamilton")).toBe("Den 87:e symfonin");
+    expect(publicCaseTitle("The Lake Placid Frequency")).toBe("Det frusna undret");
     expect(safeHeading("USA vs Soviet Union (Winter Olympics)", 1980, "miracle-on-ice-1980")).toBe(
-      "The Frozen Miracle",
+      "Det frusna undret",
     );
     const archived = previewFromArchive({
       id: "row-1",
@@ -64,9 +64,9 @@ describe("mystery case files", () => {
       category: "Football",
       year: 1958,
     });
-    expect(archived.title).toBe("Case File 1958");
+    expect(archived.title).toBe("Arkivkort 1958");
     expect(archived.title).not.toMatch(/vs/i);
-    expect(archived.context).toBe("Football");
+    expect(archived.context).toBe("Fotboll");
   });
 
   it("stores solved progress under shc_score keys", () => {

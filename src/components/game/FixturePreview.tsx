@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { fixtureSubtitle, publicCaseTitle } from "@/lib/case-files";
+import { swedishSurface } from "@/lib/swedish-surface";
 
 interface FixturePreviewProps {
   title: string;
@@ -39,16 +40,16 @@ export function FixturePreview({
       </span>
       {solved ? (
         <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">
-          {fixtureSubtitle(year, context)}
+          {fixtureSubtitle(year, swedishSurface(context))}
         </span>
       ) : (
         <p className="text-xs font-mono text-zinc-400 font-medium">
-          Classified Dossier · 6 Clues · 10 000 Max PTS
+          Hemligt arkivkort · 6 ledtrådar · 10 000 poäng
         </p>
       )}
       {solved ? (
         <span className="mt-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-          ✓ SOLVED · {solvedScore} PTS
+          ✓ LÖST · {solvedScore} poäng
         </span>
       ) : null}
       {reveal ? (
@@ -59,18 +60,18 @@ export function FixturePreview({
 
   const action = solved ? null : (
     <span className="inline-flex min-h-[48px] shrink-0 items-center bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider active:scale-[0.98] touch-manipulation">
-      PLAY →
+      SPELA →
     </span>
   );
 
   const challengeButton = onChallenge ? (
     <button
       type="button"
-      title="Challenge a friend to this fixture"
+      title="Utmana en vän på den här matchen"
       onClick={onChallenge}
       className="inline-flex min-h-[48px] shrink-0 items-center border border-zinc-200 hover:border-blue-400 text-zinc-700 hover:text-blue-600 px-3 py-2 rounded-xl text-xs font-bold active:scale-[0.98] touch-manipulation"
     >
-      ⚔️ Challenge
+      ⚔️ Utmana
     </button>
   ) : null;
 

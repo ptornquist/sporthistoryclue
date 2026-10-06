@@ -13,7 +13,7 @@ interface SubjectAutocompleteProps {
 export default function SubjectAutocomplete({
   value,
   onChange,
-  placeholder = 'Identify the event, player, or matchup...',
+  placeholder = 'Vilken klassiker är det här?',
   disabled = false,
 }: SubjectAutocompleteProps) {
   const [allSubjects, setAllSubjects] = useState<string[]>([]);

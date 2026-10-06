@@ -117,11 +117,11 @@ export function GameBoard({
       }
       if (!data.isFullyCorrect) {
         if (data.isSubjectCorrect && !data.isYearCorrect) {
-          setNotice("Right subject, wrong year. The archive still wants the date.");
+          setNotice("Rätt ämne, fel år. Arkivet vill fortfarande ha datumet.");
         } else if (data.isYearCorrect && !data.isSubjectCorrect) {
-          setNotice("Right year, wrong subject. Try another name from the dictionary.");
+          setNotice("Rätt år, fel ämne. Prova ett annat namn.");
         } else {
-          setNotice("Not the plate. Reveal another clue or try a different name.");
+          setNotice("Inte rätt. Visa en ledtråd till eller prova ett annat namn.");
         }
         return;
       }
@@ -150,7 +150,7 @@ export function GameBoard({
       setScoreOpen(true);
       persist(breakdown);
     } catch {
-      setNotice("The archive desk is busy. Try the guess again.");
+      setNotice("Arkivet svarar inte. Försök igen.");
     } finally {
       setPending(false);
     }
@@ -187,7 +187,7 @@ export function GameBoard({
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-gold">
             {mode === "daily" ? "Daily brief" : mode === "play" ? "Random plate" : expeditionTitle}
           </p>
-          <h1 className="font-serif text-3xl text-paper sm:text-4xl">Identify the plate</h1>
+          <h1 className="font-serif text-3xl text-paper sm:text-4xl">Vilken klassiker är det här?</h1>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="paper">{puzzle.era.replace("-", " ")}</Badge>

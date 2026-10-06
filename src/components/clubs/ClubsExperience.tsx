@@ -210,7 +210,7 @@ export function ClubsExperience({
     const result = await postClub({ action: "join", code: joinCode });
     setBusy(false);
     if (!result.club?.id) {
-      setNotice(result.error ?? "Could not join the club");
+      setNotice(result.error ?? "Kunde inte gå med i klubben");
       return;
     }
     setJoinCode("");
@@ -225,7 +225,7 @@ export function ClubsExperience({
       await navigator.clipboard.writeText(link);
       setNotice("Invite link copied.");
     } catch {
-      setNotice("Could not copy the invite link.");
+      setNotice("Kunde inte kopiera inbjudningslänken.");
     }
   };
 
@@ -234,8 +234,8 @@ export function ClubsExperience({
       <div>
         <Navbar />
         <div className="mx-auto max-w-5xl px-6 py-10">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Friend &amp; office leagues</p>
-          <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Private Scout Clubs</h1>
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Vänner och kontor</p>
+          <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Privata scoutklubbar</h1>
           <p className="mt-2 max-w-xl text-sm text-zinc-500">
             Compete against coworkers, friends, or your sports trivia crew.
           </p>
@@ -244,13 +244,13 @@ export function ClubsExperience({
             <div className="mt-8 h-48 animate-pulse rounded-3xl border border-zinc-200 bg-white" />
           ) : !viewerId ? (
             <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-6">
-              <p className="text-sm text-zinc-600">Sign in to create a club or join one with an invite code.</p>
+              <p className="text-sm text-zinc-600">Logga in för att skapa en klubb eller gå med med en kod.</p>
               <button
                 type="button"
                 onClick={() => setGateOpen(true)}
                 className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-2xl text-sm"
               >
-                Sign in
+                Logga in
               </button>
             </div>
           ) : (
@@ -352,7 +352,7 @@ async function postClub(payload: Record<string, unknown>): Promise<{
   });
   const body = (await response.json()) as { success?: boolean; club?: ClubSummary & { owner_id?: string }; error?: string };
   if (!response.ok || body.success === false) {
-    const fallback = payload.action === "create" ? "Failed to create club" : "Could not update the club";
+    const fallback = payload.action === "create" ? "Kunde inte skapa klubben" : "Kunde inte uppdatera klubben";
     return { error: body.error || fallback };
   }
   return body;

@@ -19,10 +19,10 @@ describe("storyline routing", () => {
 
   it("labels each era without a year range", () => {
     expect(STORYLINES.map((storyline) => storyline.era)).toEqual([
-      "COLD WAR ERA",
-      "OLYMPIC ERA",
-      "CLASSIC ERA",
-      "RIVALRY ERA",
+      "KALLA KRIGET",
+      "OS-ERAN",
+      "DEN KLASSISKA ERAN",
+      "RIVALERNAS ERA",
     ]);
     for (const storyline of STORYLINES) {
       expect(storyline.era).not.toMatch(/\d/);

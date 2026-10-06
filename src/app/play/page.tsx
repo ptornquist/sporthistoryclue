@@ -123,7 +123,7 @@ function CategoryPlay({ category }: { category: string }) {
   if (loading) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
-        Loading Arena Dossier...
+        Laddar matchen...
       </main>
     );
   }
@@ -132,10 +132,10 @@ function CategoryPlay({ category }: { category: string }) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 text-center">
         <span className="text-4xl mb-4">🏟️</span>
-        <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mb-2">No Matches in Archive</h2>
-        <p className="text-zinc-500 text-xs mb-6">Add questions to your Supabase challenges table to play.</p>
+        <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mb-2">Inga matcher i arkivet</h2>
+        <p className="text-zinc-500 text-xs mb-6">Det finns ingen kluring att spela just nu.</p>
         <Link href="/" className="text-xs font-black uppercase text-blue-600 tracking-wider hover:underline">
-          ← Back to Arena
+          ← Tillbaka till dagens kluring
         </Link>
       </main>
     );
@@ -147,13 +147,13 @@ function CategoryPlay({ category }: { category: string }) {
       <header className="bg-white border-b border-zinc-200 px-6 py-4">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <Link href="/" className="text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-black">
-            ← Exit Match
+            ← Avsluta matchen
           </Link>
 
           <div className="flex items-center gap-6">
             <div>
-              <span className="block text-[10px] font-mono font-bold uppercase text-zinc-400 text-right">Score Potential</span>
-              <span className="font-mono font-black text-blue-600 text-base">{score.toLocaleString()} PTS</span>
+              <span className="block text-[10px] font-mono font-bold uppercase text-zinc-400 text-right">Möjlig poäng</span>
+              <span className="font-mono font-black text-blue-600 text-base">{score.toLocaleString("sv-SE")} poäng</span>
             </div>
 
             <div className="flex gap-1.5">
@@ -180,7 +180,7 @@ function CategoryPlay({ category }: { category: string }) {
       <div className="max-w-3xl w-full mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
         <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-12 shadow-sm mb-8 text-center relative">
           <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[11px] font-bold uppercase rounded-full tracking-wider mb-6 inline-block">
-            Clue {currentClueIdx + 1} of 6
+            Ledtråd {currentClueIdx + 1} av 6
           </span>
 
           <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-snug text-zinc-900">
@@ -193,7 +193,7 @@ function CategoryPlay({ category }: { category: string }) {
                 onClick={handleUnlockClue}
                 className="min-h-[48px] touch-manipulation text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors active:scale-[0.98]"
               >
-                Skip to next clue (-2,000 PTS) →
+                Visa nästa ledtråd (−2 000 poäng) →
               </button>
             )}
           </div>
@@ -202,7 +202,7 @@ function CategoryPlay({ category }: { category: string }) {
         {/* 4 Suggestion Cards */}
         <div>
           <span className="block text-center text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-4">
-            Select Your Historical Deduction
+            Vilken klassiker är det här?
           </span>
 
           <div className="grid grid-cols-1 touch-manipulation sm:grid-cols-2 gap-3.5">
@@ -238,18 +238,18 @@ function CategoryPlay({ category }: { category: string }) {
           <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl">
             <span className="text-4xl block mb-2">{gameWon ? '🏆' : '⏱️'}</span>
             <h3 className="text-2xl font-black uppercase tracking-tight text-zinc-900">
-              {gameWon ? 'Match Solved!' : 'Out of Deductions'}
+              {gameWon ? 'Kluring löst!' : 'Inga försök kvar'}
             </h3>
             <p className="text-xs text-zinc-500 font-medium mt-1 mb-6">
               {gameWon
-                ? `You correctly identified ${challenge.subject} (${challenge.year}) on Clue ${currentClueIdx + 1}.`
-                : `The fixture was ${challenge.subject} (${challenge.year}).`}
+                ? `Rätt: ${challenge.subject} (${challenge.year}) på ledtråd ${currentClueIdx + 1}.`
+                : `Rätt svar var ${challenge.subject} (${challenge.year}).`}
             </p>
 
             <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 mb-6">
-              <span className="block text-[10px] font-mono uppercase text-zinc-400">Points Awarded</span>
+              <span className="block text-[10px] font-mono uppercase text-zinc-400">Poäng</span>
               <span className="text-3xl font-black font-mono text-blue-600">
-                {gameWon ? `+${score.toLocaleString()}` : '0'} PTS
+                {gameWon ? `+${score.toLocaleString("sv-SE")}` : '0'} poäng
               </span>
             </div>
 
@@ -258,13 +258,13 @@ function CategoryPlay({ category }: { category: string }) {
                 href="/standings"
                 className="flex-1 py-3 bg-zinc-100 text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-200 text-center"
               >
-                Standings
+                Tabellen
               </Link>
               <Link
                 href="/"
                 className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 text-center"
               >
-                Next Arena
+                Nästa kluring
               </Link>
             </div>
           </div>
@@ -310,7 +310,7 @@ export default function PlayArenaPage() {
     <Suspense
       fallback={
         <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-zinc-400">
-          Loading Arena Dossier...
+          Laddar matchen...
         </main>
       }
     >
