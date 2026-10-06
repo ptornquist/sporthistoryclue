@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ScopeToggle } from "@/components/ScopeToggle";
 import { ScoutAvatar } from "@/components/game/ScoutAvatar";
+import type { BoardScope } from "@/lib/board-scope";
 import { findCosmetic, titleClassName } from "@/lib/cosmetics";
+import { formatMessage } from "@/lib/i18n/format";
+import { useI18n } from "@/lib/i18n/use-i18n";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 import {
   DIVISION_TIERS,
@@ -20,6 +24,8 @@ import {
 import { loadSolvedHistory, mondayOfUtcWeek, utcDateKey } from "@/lib/utc-streak";
 
 const PROFILE_COLUMNS =
+  "id, username, total_score, streak, equipped_title, equipped_frame, matches_solved, avatar_url, favorite_club";
+const PROFILE_COLUMNS_NARROW =
   "id, username, total_score, streak, equipped_title, equipped_frame, matches_solved, avatar_url";
 const PROFILE_COLUMNS_WITH_WEEK = `${PROFILE_COLUMNS}, week_score, week_start`;
 
@@ -32,6 +38,7 @@ interface ProfileRow {
   equipped_frame: string | null;
   matches_solved: number | null;
   avatar_url: string | null;
+  favorite_club?: string | null;
   week_score?: number | null;
   week_start?: string | null;
 }
@@ -48,6 +55,7 @@ function mapProfile(row: ProfileRow): StandingRow {
     equipped_frame: row.equipped_frame,
     matches_solved: row.matches_solved ?? 0,
     avatar_url: row.avatar_url,
+    favorite_club: row.favorite_club ?? null,
   };
 }
 
@@ -65,6 +73,7 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 function ScoutModal({ scout, onClose }: { scout: StandingRow; onClose: () => void }) {
+  const { messages } = useI18n();
   const division = divisionFor(scout.total_score);
   const title = titleLabel(scout.equipped_title);
 
@@ -98,24 +107,33 @@ function ScoutModal({ scout, onClose }: { scout: StandingRow; onClose: () => voi
         <p className="mt-3 text-xs font-bold uppercase tracking-wider text-zinc-500">
           {division.emoji} {division.name}
         </p>
-        <p className="mt-4 font-mono text-2xl font-black text-blue-600">{scout.total_score.toLocaleString()} PTS</p>
+        <p className="mt-4 font-mono text-2xl font-black text-blue-600">
+          {scout.total_score.toLocaleString()} {messages.standings.points}
+        </p>
         <p className="mt-2 text-xs font-bold text-zinc-500">
-          🔥 {scout.streak}-day · {scout.matches_solved} solved
+          🔥 {formatMessage(messages.standings.streakDays, { count: scout.streak })} ·{" "}
+          {formatMessage(messages.standings.solvedCount, { count: scout.matches_solved })}
         </p>
         <button
           type="button"
           onClick={onClose}
           className="mt-5 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-700"
         >
-          Close
+          {messages.standings.close}
         </button>
       </div>
     </div>
   );
 }
 
+function groupedPoints(value: number): string {
+  return Math.max(0, Math.floor(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
 export default function StandingsPage() {
+  const { locale, messages } = useI18n();
   const [mode, setMode] = useState<StandingMode>("week");
+  const [scope, setScope] = useState<BoardScope>("world");
   const [rows, setRows] = useState<StandingRow[]>([]);
   const [viewer, setViewer] = useState<StandingRow | null>(null);
   const [weekStart, setWeekStart] = useState<string | null>(null);
@@ -155,7 +173,10 @@ export default function StandingsPage() {
           .select(PROFILE_COLUMNS)
           .order("total_score", { ascending: false })
           .limit(50);
-        listed = (narrow.data ?? []) as unknown as ProfileRow[];
+        const retry = narrow.error
+          ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_NARROW).order("total_score", { ascending: false }).limit(50)
+          : narrow;
+        listed = (retry.data ?? []) as unknown as ProfileRow[];
       }
 
       const pool = new Map<string, StandingRow>();
@@ -196,7 +217,7 @@ export default function StandingsPage() {
     };
   }, []);
 
-  const placed = placeScout(rows, viewer, mode, weekStart);
+  const placed = placeScout(rows, viewer, mode, weekStart, scope);
   const viewerScore = viewer ? scoreFor(viewer, mode, weekStart) : 0;
   const viewerTitle = viewer ? titleLabel(viewer.equipped_title) : "";
   const nextPoints = viewer ? pointsToNextTier(viewer.total_score) : null;
@@ -209,34 +230,45 @@ export default function StandingsPage() {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">Tabellen</h1>
-              <p className="mt-1 text-sm text-zinc-500">Global ranking, sviter och divisioner.</p>
+              <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">{messages.standings.title}</h1>
+              <p className="mt-1 text-sm text-zinc-500">
+                {scope === "se" ? messages.standings.subtitleSweden : messages.standings.subtitleWorld}
+              </p>
             </div>
-            <div className="flex self-start rounded-2xl bg-zinc-100 p-1">
-              <button
-                type="button"
-                aria-pressed={mode === "week"}
-                onClick={() => setMode("week")}
-                className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
-                  mode === "week" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
-                }`}
-              >
-                Den här veckan
-              </button>
-              <button
-                type="button"
-                aria-pressed={mode === "all"}
-                onClick={() => setMode("all")}
-                className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
-                  mode === "all" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
-                }`}
-              >
-                Genom tiderna
-              </button>
+            <div className="flex flex-col gap-2">
+              <ScopeToggle
+                value={scope}
+                onChange={setScope}
+                swedenLabel={messages.scope.sweden}
+                worldLabel={messages.scope.international}
+                ariaLabel={messages.standings.scopeToggle}
+              />
+              <div className="flex self-start rounded-2xl bg-zinc-100 p-1">
+                <button
+                  type="button"
+                  aria-pressed={mode === "week"}
+                  onClick={() => setMode("week")}
+                  className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
+                    mode === "week" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
+                  }`}
+                >
+                  {messages.standings.thisWeek}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "all"}
+                  onClick={() => setMode("all")}
+                  className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
+                    mode === "all" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
+                  }`}
+                >
+                  {messages.standings.allTime}
+                </button>
+              </div>
             </div>
           </div>
           {mode === "week" && (
-            <p className="mt-2 text-[11px] font-medium text-zinc-400">Resets Monday at 00:00 UTC.</p>
+            <p className="mt-2 text-[11px] font-medium text-zinc-400">{messages.standings.weekReset}</p>
           )}
 
           <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
@@ -252,7 +284,7 @@ export default function StandingsPage() {
                   <p className="text-xs font-black text-zinc-900">
                     {tier.emoji} {tier.name}
                   </p>
-                  <p className="text-[10px] font-medium text-zinc-500">{tier.range}</p>
+                  <p className="text-[10px] font-medium text-zinc-500">{messages.standings.ranges[tier.id]}</p>
                 </div>
               );
             })}
@@ -297,14 +329,14 @@ export default function StandingsPage() {
                     </div>
                     <div className="flex items-center justify-between gap-3 pl-[4.25rem] sm:justify-end sm:pl-0">
                       <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800">
-                        🔥 {row.streak}-day
+                        🔥 {formatMessage(messages.standings.streakDays, { count: row.streak })}
                       </span>
                       <div className="text-center">
                         <p className="font-mono text-sm font-black text-zinc-900">{row.matches_solved}</p>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Solved</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{messages.standings.solved}</p>
                       </div>
                       <p className="min-w-[6.5rem] text-right font-mono text-sm font-black text-zinc-900">
-                        {points.toLocaleString()} PTS
+                        {points.toLocaleString()} {messages.standings.points}
                       </p>
                     </div>
                   </article>
@@ -319,20 +351,26 @@ export default function StandingsPage() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.04)] backdrop-blur">
           <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-bold leading-relaxed text-zinc-800">
-              {formatPositionLine({
-                rank: placed.rank,
-                username: viewer.username,
-                title: viewerTitle,
-                score: viewerScore,
-                pointsToNext: nextPoints,
-              })}
+              {locale === "sv"
+                ? formatPositionLine({
+                    rank: placed.rank,
+                    username: viewer.username,
+                    title: viewerTitle,
+                    score: viewerScore,
+                    pointsToNext: nextPoints,
+                  })
+                : `YOUR RANK: #${placed.rank} · @${viewer.username}${viewerTitle ? ` · ${viewerTitle}` : ""} · ${groupedPoints(viewerScore)} pts${
+                    nextPoints == null
+                      ? " · Hall of Fame"
+                      : ` · Next tier in ${groupedPoints(nextPoints)} pts`
+                  }`}
             </p>
             {playedToday === false && (
               <Link
                 href="/"
                 className="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white hover:bg-blue-700"
               >
-                Spela dagens kluring
+                {messages.standings.playDaily}
               </Link>
             )}
           </div>

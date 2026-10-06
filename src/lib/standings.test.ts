@@ -73,4 +73,31 @@ describe("standings board", () => {
       pointsToNext: 9200,
     })).toBe("DIN PLATS: #9 · @icebreaker · Isanalytiker · 800 poäng · Nästa nivå om 9 200 poäng");
   });
+
+  it("filters the Sweden board to Swedish clubs and Swedish legends", () => {
+    const sweden = fillStandings([], "se");
+    expect(sweden.map((row) => row.username)).toContain("zlatan");
+    expect(sweden.some((row) => row.username === "pele")).toBe(false);
+
+    const international = scout({
+      id: "arsenal-fan",
+      username: "arsenal-fan",
+      total_score: 50000,
+      favorite_club: "arsenal",
+    });
+    const national = scout({
+      id: "gnaget",
+      username: "gnaget",
+      total_score: 4000,
+      favorite_club: "aik",
+    });
+    const board = fillStandings([international, national], "se");
+    expect(board.some((row) => row.username === "gnaget")).toBe(true);
+    expect(board.some((row) => row.username === "arsenal-fan")).toBe(false);
+
+    const placed = placeScout([international], national, "all", "2026-09-21", "se");
+    expect(placed.board.some((row) => row.id === "gnaget")).toBe(true);
+    expect(placed.board.some((row) => row.id === "arsenal-fan")).toBe(false);
+    expect(placed.rank).toBeGreaterThan(0);
+  });
 });

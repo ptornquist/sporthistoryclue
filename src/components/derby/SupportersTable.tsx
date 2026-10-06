@@ -3,20 +3,36 @@ import type { ClubStanding } from "@/lib/premier-league";
 export function SupportersTable({
   rows,
   highlightId,
+  labels,
 }: {
   rows: ClubStanding[];
   highlightId: string | null;
+  labels?: {
+    rank: string;
+    club: string;
+    scouts: string;
+    points: string;
+    average: string;
+  };
 }) {
+  const headers = labels ?? {
+    rank: "Placering",
+    club: "Klubb",
+    scouts: "Aktiva scouter",
+    points: "Klubbens poäng",
+    average: "Snitt per scout",
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
           <tr className="border-b border-zinc-200 text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
-            <th className="px-3 py-3 font-bold">Rank</th>
-            <th className="px-3 py-3 font-bold">Klubb</th>
-            <th className="px-3 py-3 font-bold">Active Scouts</th>
-            <th className="px-3 py-3 font-bold">Klubbens poäng</th>
-            <th className="px-3 py-3 font-bold">Snitt per scout</th>
+            <th className="px-3 py-3 font-bold">{headers.rank}</th>
+            <th className="px-3 py-3 font-bold">{headers.club}</th>
+            <th className="px-3 py-3 font-bold">{headers.scouts}</th>
+            <th className="px-3 py-3 font-bold">{headers.points}</th>
+            <th className="px-3 py-3 font-bold">{headers.average}</th>
           </tr>
         </thead>
         <tbody>

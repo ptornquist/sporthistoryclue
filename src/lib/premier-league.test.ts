@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   PREMIER_LEAGUE_CLUBS,
+  SWEDISH_CLUBS,
   derbyContributionLine,
+  findClub,
   findPremierLeagueClub,
+  isKnownClub,
+  isPremierLeagueClub,
   rankClubs,
   supporterLabel,
 } from "./premier-league";
@@ -43,5 +47,30 @@ describe("Premier League derby", () => {
     expect(derbyContributionLine(8500, "Arsenal FC")).toBe(
       "⚽ +8 500 poäng till Arsenal FC i supporterderbyt!",
     );
+  });
+
+  it("ranks Swedish clubs on the national board and keeps them off the international one", () => {
+    expect(SWEDISH_CLUBS).toHaveLength(16);
+    expect(findClub("aik")?.name).toBe("AIK");
+    expect(findClub("malmo")?.name).toBe("Malmö FF");
+    expect(isKnownClub("aik")).toBe(true);
+    expect(isPremierLeagueClub("aik")).toBe(false);
+
+    const memberships = [
+      { favorite_club: "aik", total_score: 3000 },
+      { favorite_club: "malmo", total_score: 1000 },
+      { favorite_club: "liverpool", total_score: 9000 },
+    ];
+
+    const sweden = rankClubs(memberships, "total", "se");
+    expect(sweden).toHaveLength(16);
+    expect(sweden[0]).toMatchObject({ id: "aik", rank: 1, totalPoints: 3000, scouts: 1 });
+    expect(sweden[1]).toMatchObject({ id: "malmo", rank: 2, totalPoints: 1000 });
+    expect(sweden.some((row) => row.id === "liverpool")).toBe(false);
+
+    const world = rankClubs(memberships, "total", "world");
+    expect(world).toHaveLength(20);
+    expect(world[0].id).toBe("liverpool");
+    expect(world.some((row) => row.id === "aik")).toBe(false);
   });
 });

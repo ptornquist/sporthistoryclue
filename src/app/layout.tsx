@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { InstallAppBanner } from '@/components/InstallAppBanner';
+import { LocaleBoot } from '@/components/LocaleBoot';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -63,6 +64,7 @@ export default function RootLayout({
     <html lang="sv">
       <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white">
         {children}
+        <LocaleBoot />
         <InstallAppBanner />
       </body>
     </html>

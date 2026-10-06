@@ -17,6 +17,8 @@ import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 import { ClubAllegianceCard } from '@/components/derby/ClubAllegianceCard';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useI18n } from '@/lib/i18n/use-i18n';
 
 interface SessionUser {
   id: string;
@@ -47,6 +49,7 @@ interface MatchRecord {
 
 export default function ProfilePage() {
   const { wallet, equip } = useCosmeticWallet();
+  const { messages } = useI18n();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [guestHandle, setGuestHandle] = useState('scout');
@@ -225,6 +228,19 @@ export default function ProfilePage() {
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
         />
+
+        <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">
+            {messages.nav.language}
+          </span>
+          <h2 className="mt-1 text-xl font-black uppercase tracking-tight text-zinc-900">
+            {messages.profile.languageTitle}
+          </h2>
+          <p className="mt-1 text-xs font-medium text-zinc-500">{messages.profile.languageHint}</p>
+          <div className="mt-4">
+            <LanguageSwitcher />
+          </div>
+        </section>
 
         <ClubAllegianceCard
           userId={user?.id ?? null}
