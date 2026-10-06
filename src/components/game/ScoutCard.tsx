@@ -51,12 +51,12 @@ export function ScoutCard({
   const progress = `${Math.round(level.progress * 100)}%`;
 
   const stats = [
-    { label: "Total Score", value: careerScore.toLocaleString() },
-    { label: "Average Score", value: average.toLocaleString() },
-    { label: "Matches Solved", value: solvedCount.toLocaleString() },
-    { label: "Coin Balance", value: wallet.coins.toLocaleString() },
-    { label: "Current Streak", value: `${currentStreak}` },
-    { label: "Best Streak", value: `${bestStreak}` },
+    { label: "Totalpoäng", value: careerScore.toLocaleString("sv-SE") },
+    { label: "Snitt", value: average.toLocaleString("sv-SE") },
+    { label: "Lösta matcher", value: solvedCount.toLocaleString("sv-SE") },
+    { label: "Mynt", value: wallet.coins.toLocaleString("sv-SE") },
+    { label: "Svit", value: `${currentStreak}` },
+    { label: "Bästa svit", value: `${bestStreak}` },
   ];
 
   return (
@@ -94,7 +94,7 @@ export function ScoutCard({
           <p className="mt-4 text-xs font-medium text-zinc-500">
             This card is saved on this device.{" "}
             <Link href="/login" className="font-bold text-blue-600">
-              Sign in
+              Logga in
             </Link>{" "}
             to sync coins and cosmetics.
           </p>
@@ -111,7 +111,7 @@ export function ScoutCard({
       </div>
 
       <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm">
-        <h2 className="text-sm font-black uppercase tracking-tight text-zinc-900">Wardrobe</h2>
+        <h2 className="text-sm font-black uppercase tracking-tight text-zinc-900">Garderoben</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
             Equipped title
@@ -147,7 +147,7 @@ export function ScoutCard({
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-black uppercase tracking-tight text-zinc-900">Featured badges</h2>
+        <h2 className="mb-3 text-sm font-black uppercase tracking-tight text-zinc-900">Utvalda märken</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURED_BADGES.map((badge) => {
             const unlocked = badgeUnlocked(badge.id, { ...wallet, matchesSolved: solvedCount, bestStreak }, solvedSlugs, solvedScores);

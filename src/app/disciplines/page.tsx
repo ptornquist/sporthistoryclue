@@ -191,7 +191,7 @@ export default function DisciplinesPage() {
 
           {fixtures.length === 0 && loading ? (
             <div className="py-12 text-center text-xs font-mono text-zinc-400 uppercase tracking-widest">
-              Loading fixtures…
+              Laddar matcher…
             </div>
           ) : fixtures.length === 0 ? (
             <div className="py-12 text-center text-zinc-400 text-xs font-medium">

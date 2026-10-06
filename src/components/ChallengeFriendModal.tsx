@@ -59,7 +59,7 @@ export function ChallengeFriendModal({
       setToast("📋 Challenge link copied to clipboard!");
       window.setTimeout(() => setToast(null), 2200);
     } catch {
-      setToast("Could not copy the challenge link.");
+      setToast("Kunde inte kopiera utmaningslänken.");
       window.setTimeout(() => setToast(null), 2200);
     }
   };
@@ -72,7 +72,7 @@ export function ChallengeFriendModal({
         body: JSON.stringify({ action: "share", matchTitle, matchSlug, userScore: userScore ?? 0 }),
       });
       if (response.status === 401) {
-        setToast("Sign in to share with your club.");
+        setToast("Logga in för att dela med klubben.");
       } else if (response.status === 404) {
         setToast("Join a club before sharing this match.");
       } else if (!response.ok) {

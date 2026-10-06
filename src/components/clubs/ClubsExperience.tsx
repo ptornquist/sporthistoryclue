@@ -210,7 +210,7 @@ export function ClubsExperience({
     const result = await postClub({ action: "join", code: joinCode });
     setBusy(false);
     if (!result.club?.id) {
-      setNotice(result.error ?? "Could not join the club");
+      setNotice(result.error ?? "Kunde inte gå med i klubben");
       return;
     }
     setJoinCode("");
@@ -225,7 +225,7 @@ export function ClubsExperience({
       await navigator.clipboard.writeText(link);
       setNotice("Invite link copied.");
     } catch {
-      setNotice("Could not copy the invite link.");
+      setNotice("Kunde inte kopiera inbjudningslänken.");
     }
   };
 
@@ -250,7 +250,7 @@ export function ClubsExperience({
                 onClick={() => setGateOpen(true)}
                 className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-2xl text-sm"
               >
-                Sign in
+                Logga in
               </button>
             </div>
           ) : (
@@ -352,7 +352,7 @@ async function postClub(payload: Record<string, unknown>): Promise<{
   });
   const body = (await response.json()) as { success?: boolean; club?: ClubSummary & { owner_id?: string }; error?: string };
   if (!response.ok || body.success === false) {
-    const fallback = payload.action === "create" ? "Failed to create club" : "Could not update the club";
+    const fallback = payload.action === "create" ? "Kunde inte skapa klubben" : "Kunde inte uppdatera klubben";
     return { error: body.error || fallback };
   }
   return body;

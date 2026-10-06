@@ -56,11 +56,11 @@ export function ArchiveCalendar({ todayKey }: { todayKey: string }) {
       .then(async (response) => (response.ok ? response.json() : null))
       .then((payload: { story?: string } | null) => {
         if (!cancelled) {
-          setStory({ id: challengeId, text: payload?.story ?? "The solved dossier is filed in the archive." });
+          setStory({ id: challengeId, text: payload?.story ?? "Den lösta kluringen ligger i arkivet." });
         }
       })
       .catch(() => {
-        if (!cancelled) setStory({ id: challengeId, text: "The solved dossier is filed in the archive." });
+        if (!cancelled) setStory({ id: challengeId, text: "Den lösta kluringen ligger i arkivet." });
       });
     return () => {
       cancelled = true;

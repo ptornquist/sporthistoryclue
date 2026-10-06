@@ -9,7 +9,7 @@ export default function NotFound() {
       <h1 className="mt-3 font-serif text-4xl text-paper">Den här sidan finns inte</h1>
       <p className="mt-3 text-paper/65">Numret matchar inget i arkivet.</p>
       <Link href="/" className={cn(buttonVariants({ variant: "gold" }), "mt-6 inline-flex")}>
-        Return to the desk
+        Tillbaka till dagens kluring
       </Link>
     </div>
   );

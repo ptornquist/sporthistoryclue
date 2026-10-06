@@ -64,7 +64,7 @@ export function InputBar({
     >
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_8.5rem_auto]">
         <div className="relative">
-          <Label htmlFor="event-guess">Subject</Label>
+          <Label htmlFor="event-guess">Ämne</Label>
           <div className="relative mt-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gold/60" />
             <Input
@@ -132,7 +132,7 @@ export function InputBar({
         </div>
 
         <div>
-          <Label htmlFor="year-guess">Year</Label>
+          <Label htmlFor="year-guess">År</Label>
           <div className="mt-2 flex">
             <Input
               id="year-guess"
@@ -171,22 +171,22 @@ export function InputBar({
 
         <div className="flex items-end gap-2">
           <Button type="submit" variant="gold" className="flex-1 md:flex-none" disabled={disabled || pending}>
-            {pending ? "Checking…" : "Log guess"}
+            {pending ? "Kontrollerar…" : "Skicka svar"}
           </Button>
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper/50">
-          Subject + year · clue {cluesRevealed} of {MAX_CLUES}. Autocomplete helps; scoring is exact.
+          Ämne och år · ledtråd {cluesRevealed} av {MAX_CLUES}. Förslag hjälper, poängen räknas exakt.
         </p>
         {canRevealMore ? (
           <Button variant="outline" onClick={onReveal} disabled={disabled}>
-            Reveal next clue · −{PENALTY_PER_CLUE.toLocaleString("en-US")}
+            Visa nästa ledtråd · −{PENALTY_PER_CLUE.toLocaleString("sv-SE")}
           </Button>
         ) : !disabled ? (
           <Button variant="outline" onClick={onGiveUp}>
-            Close the file
+            Stäng akten
           </Button>
         ) : null}
       </div>

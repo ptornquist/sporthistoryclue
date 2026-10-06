@@ -62,7 +62,7 @@ export default function DailyDropPage() {
           if (matchData) {
             setStatus('won');
             setAlreadyCompleted(true);
-            setFeedback(`Completed! You recorded ${matchData.score.toLocaleString()} PTS for today.`);
+            setFeedback(`Klart! Du fick ${matchData.score.toLocaleString("sv-SE")} poäng idag.`);
           }
         }
       }
@@ -93,7 +93,7 @@ export default function DailyDropPage() {
 
     if (isSubjectMatch && isYearMatch) {
       setStatus('won');
-      setFeedback(`Match Identified! Solved on Clue ${revealedCount} for ${currentScore.toLocaleString()} PTS.`);
+      setFeedback(`Rätt! Löst på ledtråd ${revealedCount} för ${currentScore.toLocaleString("sv-SE")} poäng.`);
 
       if (user) {
         await supabaseClient.from('match_history').insert({
@@ -106,9 +106,9 @@ export default function DailyDropPage() {
     } else {
       setStatus('incorrect');
       if (!isSubjectMatch && isYearMatch) {
-        setFeedback('Year confirmed, but the subject / matchup is incorrect.');
+        setFeedback('Året stämmer, men matchen är fel.');
       } else if (isSubjectMatch && !isYearMatch) {
-        setFeedback('Subject confirmed, but the year is off.');
+        setFeedback('Matchen stämmer, men året är fel.');
       } else {
         setFeedback('Incorrect subject and year.');
       }
@@ -142,7 +142,7 @@ export default function DailyDropPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white text-zinc-900 flex items-center justify-center font-bold uppercase tracking-widest text-xs">
-        Loading Scouting Report...
+        Laddar kluringen...
       </div>
     );
   }
@@ -183,9 +183,9 @@ export default function DailyDropPage() {
 
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Score Potential</span>
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Möjlig poäng</span>
               <span className="text-lg font-black font-mono tracking-tight text-blue-600">
-                {currentScore.toLocaleString()} <span className="text-xs font-semibold text-zinc-400">PTS</span>
+                {currentScore.toLocaleString("sv-SE")} <span className="text-xs font-semibold text-zinc-400">poäng</span>
               </span>
             </div>
 
@@ -225,7 +225,7 @@ export default function DailyDropPage() {
             </div>
 
             <p className="text-2xl md:text-3xl font-black text-zinc-900 leading-snug tracking-tight">
-              {clues[activeClueIndex] || 'No further clue available.'}
+              {clues[activeClueIndex] || 'Ingen fler ledtråd.'}
             </p>
           </div>
 
@@ -300,7 +300,7 @@ export default function DailyDropPage() {
                 <SubjectAutocomplete
                   value={subjectGuess}
                   onChange={(val) => setSubjectGuess(val)}
-                  placeholder="Identify athlete, nation, or historic match..."
+                  placeholder="Vilken klassiker är det här?"
                 />
               </div>
 
@@ -327,7 +327,7 @@ export default function DailyDropPage() {
                   disabled={revealedCount >= 6}
                   className="min-h-[48px] touch-manipulation px-4 py-3.5 bg-zinc-100 border border-zinc-200 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-colors whitespace-nowrap active:scale-[0.98]"
                 >
-                  Unlock Clue (-2K)
+                  Visa nästa ledtråd
                 </button>
               </div>
             </form>

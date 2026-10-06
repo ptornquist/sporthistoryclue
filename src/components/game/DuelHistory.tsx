@@ -86,7 +86,7 @@ export function DuelHistory({
       await navigator.clipboard.writeText(link);
       onToast("⚔️ Rematch link copied!");
     } catch {
-      onToast("Could not copy the rematch link.");
+      onToast("Kunde inte kopiera returlänken.");
     }
   };
 

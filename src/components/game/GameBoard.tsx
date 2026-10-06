@@ -117,11 +117,11 @@ export function GameBoard({
       }
       if (!data.isFullyCorrect) {
         if (data.isSubjectCorrect && !data.isYearCorrect) {
-          setNotice("Right subject, wrong year. The archive still wants the date.");
+          setNotice("Rätt ämne, fel år. Arkivet vill fortfarande ha datumet.");
         } else if (data.isYearCorrect && !data.isSubjectCorrect) {
-          setNotice("Right year, wrong subject. Try another name from the dictionary.");
+          setNotice("Rätt år, fel ämne. Prova ett annat namn.");
         } else {
-          setNotice("Not the plate. Reveal another clue or try a different name.");
+          setNotice("Inte rätt. Visa en ledtråd till eller prova ett annat namn.");
         }
         return;
       }
@@ -150,7 +150,7 @@ export function GameBoard({
       setScoreOpen(true);
       persist(breakdown);
     } catch {
-      setNotice("The archive desk is busy. Try the guess again.");
+      setNotice("Arkivet svarar inte. Försök igen.");
     } finally {
       setPending(false);
     }

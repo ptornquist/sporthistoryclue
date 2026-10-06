@@ -332,7 +332,7 @@ export default function StandingsPage() {
                 href="/"
                 className="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-white hover:bg-blue-700"
               >
-                Play Today&apos;s Drop
+                Spela dagens kluring
               </Link>
             )}
           </div>

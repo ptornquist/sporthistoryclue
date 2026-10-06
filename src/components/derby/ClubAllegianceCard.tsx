@@ -40,7 +40,7 @@ export function ClubAllegianceCard({
   const save = async () => {
     if (!selected || !userId) return;
     if (!isSupabaseConfigured) {
-      onSaved("Sign in with a connected archive to save your club.");
+      onSaved("Logga in för att spara klubben.");
       return;
     }
     setSaving(true);
@@ -50,7 +50,7 @@ export function ClubAllegianceCard({
       .eq("id", userId);
     setSaving(false);
     if (error) {
-      onSaved("Could not save club allegiance. Apply the favorite_club migration, then try again.");
+      onSaved("Kunde inte spara klubben. Försök igen.");
       return;
     }
     window.localStorage.setItem(FAVORITE_CLUB_KEY, selected.id);
@@ -66,7 +66,7 @@ export function ClubAllegianceCard({
         Premier League
       </h2>
       <p className="mt-1 text-xs font-medium text-zinc-500">
-        Pledge a club. Every solve adds your score to the Supporters Derby.
+        Välj en klubb. Varje löst kluring lägger dina poäng i supporterderbyt.
       </p>
 
       {selected && (
