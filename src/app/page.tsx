@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
+import { ogChallengeHeadline, ogChallengeSubtitle } from '@/lib/challenge-link';
 import { findCase } from '@/lib/case-files';
 import { arrangeClueLadder } from '@/lib/clue-ladder';
 import { sanitizeClues } from '@/lib/clue-sanitation';
@@ -27,13 +28,14 @@ export async function generateMetadata({
   searchParams: Promise<HomeSearchParams>;
 }): Promise<Metadata> {
   const params = await searchParams;
-  const duel = firstParam(params.duel);
+  const duel = firstParam(params.duel).replace(/^@/, '').trim();
   const pts = firstParam(params.pts);
   const match = firstParam(params.match);
-  const title = duel
-    ? `Can you beat @${duel} on SportsHistoryClue?`
-    : 'SportsHistoryClue — The Daily Sports Deduction Puzzle';
-  const description = 'Crack the mystery historical fixture in 6 clues or fewer.';
+  const parsedPts = Number.parseInt(pts, 10);
+  const title = duel ? ogChallengeHeadline(duel, match || null) : 'Dagens Kluring';
+  const description = duel
+    ? ogChallengeSubtitle(Number.isFinite(parsedPts) ? parsedPts : 0)
+    : 'Sex ledtrådar. Kan du knäcka dagens kluring?';
   const image = `/api/og?duel=${encodeURIComponent(duel)}&pts=${encodeURIComponent(pts)}&match=${encodeURIComponent(match)}`;
 
   return {
@@ -42,6 +44,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
+      locale: 'sv_SE',
       images: [image],
     },
     twitter: {

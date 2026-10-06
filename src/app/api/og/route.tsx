@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { ogChallengeHeadline, publicFixtureName } from '@/lib/challenge-link';
+import { ogChallengeHeadline, ogChallengeSubtitle } from '@/lib/challenge-link';
 
 export const runtime = 'edge';
 
@@ -7,15 +7,13 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const duel = searchParams.get('duel')?.trim() ?? '';
   const match = searchParams.get('match')?.trim() ?? '';
-  const fixtureName = publicFixtureName(match);
-  const headline = ogChallengeHeadline(duel, fixtureName);
+  const headline = ogChallengeHeadline(duel, match || null);
   const ptsParam = searchParams.get('pts')?.trim() || '0';
   const parsedPts = Number.parseInt(ptsParam, 10);
-  const ptsLabel = Number.isFinite(parsedPts) ? parsedPts.toLocaleString('en-US') : ptsParam;
-  const category = searchParams.get('category')?.trim() || 'SPORTS DEDUCTION';
-  const beatLine = fixtureName
-    ? `Can you beat their ${ptsLabel} PTS on '${fixtureName}'?`
-    : `Can you beat their ${ptsLabel} PTS on today's mystery match?`;
+  const beatLine = ogChallengeSubtitle(Number.isFinite(parsedPts) ? parsedPts : 0);
+  const rawCategory = searchParams.get('category')?.trim() ?? '';
+  const category =
+    rawCategory && rawCategory.toUpperCase() !== 'SPORTS DEDUCTION' ? rawCategory.toUpperCase() : '';
 
   return new ImageResponse(
     (
@@ -46,15 +44,17 @@ export async function GET(request: Request) {
               borderRadius: 999,
             }}
           >
-            SPORTS HISTORY CLUE · DAILY DROP
+            DAGENS KLURING
           </div>
-          <div style={{ display: 'flex', color: '#93c5fd', fontSize: 22, letterSpacing: 3 }}>
-            {category.toUpperCase()}
-          </div>
+          {category ? (
+            <div style={{ display: 'flex', color: '#93c5fd', fontSize: 22, letterSpacing: 3 }}>
+              {category}
+            </div>
+          ) : null}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div style={{ display: 'flex', fontSize: fixtureName ? 52 : 72, fontWeight: 800, lineHeight: 1.1, maxWidth: 1040 }}>
+          <div style={{ display: 'flex', fontSize: duel ? 60 : 72, fontWeight: 800, lineHeight: 1.1, maxWidth: 1040 }}>
             {headline}
           </div>
           {duel ? (
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
           }}
         >
           <div style={{ display: 'flex' }}>sportshistoryclue.com</div>
-          <div style={{ display: 'flex' }}>6 Clues. One Historic Match.</div>
+          <div style={{ display: 'flex' }}>6 ledtrådar. En historisk match.</div>
         </div>
       </div>
     ),
