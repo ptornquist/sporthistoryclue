@@ -20,7 +20,7 @@ describe("archive calendar", () => {
     expect(month.elapsed).toBe(27);
     expect(canAdvanceMonth(2026, 8, today)).toBe(false);
     expect(canAdvanceMonth(2026, 7, today)).toBe(true);
-    expect(formatArchiveDate("2026-09-24")).toBe("24 September 2026");
+    expect(formatArchiveDate("2026-09-24")).toBe("24 september 2026");
     expect(formatScoreBadge(8500)).toBe("8.5k");
     expect(formatScoreBadge(10000)).toBe("10k");
   });

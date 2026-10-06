@@ -180,7 +180,7 @@ function CategoryPlay({ category }: { category: string }) {
       <div className="max-w-3xl w-full mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
         <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-12 shadow-sm mb-8 text-center relative">
           <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-[11px] font-bold uppercase rounded-full tracking-wider mb-6 inline-block">
-            Clue {currentClueIdx + 1} of 6
+            Ledtråd {currentClueIdx + 1} av 6
           </span>
 
           <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-snug text-zinc-900">
@@ -193,7 +193,7 @@ function CategoryPlay({ category }: { category: string }) {
                 onClick={handleUnlockClue}
                 className="min-h-[48px] touch-manipulation text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-800 transition-colors active:scale-[0.98]"
               >
-                Skip to next clue (-2,000 PTS) →
+                Visa nästa ledtråd (−2 000 poäng) →
               </button>
             )}
           </div>
@@ -242,7 +242,7 @@ function CategoryPlay({ category }: { category: string }) {
             </h3>
             <p className="text-xs text-zinc-500 font-medium mt-1 mb-6">
               {gameWon
-                ? `You correctly identified ${challenge.subject} (${challenge.year}) on Clue ${currentClueIdx + 1}.`
+                ? `Rätt: ${challenge.subject} (${challenge.year}) på ledtråd ${currentClueIdx + 1}.`
                 : `The fixture was ${challenge.subject} (${challenge.year}).`}
             </p>
 

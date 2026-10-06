@@ -32,7 +32,7 @@ export const TITLES: CosmeticItem[] = [
   {
     id: "rookie",
     kind: "title",
-    name: "Archive Rookie",
+    name: "Arkivrookie",
     rarity: "COMMON",
     cost: 0,
     emoji: "🗂️",
@@ -41,7 +41,7 @@ export const TITLES: CosmeticItem[] = [
   {
     id: "ice-analyst",
     kind: "title",
-    name: "Ice Analyst",
+    name: "Isanalytiker",
     rarity: "RARE",
     cost: 400,
     emoji: "🏒",

@@ -81,15 +81,16 @@ export function activityLine(input: {
   score: number;
 }): string {
   const name = input.username.replace(/^@/, "").trim() || "Scout";
-  const points = Math.max(0, Math.floor(input.score)).toLocaleString("en-US");
+  const points = Math.max(0, Math.floor(input.score)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   if (input.kind === "challenge") {
-    const title = input.label.trim() || "a fixture";
+    const title = input.label.trim() || "en match";
     return input.score
-      ? `@${name} challenged the club to crack "${title}" (${points} PTS)`
-      : `@${name} challenged the club to crack "${title}"`;
+      ? `@${name} utmanade klubben att knäcka "${title}" (${points} poäng)`
+      : `@${name} utmanade klubben att knäcka "${title}"`;
   }
-  const fixture = input.label === "today's Daily Drop" ? input.label : publicFixtureName(input.label) ?? input.label;
-  return `@${name} solved ${fixture} (${points} PTS)`;
+  const daily = input.label === "today's Daily Drop" || input.label === "Dagens kluring";
+  const fixture = daily ? "dagens kluring" : publicFixtureName(input.label) ?? input.label;
+  return `@${name} löste ${fixture} (${points} poäng)`;
 }
 
 export function rankClubMembers(members: ClubMember[]): ClubMember[] {

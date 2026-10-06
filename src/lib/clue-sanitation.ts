@@ -1,12 +1,12 @@
 const PLATE_PREFIX = /^(plate|figure)\s/i;
 
 const FILLER_CLUES = [
-  "Clue #1: An iconic championship fixture held in the modern era.",
-  "Clue #2: High stakes, extreme crowd tension, and a defining momentum shift.",
-  "Clue #3: The setting is a famous stage, and the sport's own calendar marks the day.",
-  "Clue #4: One competitor carries the favorite's burden. The other brings the upset.",
-  "Clue #5: A single decisive action is still replayed when the sport tells this story.",
-  "Clue #6: The afternoon ended, and the result stayed in the record as a defining fixture.",
+  "Ledtråd 1: En klassisk mästerskapsmatch från den moderna eran.",
+  "Ledtråd 2: Hög insats, en full läktare och ett skifte i matchbilden.",
+  "Ledtråd 3: Scenen är berömd, och sportens egen kalender markerar dagen.",
+  "Ledtråd 4: Den ena bär favoritens börda. Den andra kommer för att välta den.",
+  "Ledtråd 5: En enda avgörande aktion spelas om när sporten berättar den här historien.",
+  "Ledtråd 6: Eftermiddagen tar slut, och resultatet står kvar som en klassiker.",
 ] as const;
 
 export function isRejectedClue(value: string): boolean {
@@ -35,9 +35,9 @@ export function sanitizeClues(
 function fillerClues(title?: string | null, year?: number | null): string[] {
   const name = title?.trim() ?? "";
   const yearLabel = typeof year === "number" && year > 0 ? String(year) : "";
-  const named = name && yearLabel ? `${name} (${yearLabel})` : name || (yearLabel ? `The ${yearLabel} fixture` : "");
+  const named = name && yearLabel ? `${name} (${yearLabel})` : name || (yearLabel ? `Matchen ${yearLabel}` : "");
   const third = named
-    ? `Clue #3: ${named} is remembered for the stage as much as the scoreline.`
+    ? `Ledtråd 3: ${named} minns man lika mycket för scenen som för siffrorna.`
     : FILLER_CLUES[2];
   return [FILLER_CLUES[0], FILLER_CLUES[1], third, FILLER_CLUES[3], FILLER_CLUES[4], FILLER_CLUES[5]];
 }

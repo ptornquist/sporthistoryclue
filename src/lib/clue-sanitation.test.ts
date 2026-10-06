@@ -18,9 +18,9 @@ describe("clue sanitation", () => {
     expect(clues).toHaveLength(6);
     expect(clues[0]).toBe("A local amateur is entered almost as an afterthought.");
     expect(clues[1]).toBe("Host city: Athens · Distance: 40 km");
-    expect(clues[2]).toBe("Clue #1: An iconic championship fixture held in the modern era.");
-    expect(clues[3]).toBe("Clue #2: High stakes, extreme crowd tension, and a defining momentum shift.");
-    expect(clues[4]).toBe("Clue #3: The Marble Revival (1896) is remembered for the stage as much as the scoreline.");
+    expect(clues[2]).toBe("Ledtråd 1: En klassisk mästerskapsmatch från den moderna eran.");
+    expect(clues[3]).toBe("Ledtråd 2: Hög insats, en full läktare och ett skifte i matchbilden.");
+    expect(clues[4]).toBe("Ledtråd 3: The Marble Revival (1896) minns man lika mycket för scenen som för siffrorna.");
     expect(clues.some((clue) => clue.startsWith("Plate ") || clue.includes("photograph by"))).toBe(false);
   });
 

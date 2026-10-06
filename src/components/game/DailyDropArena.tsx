@@ -17,8 +17,9 @@ import Footer from '@/components/Footer';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
-import { arrangeClueLadder } from '@/lib/clue-ladder';
-import { sanitizeClues } from '@/lib/clue-sanitation';
+import { presentClues } from '@/lib/present-clues';
+import { swedishAnswer } from '@/lib/decoy-options';
+import { swedishSurface } from '@/lib/swedish-surface';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
@@ -48,16 +49,16 @@ interface DailyFixture {
 
 function cleanFixture(fixture: DailyFixture): DailyFixture {
   const file = findCase(fixture.id);
-  const category = file?.context || fixture.category;
+  const category = swedishSurface(file?.context || fixture.category);
   return {
     ...fixture,
-    clues: arrangeClueLadder(
-      sanitizeClues(fixture.clues ?? [], {
-        title: file?.title || fixture.category,
-        year: file?.year,
-      }),
-      { category },
-    ),
+    category,
+    options: (fixture.options ?? []).map((option) => swedishSurface(option)),
+    clues: presentClues(fixture.id, fixture.clues ?? [], {
+      title: file?.title || fixture.category,
+      year: file?.year,
+      category,
+    }),
   };
 }
 
@@ -105,9 +106,9 @@ function MatchModeBanner({
   if (campaignId && campaignTitle) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-6 py-3 text-amber-950">
-        <span className="text-xs font-black uppercase tracking-wide">🏆 Campaign Mode · {campaignTitle}</span>
+        <span className="text-xs font-black uppercase tracking-wide">🏆 Utmaning · {campaignTitle}</span>
         <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-amber-800 hover:text-amber-950">
-          ← Back to Storylines
+          ← Tillbaka till utmaningar
         </Link>
       </div>
     );
@@ -116,23 +117,23 @@ function MatchModeBanner({
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
         <span className="text-xs font-black uppercase tracking-wide">
-          📚 Sports Archive{category ? ` · ${category}` : ''}
+          📚 Sportarkiv{category ? ` · ${swedishSurface(category)}` : ''}
         </span>
         <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-blue-800 hover:text-blue-950">
-          ← Back to Disciplines
+          ← Tillbaka till grenar
         </Link>
       </div>
     );
   }
   if (isDateKey(archiveDate)) {
-    const label = training ? 'SCOUT TRAINING' : 'ARCHIVE DOSSIER';
+    const label = training ? 'SCOUTTRÄNING' : 'ARKIVKLURING';
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
         <span className="text-xs font-black tracking-wide">
           {label} · {formatArchiveDate(archiveDate)}
         </span>
         <Link href="/archive" className="text-xs font-bold tracking-wider text-blue-800 hover:text-blue-950">
-          Back to Calendar
+          Tillbaka till kalendern
         </Link>
       </div>
     );
@@ -352,7 +353,7 @@ export function DailyDropArena({
         setChoiceOptions(setupOptions(fixture.options ?? []));
         setChallenge(fixture);
       } catch {
-        showToast('Could not load this drop.');
+        showToast('Kunde inte ladda kluringen.');
         setChallenge(null);
       } finally {
         setLoading(false);
@@ -519,7 +520,7 @@ export function DailyDropArena({
         logFinishedDuel(0);
       }
     } catch {
-      showToast('Could not check that guess.');
+      showToast('Kunde inte kontrollera svaret.');
     } finally {
       setGuessing(false);
     }
@@ -536,7 +537,7 @@ export function DailyDropArena({
     }
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       await navigator.clipboard.writeText(text.includes(url) ? text : `${text}\n${url}`);
-      showToast('📋 Result copied to clipboard!');
+      showToast('📋 Resultatet kopierades!');
     }
   };
 
@@ -545,7 +546,7 @@ export function DailyDropArena({
     const link = `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${score}`;
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(link);
-      showToast('⚔️ Duel link copied to clipboard!');
+      showToast('⚔️ Duellänken kopierades!');
     }
   };
 
@@ -554,21 +555,21 @@ export function DailyDropArena({
     const userScore = gameWon ? score : 0;
     const handle = playerName.replace(/^@/, '') || 'Scout';
     const outcome = userScore > duelPts 
-      ? `I defeated @${duelHandle}` 
-      : userScore === duelPts 
-      ? `Tied with @${duelHandle}` 
-      : `Close match against @${duelHandle}`;
+      ? `Jag slog @${duelHandle}`
+      : userScore === duelPts
+      ? `Oavgjort mot @${duelHandle}`
+      : `Jämn duell mot @${duelHandle}`;
 
     const text = [
-      '⚔️ DUEL SHOWDOWN on SportsHistoryClue!',
+      '⚔️ DUELL i SportsHistoryClue!',
       outcome,
-      `Me: ${userScore.toLocaleString()} PTS vs @${duelHandle}: ${duelPts.toLocaleString()} PTS`,
-      "Think you can beat us both? Play today's drop:",
+      `Jag: ${userScore.toLocaleString('sv-SE')} poäng mot @${duelHandle}: ${duelPts.toLocaleString('sv-SE')} poäng`,
+      'Kan du slå oss båda? Spela dagens kluring:',
       `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${userScore}`,
     ].join('\n');
 
     const url = `https://sportshistoryclue.com/?duel=${encodeURIComponent(handle)}&pts=${userScore}`;
-    await sharePayload('SportsHistoryClue Duel', text, url);
+    await sharePayload('SportsHistoryClue-duell', text, url);
   };
 
   const campaign = storylineById(campaignId);
@@ -586,7 +587,7 @@ export function DailyDropArena({
           training={training}
         />
         <div className="flex flex-1 items-center justify-center">
-          {loading ? 'Loading Match Fixture...' : 'Drop unavailable'}
+          {loading ? 'Laddar kluringen...' : 'Kluringen är inte tillgänglig'}
         </div>
       </main>
     );
@@ -618,10 +619,10 @@ export function DailyDropArena({
   const resultText = [
     'SportsHistoryClue 🏆',
     gridLine,
-    `🎯 Solved on Clue ${revealedCount} of 6 (${userFinalScore.toLocaleString()} PTS)`,
-    `🔥 ${streak}-Day Streak`,
+    `🎯 Löst på ledtråd ${revealedCount} av 6 (${userFinalScore.toLocaleString('sv-SE')} poäng)`,
+    `🔥 ${streak} dagars svit`,
     '',
-    "Can you crack today's case?",
+    'Kan du knäcka dagens kluring?',
     resultUrl,
   ].join('\n');
 
@@ -645,7 +646,7 @@ export function DailyDropArena({
         {/* Duel Banner */}
         {isDuelActive && !gameWon && !gameOver && (
           <div className="bg-blue-600 text-white px-4 py-2.5 text-center text-xs font-bold tracking-wide">
-            ⚔️ Duel Active: VS @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''} — beat {duelPts.toLocaleString()} PTS!
+            ⚔️ Duell pågår: mot @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''} — slå {duelPts.toLocaleString('sv-SE')} poäng!
           </div>
         )}
 
@@ -664,18 +665,18 @@ export function DailyDropArena({
                 {challenge.category}
               </span>
               <h1 className="text-xl font-black uppercase tracking-tight mt-1 text-zinc-900">
-                {playingArchive ? (campaign ? 'Campaign Match' : 'Archive Match') : 'Daily Drop'}
+                {playingArchive ? (campaign ? 'Utmaningsmatch' : 'Arkivmatch') : 'Dagens kluring'}
               </h1>
               {!playingArchive && (
                 <p className="mt-1 font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-                  DROP #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
+                  KLURING #{dayIndexFromKey(challenge.date_key)} · {challenge.date_key} UTC
                 </p>
               )}
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Potential Score</span>
+              <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">Möjlig poäng</span>
               <span className="text-2xl font-black text-blue-600 font-mono">
-                {score.toLocaleString()} <span className="text-xs text-zinc-400 font-sans">PTS</span>
+                {score.toLocaleString('sv-SE')} <span className="text-xs text-zinc-400 font-sans">poäng</span>
               </span>
             </div>
           </div>
@@ -685,13 +686,13 @@ export function DailyDropArena({
               {viewingArchiveDate ? (
                 <>
                   <Link href="/" className="text-blue-600 font-bold text-xs hover:underline">
-                    ← Back to Today
+                    ← Tillbaka till idag
                   </Link>
                   <Link
                     href="/archive"
                     className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
                   >
-                    <span>📅 Full Calendar</span>
+                    <span>📅 Hela kalendern</span>
                   </Link>
                 </>
               ) : (
@@ -699,7 +700,7 @@ export function DailyDropArena({
                   href="/archive"
                   className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider transition-all border border-zinc-200"
                 >
-                  <span>📅 Browse Archive</span>
+                  <span>📅 Öppna kalendern</span>
                   <span className="text-zinc-400">→</span>
                 </Link>
               )}
@@ -710,7 +711,7 @@ export function DailyDropArena({
           <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm mb-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-mono font-bold uppercase text-zinc-400">
-                Clue {currentClueIdx + 1} of {challenge.clues.length}
+                Ledtråd {currentClueIdx + 1} av {challenge.clues.length}
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -718,13 +719,13 @@ export function DailyDropArena({
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={handleToggleSound}
                   aria-pressed={soundMuted}
-                  aria-label={soundMuted ? 'Unmute match sounds' : 'Mute match sounds'}
+                  aria-label={soundMuted ? 'Slå på matchljud' : 'Stäng av matchljud'}
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-sm hover:border-blue-600"
                 >
                   {soundMuted ? '🔇' : '🔊'}
                 </button>
                 <span className="text-xs font-mono font-bold text-amber-600">
-                  🔥 {streak} Streak
+                  🔥 {streak} i svit
                 </span>
               </div>
             </div>
@@ -743,7 +744,7 @@ export function DailyDropArena({
                 onClick={handleRevealClue}
                 className="w-full min-h-[48px] touch-manipulation py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider rounded-2xl transition-colors active:scale-[0.98]"
               >
-                Reveal Next Clue (-1,500 PTS)
+                Visa nästa ledtråd (−1 500 poäng)
               </button>
             )}
           </div>
@@ -752,7 +753,7 @@ export function DailyDropArena({
           {!gameWon && !gameOver && (
             <div>
               <p className="text-xs font-mono font-bold uppercase text-zinc-400 mb-3">
-                Identify the Historical Matchup
+                Vilken klassiker är det här?
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 touch-manipulation">
                 {choiceOptions.map((option, idx) => {
@@ -785,10 +786,10 @@ export function DailyDropArena({
               {isDuelActive && (
                 <div className="mb-8 p-6 bg-zinc-50 border border-zinc-200 rounded-2xl text-center">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-2">
-                    Head-to-Head Showdown
+                    Duell man mot man
                   </span>
                   <p className="mb-4 text-sm font-black text-zinc-900">
-                    VS @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''}
+                    mot @{duelHandle}{opponentTitle ? ` ["${opponentTitle}"]` : ''}
                   </p>
                   
                   {isVictory && (
@@ -810,14 +811,14 @@ export function DailyDropArena({
                   <div className="grid grid-cols-3 items-center max-w-sm mx-auto">
                     <div>
                       <p className="text-xs font-bold text-zinc-700 truncate">@{duelHandle}</p>
-                      <p className="text-xl font-black font-mono text-zinc-900">{duelPts.toLocaleString()}</p>
+                      <p className="text-xl font-black font-mono text-zinc-900">{duelPts.toLocaleString('sv-SE')}</p>
                     </div>
-                    <div className="text-zinc-300 font-black text-sm">VS</div>
+                    <div className="text-zinc-300 font-black text-sm">MOT</div>
                     <div>
                       <p className="text-xs font-bold text-blue-600 truncate">
-                        You (@{playerName}){cosmeticName(wallet.equippedTitle) ? ` ["${cosmeticName(wallet.equippedTitle)}"]` : ''}
+                        Du (@{playerName}){cosmeticName(wallet.equippedTitle) ? ` ["${cosmeticName(wallet.equippedTitle)}"]` : ''}
                       </p>
-                      <p className="text-xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()}</p>
+                      <p className="text-xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString('sv-SE')}</p>
                     </div>
                   </div>
 
@@ -825,17 +826,17 @@ export function DailyDropArena({
                     onClick={handleShareShowdown}
                     className="mt-5 w-full py-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm"
                   >
-                    Share Showdown Result
+                    Dela duellresultat
                   </button>
                 </div>
               )}
 
               {/* Standard Outcome */}
               <h2 className="text-2xl font-black uppercase tracking-tight mb-1 text-zinc-900">
-                {gameWon ? 'Fixture Solved!' : 'Game Over'}
+                {gameWon ? 'Kluring löst!' : 'Slutspelat'}
               </h2>
               <p className="text-xs text-zinc-500 mb-4">
-                {solution ? `${solution.subject} (${solution.year})` : 'Answer sealed until the case closes.'}
+                {solution ? `${swedishAnswer(solution.subject)} (${solution.year})` : 'Svaret är förseglat tills kluringen stängs.'}
               </p>
 
               <div className="mx-auto mb-6 max-w-xs rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-center">
@@ -847,15 +848,15 @@ export function DailyDropArena({
                     <span key={index} className="mx-0.5 inline-block">{cell}</span>
                   ))}
                   <span className="ml-1 font-mono text-xs font-bold text-zinc-700">
-                    · {userFinalScore.toLocaleString()} PTS
+                    · {userFinalScore.toLocaleString('sv-SE')} poäng
                   </span>
                 </p>
-                <p className="mt-1 text-xs font-bold text-amber-600">🔥 {streak}-Day Streak</p>
+                <p className="mt-1 text-xs font-bold text-amber-600">🔥 {streak} dagars svit</p>
               </div>
 
               <div className="inline-block bg-blue-50 border border-blue-200 px-6 py-3 rounded-2xl mb-6">
-                <span className="block text-[10px] font-mono font-bold uppercase text-blue-600">Final Score</span>
-                <span className="text-3xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString()} PTS</span>
+                <span className="block text-[10px] font-mono font-bold uppercase text-blue-600">Slutpoäng</span>
+                <span className="text-3xl font-black font-mono text-blue-600">{userFinalScore.toLocaleString('sv-SE')} poäng</span>
               </div>
 
               {gameWon && pledgedClub && (
@@ -864,14 +865,14 @@ export function DailyDropArena({
                     {derbyContributionLine(userFinalScore, pledgedClub.name)}
                   </p>
                   <Link href="/derby" className="mt-2 inline-block text-xs font-bold text-blue-600 hover:text-blue-700">
-                    View Fan Table →
+                    Visa fankartan →
                   </Link>
                 </div>
               )}
 
               {gameWon && coinsEarned > 0 && (
                 <div className="mb-6 inline-block rounded-full border border-amber-300 bg-amber-50 px-5 py-2 text-sm font-black tracking-wide text-amber-800">
-                  +{coinsEarned} COINS EARNED 🪙
+                  +{coinsEarned} mynt 🪙
                 </div>
               )}
 
@@ -880,7 +881,7 @@ export function DailyDropArena({
                   href={arenaHref(nextMatch.key, campaign.id)}
                   className="mb-4 inline-flex px-6 py-3 bg-zinc-900 hover:bg-black text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
                 >
-                  Next Campaign Match →
+                  Nästa utmaningsmatch →
                 </Link>
               )}
               {gameWon && playingArchive && !campaign && (
@@ -888,7 +889,7 @@ export function DailyDropArena({
                   href={sportHref}
                   className="mb-4 inline-flex px-6 py-3 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
                 >
-                  ← Back to {sportLabel} Archive
+                  ← Tillbaka till {swedishSurface(sportLabel)}
                 </Link>
               )}
 
@@ -898,32 +899,32 @@ export function DailyDropArena({
                   onClick={() => setChallengeOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-2xl text-sm"
                 >
-                  ⚔️ Challenge a Friend
+                  ⚔️ Utmana en vän
                 </button>
                 <button
                   onClick={handleShareResult}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
                 >
-                  Share Result
+                  Dela resultat
                 </button>
                 <button
                   onClick={() => {
                     if (navigator.clipboard) {
                       void navigator.clipboard.writeText(resultText).then(() => {
-                        showToast('📋 Result copied to clipboard!');
+                        showToast('📋 Resultatet kopierades!');
                       });
                     }
                   }}
                   className="px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
                 >
-                  Copy Score
+                  Kopiera poäng
                 </button>
                 {(playingArchive || !gameWon) && (
                   <button
                     onClick={handleChallengeScout}
                     className="px-6 py-3 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
                   >
-                    Challenge a Scout
+                    Utmana en scout
                   </button>
                 )}
               </div>
@@ -937,14 +938,14 @@ export function DailyDropArena({
                 onCopyLink={() => {
                   if (navigator.clipboard) {
                     void navigator.clipboard.writeText(resultUrl).then(() => {
-                      showToast('⚔️ Duel link copied to clipboard!');
+                      showToast('⚔️ Duellänken kopierades!');
                     });
                   }
                 }}
                 onShareLink={() => {
                   void sharePayload(
-                    'SportsHistoryClue Duel',
-                    `⚔️ Duel me on SportsHistoryClue. Beat ${userFinalScore.toLocaleString()} PTS.\n${resultUrl}`,
+                    'SportsHistoryClue-duell',
+                    `⚔️ Utmana mig i SportsHistoryClue. Slå ${userFinalScore.toLocaleString('sv-SE')} poäng.\n${resultUrl}`,
                     resultUrl,
                   );
                 }}
@@ -968,7 +969,7 @@ export function DailyDropArena({
         isOpen={challengeOpen}
         onClose={() => setChallengeOpen(false)}
         matchSlug={findCase(challenge.id)?.slug ?? challenge.id}
-        matchTitle={findCase(challenge.id)?.title ?? (playingArchive ? sportLabel : "Today's Daily Drop")}
+        matchTitle={findCase(challenge.id)?.title ?? (playingArchive ? swedishSurface(sportLabel) : 'Dagens kluring')}
         userScore={userFinalScore > 0 ? userFinalScore : null}
         category={challenge.category}
         username={playerName}

@@ -34,13 +34,13 @@ describe("duel records", () => {
   });
 
   it("uses Guest Scout when the player has no handle", () => {
-    expect(duelHandleName("Scout")).toBe("Guest Scout");
+    expect(duelHandleName("Scout")).toBe("Gästscout");
     expect(duelHandleName("@icebreaker")).toBe("icebreaker");
   });
 
   it("writes the result from the recipient's side", () => {
-    expect(duelPrompt("icebreaker", 8500, 5500)).toBe("⚔️ You defeated @icebreaker by +3,000 PTS!");
-    expect(duelPrompt("icebreaker", 4000, 5500)).toBe("⚔️ Defeated by @icebreaker (-1,500 PTS)");
+    expect(duelPrompt("icebreaker", 8500, 5500)).toBe("⚔️ Du slog @icebreaker med +3 000 poäng!");
+    expect(duelPrompt("icebreaker", 4000, 5500)).toBe("⚔️ Förlust mot @icebreaker (−1 500 poäng)");
     expect(outcomeFor("Guest Scout", duel({}))).toBe("victory");
     expect(outcomeFor("icebreaker", duel({ winner_username: "TIE" }))).toBe("draw");
     expect(sidesFor("Guest Scout", duel({})).you).toBe(8500);
@@ -57,8 +57,8 @@ describe("duel records", () => {
 
   it("says how long ago a clash was logged", () => {
     const now = new Date("2026-09-26T10:00:00.000Z");
-    expect(formatAgo("2026-09-26T08:00:00.000Z", now)).toBe("2 hours ago");
-    expect(formatAgo("2026-09-26T09:59:40.000Z", now)).toBe("just now");
+    expect(formatAgo("2026-09-26T08:00:00.000Z", now)).toBe("2 timmar sedan");
+    expect(formatAgo("2026-09-26T09:59:40.000Z", now)).toBe("just nu");
   });
 
   it("keeps the newest twenty clashes", () => {

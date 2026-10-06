@@ -70,10 +70,10 @@ export default function DerbyPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-              The Supporters Derby
+              Supporterderbyt
             </h1>
             <p className="mt-1 max-w-xl text-sm text-zinc-500">
-              Which football club has the sharpest sports minds on the planet?
+              Vilken klubb har de skarpaste sportminnena?
             </p>
           </div>
           <div className="flex self-start rounded-2xl bg-zinc-100 p-1" role="group" aria-label="Table toggle">
@@ -85,7 +85,7 @@ export default function DerbyPage() {
                 mode === "total" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
-              Total Points
+              Totalpoäng
             </button>
             <button
               type="button"
@@ -95,7 +95,7 @@ export default function DerbyPage() {
                 mode === "average" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
-              Tactical Average
+              Snitt
             </button>
           </div>
         </div>

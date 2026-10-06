@@ -22,7 +22,7 @@ describe("challenge links", () => {
   });
 
   it("names the public fixture on the challenge preview", () => {
-    expect(publicFixtureName("miracle-1980")).toBe("The Frozen Miracle");
+    expect(publicFixtureName("miracle-1980")).toBe("Det frusna undret");
     expect(ogChallengeHeadline("ptornquist", "The Frozen Miracle")).toBe("UTMANING FRÅN @ptornquist");
     expect(ogChallengeHeadline("@ptornquist", null)).toBe("UTMANING FRÅN @ptornquist");
     expect(ogChallengeHeadline("", null)).toBe("DAGENS KLURING");

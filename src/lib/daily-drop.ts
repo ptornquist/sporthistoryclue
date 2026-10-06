@@ -8,8 +8,6 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
 import { findCase, SPORT_NAME } from "@/lib/case-files";
-import { arrangeClueLadder } from "@/lib/clue-ladder";
-import { sanitizeClues } from "@/lib/clue-sanitation";
 import {
   canonicalSport,
   isUnrelatedEra,
@@ -19,7 +17,9 @@ import {
   type DecoyChallenge,
   type DecoyPeer,
 } from "@/lib/decoy-options";
+import { swedishSurface } from "@/lib/swedish-surface";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
+import { presentClues } from "@/lib/present-clues";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
@@ -62,14 +62,12 @@ export function toPublicDaily(fixture: SecretDaily): PublicDaily {
   return {
     id: fixture.id,
     date_key: fixture.date_key,
-    category: fixture.category,
-    clues: arrangeClueLadder(
-      sanitizeClues(fixture.clues, {
-        title: file?.title || fixture.category,
-        year: file?.year || fixture.year,
-      }),
-      { category: file?.context || fixture.category },
-    ),
+    category: swedishSurface(file?.context || fixture.category),
+    clues: presentClues(fixture.id, fixture.clues, {
+      title: file?.title || fixture.category,
+      year: file?.year || fixture.year,
+      category: file?.context || fixture.category,
+    }),
     options: fixture.options,
   };
 }

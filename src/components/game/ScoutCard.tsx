@@ -44,7 +44,7 @@ export function ScoutCard({
 }) {
   const level = scoutLevel(careerScore);
   const average = solvedCount > 0 ? Math.round(careerScore / solvedCount) : 0;
-  const titleName = cosmeticName(wallet.equippedTitle) || "Archive Rookie";
+  const titleName = cosmeticName(wallet.equippedTitle) || "Arkivrookie";
   const titleItem = TITLES.find((item) => item.id === wallet.equippedTitle);
   const unlockedTitles = TITLES.filter((item) => wallet.unlockedTitles.includes(item.id));
   const unlockedFrames = FRAMES.filter((item) => wallet.unlockedFrames.includes(item.id));

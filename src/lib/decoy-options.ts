@@ -1,3 +1,5 @@
+import { swedishSurface } from "@/lib/swedish-surface";
+
 export interface DecoyPeer {
   subject: string;
   year: number;
@@ -19,17 +21,17 @@ const UNIFORM = /^(-?\d{1,4})\s+([^:]+):\s+(.+)$/;
 
 const RIVALS: Record<string, Array<[string, string]>> = {
   ice_hockey: [
-    ["USA", "Soviet Union"],
-    ["Canada", "Czechoslovakia"],
-    ["Sweden", "Finland"],
-    ["Canada", "USA"],
-    ["Soviet Union", "Czechoslovakia"],
+    ["USA", "Sovjetunionen"],
+    ["Kanada", "Tjeckoslovakien"],
+    ["Sverige", "Finland"],
+    ["Kanada", "USA"],
+    ["Sovjetunionen", "Tjeckoslovakien"],
   ],
   football: [
-    ["Brazil", "Italy"],
-    ["West Germany", "Netherlands"],
+    ["Brasilien", "Italien"],
+    ["Västtyskland", "Nederländerna"],
     ["Argentina", "England"],
-    ["France", "Brazil"],
+    ["Frankrike", "Brasilien"],
     ["Uruguay", "Argentina"],
   ],
   boxing: [
@@ -43,19 +45,19 @@ const RIVALS: Record<string, Array<[string, string]>> = {
     ["John McEnroe", "Ivan Lendl"],
   ],
   basketball: [
-    ["USA", "Soviet Union"],
-    ["USA", "Yugoslavia"],
-    ["USA", "Spain"],
+    ["USA", "Sovjetunionen"],
+    ["USA", "Jugoslavien"],
+    ["USA", "Spanien"],
   ],
   athletics: [
-    ["The favorite", "the defending champion"],
-    ["The record holder", "the lane-four challenger"],
-    ["The host-nation runner", "the Olympic champion"],
+    ["Favoriten", "den regerande mästaren"],
+    ["Rekordhållaren", "utmanaren i bana fyra"],
+    ["Hemmanationens löpare", "den olympiska mästaren"],
   ],
   gymnastics: [
-    ["The defending champion", "the home favorite"],
-    ["The Soviet entry", "the Romanian entry"],
-    ["The all-around leader", "the vault specialist"],
+    ["Den regerande mästaren", "hemmafavoriten"],
+    ["Det sovjetiska bidraget", "det rumänska bidraget"],
+    ["Ledaren i mångkampen", "hoppspecialisten"],
   ],
 };
 
@@ -115,29 +117,38 @@ export function fisherYates<T>(items: readonly T[], random: () => number = Math.
 }
 
 export function shortEvent(category: string, sport: string): string {
-  if (/olympic/i.test(category) && sport === "ice_hockey") return "Olympic Hockey";
-  if (/olympic/i.test(category) && sport === "basketball") return "Olympic Basketball";
+  if (/olympic/i.test(category) && sport === "ice_hockey") return "OS-hockey";
+  if (/olympic/i.test(category) && sport === "basketball") return "OS-basket";
   if (/wimbledon/i.test(category)) return "Wimbledon";
-  if (/world cup/i.test(category)) return "World Cup";
-  if (/summit/i.test(category)) return "Summit Series";
-  if (/heavyweight/i.test(category)) return "Heavyweight Title Fight";
-  const cleaned = category.replace(/\b(decider|showdown)\b/gi, "").replace(/\s+/g, " ").trim();
-  return cleaned || sportLabel(sport);
+  if (/world cup|vm\b/i.test(category)) return "VM";
+  if (/summit/i.test(category)) return "Summitserien";
+  if (/heavyweight|tungvikt/i.test(category)) return "Tungviktstitel";
+  const cleaned = category.replace(/\b(decider|showdown|avgörande)\b/gi, "").replace(/\s+/g, " ").trim();
+  return swedishSurface(cleaned || sportLabel(sport));
 }
 
 const KNOWN_MATCHUPS: Record<string, string> = {
-  "the miracle on ice": "USA vs Soviet Union",
-  "the dream team wins olympic gold in barcelona": "USA vs Croatia",
-  "uruguay win the first fifa world cup": "Uruguay vs Argentina",
-  "west germany's miracle of bern": "West Germany vs Hungary",
-  "a 17-year-old pelé wins the world cup in sweden": "Brazil vs Sweden",
-  "geoff hurst's hat-trick at wembley": "England vs West Germany",
-  "maradona's goal of the century": "Argentina vs England",
-  "manchester united's stoppage-time treble": "Manchester United vs Bayern Munich",
-  "brandi chastain's penalty wins the women's world cup": "USA vs China",
-  "messi wins the world cup in lusail": "Argentina vs France",
-  "south africa win the rugby world cup in a springbok jersey": "South Africa vs New Zealand",
-  "billie jean king wins the battle of the sexes": "Billie Jean King vs Bobby Riggs",
+  "the miracle on ice": "USA mot Sovjetunionen",
+  "the dream team wins olympic gold in barcelona": "USA mot Kroatien",
+  "uruguay win the first fifa world cup": "Uruguay mot Argentina",
+  "west germany's miracle of bern": "Västtyskland mot Ungern",
+  "a 17-year-old pelé wins the world cup in sweden": "Brasilien mot Sverige",
+  "geoff hurst's hat-trick at wembley": "England mot Västtyskland",
+  "maradona's goal of the century": "Argentina mot England",
+  "manchester united's stoppage-time treble": "Manchester United mot Bayern München",
+  "brandi chastain's penalty wins the women's world cup": "USA mot Kina",
+  "messi wins the world cup in lusail": "Argentina mot Frankrike",
+  "south africa win the rugby world cup in a springbok jersey": "Sydafrika mot Nya Zeeland",
+  "billie jean king wins the battle of the sexes": "Billie Jean King mot Bobby Riggs",
+  "spyridon louis wins the first olympic marathon": "Spyridon Louis vinner det första maratonloppet",
+  "jesse owens wins four golds in berlin": "Jesse Owens fyra guld i Berlin",
+  "dick fosbury flops to olympic gold": "Dick Fosbury och ryggfloppen",
+  "nadia comăneci scores the first perfect 10": "Nadia Comăneci och den första tian",
+  "nadia comaneci scores the first perfect 10": "Nadia Comăneci och den första tian",
+  "usain bolt runs 9.69 in beijing": "Usain Bolt på 100 meter i Peking",
+  "london 2012 super saturday": "Superlördagen i London",
+  "leicester city win the premier league at 5000-1": "Leicester City blir mästare",
+  "ali defeats foreman in the rumble in the jungle": "Ali mot Foreman",
 };
 
 export function matchupDetail(subject: string): string {
@@ -150,9 +161,13 @@ export function matchupDetail(subject: string): string {
   return bare;
 }
 
+export function swedishAnswer(subject: string): string {
+  return swedishSurface(matchupDetail(subject));
+}
+
 export function formatOption(year: number, event: string, detail: string): string {
   const matchup = matchupDetail(detail);
-  return `${year} ${event}: ${matchup}`;
+  return swedishSurface(`${year} ${event}: ${matchup}`);
 }
 
 export function correctOptionLabel(source: Pick<DecoyChallenge, "subject" | "year" | "category" | "sport">): string {
@@ -201,7 +216,7 @@ export function selectChallengeOptions(
 
 function uniformDecoy(raw: string, fallbackYear: number, event: string): string {
   const uniform = raw.match(UNIFORM);
-  if (uniform) return `${uniform[1]} ${uniform[2].trim()}: ${uniform[3].trim()}`;
+  if (uniform) return swedishSurface(`${uniform[1]} ${uniform[2].trim()}: ${uniform[3].trim()}`);
   const paren = raw.match(/^(.*)\((-?\d{1,4})\)\s*$/);
   if (paren) return formatOption(Number(paren[2]), event, paren[1]);
   const leading = raw.match(/^(-?\d{1,4})\s+(.+)$/);
@@ -243,9 +258,9 @@ function fallbackDecoys(
 
 function syntheticDecoys(sport: string, year: number, event: string, subject: string): string[] {
   const pairs = RIVALS[sport] ?? [
-    ["The hosts", "the visitors"],
-    ["The holders", "the challengers"],
-    ["The favorites", "the underdogs"],
+    ["Hemmalaget", "bortalaget"],
+    ["Regerande mästare", "utmanarna"],
+    ["Favoriterna", "utmanarna"],
   ];
   const blocked = new Set([
     subject.replace(/\s*\((-?\d{1,4})\)\s*$/, "").trim().toLowerCase(),
@@ -268,20 +283,20 @@ function syntheticDecoys(sport: string, year: number, event: string, subject: st
 function sportLabel(sport: string): string {
   switch (sport) {
     case "ice_hockey":
-      return "Ice Hockey";
+      return "Ishockey";
     case "football":
-      return "Football";
+      return "Fotboll";
     case "boxing":
-      return "Boxing";
+      return "Boxning";
     case "tennis":
       return "Tennis";
     case "basketball":
-      return "Basketball";
+      return "Basket";
     case "athletics":
-      return "Athletics";
+      return "Friidrott";
     case "gymnastics":
-      return "Gymnastics";
+      return "Gymnastik";
     default:
-      return "Fixture";
+      return "Match";
   }
 }

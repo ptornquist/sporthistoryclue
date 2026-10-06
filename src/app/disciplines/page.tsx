@@ -32,11 +32,11 @@ interface SportGroup {
 }
 
 const SPORTS: SportGroup[] = [
-  { id: 'ice_hockey', name: 'Ice Hockey', icon: '🏒', description: 'Olympic shootouts, Cold War clashes & Stanley Cup lore.' },
-  { id: 'football', name: 'Football', icon: '⚽', description: 'World Cup finals, miracle comebacks & golden generations.' },
-  { id: 'boxing', name: 'Boxing', icon: '🥊', description: 'Heavyweight wars, long nights & upset champions.' },
-  { id: 'tennis', name: 'Tennis', icon: '🎾', description: 'Historic tiebreaks, Wimbledon grass epics & five-set marathons.' },
-  { id: 'athletics', name: 'Athletics', icon: '🏃', description: 'Shattered world records and iconic Olympic track moments.' },
+  { id: 'ice_hockey', name: 'Ishockey', icon: '🏒', description: 'Olympiska straffar, kalla kriget och Stanley Cup-lore.' },
+  { id: 'football', name: 'Fotboll', icon: '⚽', description: 'VM-finaler, mirakelvändningar och gyllene generationer.' },
+  { id: 'boxing', name: 'Boxning', icon: '🥊', description: 'Tungviktskrig, långa nätter och skrällmästare.' },
+  { id: 'tennis', name: 'Tennis', icon: '🎾', description: 'Historiska särspel, Wimbledon och femsetsmatcher.' },
+  { id: 'athletics', name: 'Friidrott', icon: '🏃', description: 'Världsrekord och ikoniska olympiska lopp.' },
 ];
 
 export default function DisciplinesPage() {
@@ -91,7 +91,7 @@ export default function DisciplinesPage() {
         setChallenges((data as ChallengeItem[]) ?? []);
       } catch (err) {
         console.error('Failed to load challenges:', err);
-        setError('Could not reach the archive. Please try again shortly.');
+        setError('Kunde inte nå arkivet. Försök igen om en stund.');
       } finally {
         setLoading(false);
       }
@@ -112,28 +112,28 @@ export default function DisciplinesPage() {
               Sports<span className="text-blue-600">History</span>Clue
             </Link>
             <span className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold">
-              By Sport
+              Grenar
             </span>
           </div>
 
           <nav className="flex items-center gap-4">
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Daily Drop
+              Dagens kluring
             </Link>
             <Link href="/archive" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Archive
+              Kalender
             </Link>
             <Link href="/campaigns" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Storylines
+              Utmaningar
             </Link>
             <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Standings
+              Tabellen
             </Link>
             <Link href="/derby" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Derby
             </Link>
             <Link href="/clubs" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Clubs
+              Klubbar
             </Link>
           </nav>
         </div>
@@ -143,13 +143,13 @@ export default function DisciplinesPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-1">
-            Browse by Sport
+            Välj gren
           </span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-            Sports Archive
+            Grenar
           </h1>
           <p className="text-zinc-500 text-sm mt-1 max-w-xl">
-            Choose your specialty sport and deduce iconic matches from that discipline.
+            Välj en gren och knäck ikoniska matcher från just den sporten.
           </p>
         </div>
 
@@ -195,7 +195,7 @@ export default function DisciplinesPage() {
             </div>
           ) : fixtures.length === 0 ? (
             <div className="py-12 text-center text-zinc-400 text-xs font-medium">
-              {error ?? 'No matches found for this sport yet. New fixtures added weekly.'}
+              {error ?? 'Inga matcher i den här grenen ännu. Nya tillkommer löpande.'}
             </div>
           ) : (
             <div className="space-y-3">

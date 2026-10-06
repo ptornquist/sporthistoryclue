@@ -41,7 +41,7 @@ describe("Premier League derby", () => {
     expect(byAverage[0].id).toBe("chelsea");
     expect(byAverage[1].id).toBe("arsenal");
     expect(derbyContributionLine(8500, "Arsenal FC")).toBe(
-      "⚽ +8,500 PTS bagged for Arsenal FC in the Supporters Derby!",
+      "⚽ +8 500 poäng till Arsenal FC i supporterderbyt!",
     );
   });
 });

@@ -16,8 +16,8 @@ import {
 import { useCosmeticWallet } from "@/lib/useCosmeticWallet";
 
 const TABS: { id: CosmeticKind; label: string }[] = [
-  { id: "title", label: "Titles" },
-  { id: "frame", label: "Frames" },
+  { id: "title", label: "Titlar" },
+  { id: "frame", label: "Ramar" },
   { id: "vip", label: "VIP" },
 ];
 
@@ -52,10 +52,10 @@ export default function ProShopPage() {
           <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h1 className="text-3xl font-black tracking-tight text-zinc-900">THE PRO SHOP</h1>
-                <p className="mt-1 text-sm text-zinc-500">Customize your scout identity and unlock sports memorabilia.</p>
+                <h1 className="text-3xl font-black tracking-tight text-zinc-900">Butiken</h1>
+                <p className="mt-1 text-sm text-zinc-500">Välj titel, ram och minnen till din scout.</p>
               </div>
-              <span className={COIN_BADGE}>🟡 {wallet.coins.toLocaleString()} Coins</span>
+              <span className={COIN_BADGE}>🟡 {wallet.coins.toLocaleString("sv-SE")} mynt</span>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Pro Shop catalog">
@@ -101,7 +101,7 @@ export default function ProShopPage() {
                   <h2 className="mt-4 text-lg font-black text-zinc-900">{item.name}</h2>
                   <p className="mt-2 flex-1 text-sm text-zinc-600">{item.quote}</p>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                    <span className={COIN_BADGE}>🟡 {item.cost.toLocaleString()} Coins</span>
+                    <span className={COIN_BADGE}>🟡 {item.cost.toLocaleString("sv-SE")} mynt</span>
                     <button
                       type="button"
                       onClick={() => onAction(item)}

@@ -27,28 +27,28 @@ export default function CampaignsPage() {
               Sports<span className="text-blue-600">History</span>Clue
             </Link>
             <span className="text-[10px] font-mono uppercase bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-bold">
-              Storylines
+              Utmaningar
             </span>
           </div>
 
           <nav className="flex items-center gap-4">
             <Link href="/" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Daily Drop
+              Dagens kluring
             </Link>
             <Link href="/archive" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Archive
+              Kalender
             </Link>
             <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              By Sport
+              Grenar
             </Link>
             <Link href="/standings" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Standings
+              Tabellen
             </Link>
             <Link href="/derby" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
               Derby
             </Link>
             <Link href="/clubs" className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors">
-              Clubs
+              Klubbar
             </Link>
           </nav>
         </div>
@@ -58,13 +58,13 @@ export default function CampaignsPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 block mb-1">
-            Historical Storylines
+            Historiska utmaningar
           </span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-            Storylines &amp; Eras
+            Utmaningar och epoker
           </h1>
           <p className="text-zinc-500 text-sm mt-1 max-w-xl">
-            Play through curated thematic collections of the most iconic clashes in sports history.
+            Spela tematiska samlingar av de mest ikoniska uppgörelserna i sportens historia.
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function CampaignsPage() {
                 {/* Fixture links inside campaign */}
                 <div className="mt-5 space-y-2">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block">
-                    Fixtures in this storyline
+                    Matcher i den här utmaningen
                   </span>
                   {campaign.matches.map((match) => {
                     const record = solved[match.key];
@@ -115,8 +115,8 @@ export default function CampaignsPage() {
 
               <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between">
                 <span className="text-[11px] font-mono font-bold text-zinc-400">
-                  {campaign.matches.length} Historical{' '}
-                  {campaign.matches.length === 1 ? 'Match' : 'Matches'}
+                  {campaign.matches.length} historiska{' '}
+                  {campaign.matches.length === 1 ? 'match' : 'matcher'}
                 </span>
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <button
@@ -124,7 +124,7 @@ export default function CampaignsPage() {
                     onClick={() => setStoryChallenge(campaign)}
                     className="border border-zinc-200 hover:border-blue-400 text-zinc-700 hover:text-blue-600 px-3 py-2 rounded-xl text-xs font-bold"
                   >
-                    ⚔️ Challenge Storyline
+                    ⚔️ Utmana på serien
                   </button>
                   <Link
                     href={arenaHref(
@@ -133,7 +133,7 @@ export default function CampaignsPage() {
                     )}
                     className="px-4 py-2 bg-zinc-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
                   >
-                    Start Campaign
+                    Starta utmaningen
                   </Link>
                 </div>
               </div>

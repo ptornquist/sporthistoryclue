@@ -1,3 +1,5 @@
+import { swedishSurface } from "@/lib/swedish-surface";
+
 export interface CaseFile {
   slug: string;
   ids: string[];
@@ -27,85 +29,85 @@ export const CASE_FILES: CaseFile[] = [
   {
     slug: "miracle-on-ice-1980",
     ids: ["miracle-on-ice-1980", "miracle-1980"],
-    title: "The Frozen Miracle",
+    title: "Det frusna undret",
     year: 1980,
-    context: "Olympic Medal Round",
+    context: "Olympisk medaljomgång",
     sport: "ice_hockey",
   },
   {
     slug: "summit-series-1972",
     ids: ["summit-series-1972"],
-    title: "The Eighth Siren",
+    title: "Den åttonde sirenen",
     year: 1972,
-    context: "Summit Series Decider",
+    context: "Summitseriens avgörande",
     sport: "ice_hockey",
   },
   {
     slug: "comaneci-1976",
     ids: ["comaneci-1976"],
-    title: "The 1.00 Scoreboard Anomaly",
+    title: "Avvikelsen 1,00",
     year: 1976,
-    context: "Olympic All-Around",
+    context: "Olympisk mångkamp",
     sport: "gymnastics",
   },
   {
     slug: "dream-team-1992",
     ids: ["dream-team-1992"],
-    title: "The Unmarked Exhibition",
+    title: "Den omärkta uppvisningen",
     year: 1992,
-    context: "Olympic Gold-Medal Game",
+    context: "Olympisk final",
     sport: "basketball",
   },
   {
     slug: "bolt-beijing-2008",
     ids: ["bolt-beijing-2008", "bolt-2008"],
-    title: "The Golden Spikes",
+    title: "De gyllene spikarna",
     year: 2008,
-    context: "Olympic 100m Final",
+    context: "Olympisk 100-metersfinal",
     sport: "athletics",
   },
   {
     slug: "pele-sweden-1958",
     ids: ["pele-sweden-1958", "pele-1958"],
-    title: "The Solna Breakthrough",
+    title: "Genombrottet i Solna",
     year: 1958,
-    context: "World Cup Final",
+    context: "VM-final",
     sport: "football",
   },
   {
     slug: "hand-of-god-1986",
     ids: ["hand-of-god-1986", "maradona-1986"],
-    title: "The Azteca Double",
+    title: "Dubbeln på Azteca",
     year: 1986,
-    context: "World Cup Quarter-Final",
+    context: "VM-kvartsfinal",
     sport: "football",
   },
   {
     slug: "rumble-in-the-jungle-1974",
     ids: ["rumble-in-the-jungle-1974", "ali-1974"],
-    title: "The Kinshasa Night",
+    title: "Natten i Kinshasa",
     year: 1974,
-    context: "Heavyweight Title Fight",
+    context: "Tungviktstitel",
     sport: "boxing",
   },
   {
     slug: "wimbledon-epic-1980",
     ids: ["wimbledon-epic-1980"],
-    title: "The Tiebreak That Wouldn't End",
+    title: "Avgörandet som inte tog slut",
     year: 1980,
-    context: "Wimbledon Gentlemen's Final",
+    context: "Wimbledonfinal",
     sport: "tennis",
   },
 ];
 
 export const SPORT_NAME: Record<CaseFile["sport"], string> = {
-  ice_hockey: "Ice Hockey",
-  football: "Football",
-  boxing: "Boxing",
+  ice_hockey: "Ishockey",
+  football: "Fotboll",
+  boxing: "Boxning",
   tennis: "Tennis",
-  athletics: "Athletics",
-  gymnastics: "Gymnastics",
-  basketball: "Basketball",
+  athletics: "Friidrott",
+  gymnastics: "Gymnastik",
+  basketball: "Basket",
 };
 
 const SPORT_LABELS: Record<string, string[]> = {
@@ -128,9 +130,19 @@ export function caseIdsFor(id: string): string[] {
 }
 
 const TITLE_RENAMES: Record<string, string> = {
-  "the beijing lightning bolt": "The Golden Spikes",
-  "the lake placid frequency": "The Frozen Miracle",
-  "the masterpiece in hamilton": "The 87th Symphony",
+  "the beijing lightning bolt": "De gyllene spikarna",
+  "the lake placid frequency": "Det frusna undret",
+  "the masterpiece in hamilton": "Den 87:e symfonin",
+  "the golden spikes": "De gyllene spikarna",
+  "the frozen miracle": "Det frusna undret",
+  "the 87th symphony": "Den 87:e symfonin",
+  "the 1.00 scoreboard anomaly": "Avvikelsen 1,00",
+  "the eighth siren": "Den åttonde sirenen",
+  "the unmarked exhibition": "Den omärkta uppvisningen",
+  "the solna breakthrough": "Genombrottet i Solna",
+  "the azteca double": "Dubbeln på Azteca",
+  "the kinshasa night": "Natten i Kinshasa",
+  "the tiebreak that wouldn't end": "Avgörandet som inte tog slut",
 };
 
 export function publicCaseTitle(title: string | null | undefined): string {
@@ -139,7 +151,7 @@ export function publicCaseTitle(title: string | null | undefined): string {
 }
 
 export function fixtureSubtitle(year: number, context: string): string {
-  return `${year} · ${context} · 6 Clues`;
+  return `${year} · ${context} · 6 ledtrådar`;
 }
 
 export function isSpoilerHeading(title: string | undefined | null): boolean {
@@ -156,15 +168,15 @@ export function safeHeading(title: string | undefined, year: number, id?: string
   if (file) return publicCaseTitle(file.title);
   const candidate = title?.trim();
   if (candidate && !isSpoilerHeading(candidate)) return publicCaseTitle(candidate);
-  return `Case File ${year}`;
+  return `Arkivkort ${year}`;
 }
 
 export function safeContext(category: string | undefined, id?: string): string {
   const file = findCase(id);
   if (file) return file.context;
   const candidate = category?.trim();
-  if (candidate && !isSpoilerHeading(candidate)) return candidate;
-  return "Historic Fixture";
+  if (candidate && !isSpoilerHeading(candidate)) return swedishSurface(candidate);
+  return "Historisk match";
 }
 
 export function categoryMatchesSport(category: string | undefined, sport: string): boolean {

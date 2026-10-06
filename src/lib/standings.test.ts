@@ -24,12 +24,12 @@ function scout(partial: Partial<StandingRow> & Pick<StandingRow, "id" | "usernam
 
 describe("division tiers", () => {
   it("places the boundaries on the published ranges", () => {
-    expect(divisionFor(0).name).toBe("Bronze League");
-    expect(divisionFor(9999).name).toBe("Bronze League");
-    expect(divisionFor(10000).name).toBe("Silver League");
-    expect(divisionFor(29999).name).toBe("Silver League");
-    expect(divisionFor(30000).name).toBe("Gold Tactician");
-    expect(divisionFor(59999).name).toBe("Gold Tactician");
+    expect(divisionFor(0).name).toBe("Bronsdivisionen");
+    expect(divisionFor(9999).name).toBe("Bronsdivisionen");
+    expect(divisionFor(10000).name).toBe("Silverdivisionen");
+    expect(divisionFor(29999).name).toBe("Silverdivisionen");
+    expect(divisionFor(30000).name).toBe("Guldstrategen");
+    expect(divisionFor(59999).name).toBe("Guldstrategen");
     expect(divisionFor(60000).name).toBe("Hall of Fame");
   });
 
@@ -68,9 +68,9 @@ describe("standings board", () => {
     expect(formatPositionLine({
       rank: placed.rank ?? 1,
       username: viewer.username,
-      title: "Ice Analyst",
+      title: "Isanalytiker",
       score: 800,
       pointsToNext: 9200,
-    })).toBe("YOUR RANK: #9 · @icebreaker · Ice Analyst · 800 PTS · Next Tier in 9,200 PTS");
+    })).toBe("DIN PLATS: #9 · @icebreaker · Isanalytiker · 800 poäng · Nästa nivå om 9 200 poäng");
   });
 });

@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Scout Standings",
-  description: "Global rankings, active streaks, and division status.",
+  title: "Tabellen",
+  description: "Global ranking, sviter och divisioner.",
 };
 
 export default function StandingsLayout({ children }: { children: ReactNode }) {

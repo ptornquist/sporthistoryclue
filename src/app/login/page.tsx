@@ -78,12 +78,12 @@ function AuthContent() {
           Sports<span className="text-blue-600">History</span>Clue
         </Link>
         <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mt-3">
-          {mode === 'login' ? 'Scout Login' : 'Join the League'}
+          {mode === 'login' ? 'Logga in' : 'Gå med i ligan'}
         </h1>
         <p className="text-xs text-zinc-500 mt-1">
           {mode === 'login'
-            ? 'Access your match history and track daily solve streaks.'
-            : 'Compete on daily leaderboards and challenge friends.'}
+            ? 'Se din matchhistorik och håll koll på sviten.'
+            : 'Tävla på dagens lista och utmana vänner.'}
         </p>
       </div>
 
@@ -96,7 +96,7 @@ function AuthContent() {
             mode === 'login' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
           }`}
         >
-          Log In
+          Logga in
         </button>
         <button
           type="button"
@@ -105,7 +105,7 @@ function AuthContent() {
             mode === 'signup' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-black'
           }`}
         >
-          Join Free
+          Gå med gratis
         </button>
       </div>
 
@@ -125,7 +125,7 @@ function AuthContent() {
         {mode === 'signup' && (
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-              Scout Handle / Name
+              Scoutnamn
             </label>
             <input
               type="text"
@@ -140,7 +140,7 @@ function AuthContent() {
 
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-            Email
+            E-post
           </label>
           <input
             type="email"
@@ -154,7 +154,7 @@ function AuthContent() {
 
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5 block">
-            Password
+            Lösenord
           </label>
           <input
             type="password"
@@ -172,13 +172,13 @@ function AuthContent() {
           disabled={loading}
           className="w-full mt-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm"
         >
-          {loading ? 'Processing...' : mode === 'login' ? 'Sign In →' : 'Create Free Account →'}
+          {loading ? 'Vänta...' : mode === 'login' ? 'Logga in →' : 'Skapa konto →'}
         </button>
       </form>
 
       <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
         <Link href="/" className="text-xs text-zinc-400 hover:text-black font-medium">
-          ← Back to Daily Match
+          ← Tillbaka till dagens kluring
         </Link>
       </div>
     </div>

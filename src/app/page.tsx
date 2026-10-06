@@ -3,10 +3,10 @@ import { Suspense } from 'react';
 import { DailyDropArena } from '@/components/game/DailyDropArena';
 import { ogChallengeHeadline, ogChallengeSubtitle } from '@/lib/challenge-link';
 import { findCase } from '@/lib/case-files';
-import { arrangeClueLadder } from '@/lib/clue-ladder';
-import { sanitizeClues } from '@/lib/clue-sanitation';
 import { loadPublicArchive, utcTodayKey } from '@/lib/daily-drop';
 import { selectChallengeOptions } from '@/lib/decoy-options';
+import { presentClues } from '@/lib/present-clues';
+import { swedishSurface } from '@/lib/swedish-surface';
 
 type HomeSearchParams = {
   duel?: string | string[];
@@ -74,13 +74,12 @@ export default async function Page({
   const initialFixture = archive?.challenge
     ? {
         ...archive.challenge,
-        clues: arrangeClueLadder(
-          sanitizeClues(archive.challenge.clues, {
-            title: file?.title || archive.challenge.category,
-            year: file?.year,
-          }),
-          { category: file?.context || archive.challenge.category },
-        ),
+        category: swedishSurface(file?.context || archive.challenge.category),
+        clues: presentClues(archive.challenge.id, archive.challenge.clues, {
+          title: file?.title || archive.challenge.category,
+          year: file?.year,
+          category: file?.context || archive.challenge.category,
+        }),
         options: selectChallengeOptions(archive.optionSource),
       }
     : null;
@@ -89,7 +88,7 @@ export default async function Page({
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-          Loading Drop...
+          Laddar kluringen...
         </div>
       }
     >

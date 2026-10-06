@@ -219,7 +219,7 @@ export default function DailyDropPage() {
           <div className="bg-white border border-zinc-200 rounded-3xl p-8 md:p-12 shadow-sm mb-6 relative overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-black tracking-wider uppercase">
-                Clue {activeClueIndex + 1} of 6
+                Ledtråd {activeClueIndex + 1} av 6
               </span>
               <span className="text-xs font-medium text-zinc-400">Deduction Phase</span>
             </div>

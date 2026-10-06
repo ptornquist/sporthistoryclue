@@ -234,8 +234,8 @@ export function ClubsExperience({
       <div>
         <Navbar />
         <div className="mx-auto max-w-5xl px-6 py-10">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Friend &amp; office leagues</p>
-          <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Private Scout Clubs</h1>
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">Vänner och kontor</p>
+          <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-zinc-900">Privata scoutklubbar</h1>
           <p className="mt-2 max-w-xl text-sm text-zinc-500">
             Compete against coworkers, friends, or your sports trivia crew.
           </p>
@@ -244,7 +244,7 @@ export function ClubsExperience({
             <div className="mt-8 h-48 animate-pulse rounded-3xl border border-zinc-200 bg-white" />
           ) : !viewerId ? (
             <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-6">
-              <p className="text-sm text-zinc-600">Sign in to create a club or join one with an invite code.</p>
+              <p className="text-sm text-zinc-600">Logga in för att skapa en klubb eller gå med med en kod.</p>
               <button
                 type="button"
                 onClick={() => setGateOpen(true)}

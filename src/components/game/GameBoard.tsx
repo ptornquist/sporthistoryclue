@@ -187,7 +187,7 @@ export function GameBoard({
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-gold">
             {mode === "daily" ? "Daily brief" : mode === "play" ? "Random plate" : expeditionTitle}
           </p>
-          <h1 className="font-serif text-3xl text-paper sm:text-4xl">Identify the plate</h1>
+          <h1 className="font-serif text-3xl text-paper sm:text-4xl">Vilken klassiker är det här?</h1>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="paper">{puzzle.era.replace("-", " ")}</Badge>

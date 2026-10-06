@@ -37,8 +37,8 @@ export function ClubComposer({
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">Create a Club</h2>
-        <p className="mt-1 text-sm text-zinc-500">Start a private table for the people you actually play with.</p>
+        <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">Skapa en klubb</h2>
+        <p className="mt-1 text-sm text-zinc-500">Starta ett privat bord för dem du faktiskt spelar med.</p>
         <label className="mt-4 block text-[10px] font-bold uppercase tracking-wider text-zinc-400" htmlFor="club-name">
           Club name
         </label>
@@ -46,7 +46,7 @@ export function ClubComposer({
           id="club-name"
           value={clubName}
           onChange={(event) => onClubName(event.target.value)}
-          placeholder="Locker Room Legends"
+          placeholder="Lagets legender"
           maxLength={48}
           className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-900 outline-none focus:border-blue-400"
         />
@@ -56,15 +56,15 @@ export function ClubComposer({
           onClick={onCreate}
           className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold px-5 py-3 rounded-2xl text-sm"
         >
-          Create Club →
+          Skapa klubb →
         </button>
       </section>
 
       <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">Join with Code</h2>
-        <p className="mt-1 text-sm text-zinc-500">Enter the six-character code from a teammate.</p>
+        <h2 className="text-lg font-black uppercase tracking-tight text-zinc-900">Gå med med kod</h2>
+        <p className="mt-1 text-sm text-zinc-500">Skriv den sexsiffriga koden från en lagkamrat.</p>
         <label className="mt-4 block text-[10px] font-bold uppercase tracking-wider text-zinc-400" htmlFor="club-code">
-          Invite code
+          Inbjudningskod
         </label>
         <input
           id="club-code"
@@ -81,7 +81,7 @@ export function ClubComposer({
           onClick={onJoin}
           className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold px-5 py-3 rounded-2xl text-sm"
         >
-          Join Club →
+          Gå med →
         </button>
       </section>
     </div>
@@ -112,18 +112,18 @@ export function ClubStandings({
           <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900">{club.name}</h2>
           {club.role === "owner" ? (
             <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
-              Owner
+              Ägare
             </span>
           ) : (
             <span className="rounded-full border border-zinc-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-              Owner · @{owner?.username || "Scout"}
+              Ägare · @{owner?.username || "Scout"}
             </span>
           )}
         </div>
         <p className="mt-1 text-sm font-medium text-zinc-500">{scoutLabel}</p>
 
         <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Invite code</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Inbjudningskod</p>
           <p className="mt-1 font-mono text-3xl font-black tracking-[0.28em] text-zinc-900">{club.code}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
@@ -203,7 +203,7 @@ export function ClubStandings({
       <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h3 className="text-xs font-black uppercase tracking-wider text-zinc-500">Club Activity</h3>
         {activity.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">Club solves will show up here after the next Daily Drop.</p>
+          <p className="mt-3 text-sm text-zinc-500">Klubbens lösningar syns här efter nästa kluring.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {activity.map((item) => (

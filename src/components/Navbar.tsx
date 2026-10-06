@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { supabaseClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
@@ -18,6 +18,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      if (!isSupabaseConfigured) return;
       const { data: { user } } = await supabaseClient.auth.getUser();
       setUser(user);
       if (user) {
@@ -36,12 +37,14 @@ export default function Navbar() {
 
     fetchUserData();
 
-    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    const listener = isSupabaseConfigured
+      ? supabaseClient.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user || null);
+        })
+      : null;
 
     return () => {
-      listener.subscription.unsubscribe();
+      listener?.data.subscription.unsubscribe();
     };
   }, []);
 
@@ -57,14 +60,14 @@ export default function Navbar() {
   const pillLabel = equippedTitle ? `@${displayName} · ${equippedTitle}` : `@${displayName}`;
 
   const NAV_LINKS = [
-    { name: 'Daily Drop', href: '/' },
-    { name: 'Archive', href: '/archive' },
-    { name: 'Storylines', href: '/campaigns' },
-    { name: 'Standings', href: '/standings' },
-    { name: 'Clubs', href: '/clubs' },
+    { name: 'Dagens kluring', href: '/' },
+    { name: 'Kalender', href: '/archive' },
+    { name: 'Utmaningar', href: '/campaigns' },
+    { name: 'Tabellen', href: '/standings' },
+    { name: 'Klubbar', href: '/clubs' },
     { name: 'Derby', href: '/derby' },
-    { name: 'Disciplines', href: '/disciplines' },
-    { name: 'Pro Shop', href: '/shop' },
+    { name: 'Grenar', href: '/disciplines' },
+    { name: 'Butiken', href: '/shop' },
   ];
 
   return (
@@ -122,13 +125,13 @@ export default function Navbar() {
                 href="/login"
                 className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black transition-colors"
               >
-                Log In
+                Logga in
               </Link>
               <Link
                 href="/login?mode=signup"
                 className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
               >
-                Join
+                Gå med
               </Link>
             </div>
           )}
@@ -137,7 +140,7 @@ export default function Navbar() {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-100 text-zinc-700"
-            aria-label="Toggle menu"
+            aria-label="Öppna menyn"
           >
             ☰
           </button>
@@ -164,14 +167,14 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}
                 className="text-center py-2 bg-zinc-100 rounded-lg text-xs font-bold uppercase text-zinc-800"
               >
-                Log In
+                Logga in
               </Link>
               <Link
                 href="/login?mode=signup"
                 onClick={() => setMenuOpen(false)}
                 className="text-center py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase"
               >
-                Join
+                Gå med
               </Link>
             </div>
           ) : (
@@ -179,7 +182,7 @@ export default function Navbar() {
               onClick={() => { setMenuOpen(false); handleSignOut(); }}
               className="w-full text-left px-3 py-2 text-xs font-bold uppercase text-rose-600 hover:bg-rose-50 rounded-lg"
             >
-              Log Out
+              Logga ut
             </button>
           )}
         </div>

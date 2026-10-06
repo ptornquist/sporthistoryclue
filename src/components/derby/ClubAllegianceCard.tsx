@@ -60,7 +60,7 @@ export function ClubAllegianceCard({
   return (
     <section className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">
-        Club Allegiance
+        Klubbval
       </span>
       <h2 className="mt-1 text-xl font-black uppercase tracking-tight text-zinc-900">
         Premier League
@@ -105,11 +105,11 @@ export function ClubAllegianceCard({
           disabled={!selected || !userId || saving}
           className="min-h-[48px] rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
-          {saving ? "Saving..." : "Save Club"}
+          {saving ? "Sparar..." : "Spara klubb"}
         </button>
       </div>
       {!userId && (
-        <p className="mt-3 text-[11px] font-medium text-zinc-400">Sign in to save your allegiance.</p>
+        <p className="mt-3 text-[11px] font-medium text-zinc-400">Logga in för att spara klubben.</p>
       )}
     </section>
   );

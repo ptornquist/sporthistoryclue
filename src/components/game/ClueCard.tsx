@@ -26,7 +26,7 @@ export function ClueCard({
     <section className="overflow-hidden rounded-xl border border-gold/25 bg-card shadow-[0_24px_80px_-32px_rgba(0,0,0,0.8)]">
       <div className="flex items-center justify-between gap-3 border-b border-gold/20 bg-ink px-4 py-3">
         <div className="flex items-center gap-2">
-          <Badge variant="gold">Clue {clueNumber}</Badge>
+          <Badge variant="gold">Ledtråd {clueNumber}</Badge>
           {clue.kicker && (
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-amber">
               {clue.kicker}

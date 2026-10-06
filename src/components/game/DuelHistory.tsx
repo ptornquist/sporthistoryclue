@@ -92,8 +92,8 @@ export function DuelHistory({
 
   return (
     <section className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm" aria-busy={loading}>
-      <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">Head-to-Head Match History</h2>
-      <p className="mt-1 text-xs font-medium text-zinc-500">Duel arena results for @{username}.</p>
+      <h2 className="text-xl font-black uppercase tracking-tight text-zinc-900">Duellhistorik</h2>
+      <p className="mt-1 text-xs font-medium text-zinc-500">Duellresultat för @{username}.</p>
       <div className="mt-6 min-h-[288px] space-y-3">
         {loading ? (
           [0, 1, 2].map((slot) => (
@@ -101,7 +101,7 @@ export function DuelHistory({
           ))
         ) : duels.length === 0 ? (
           <div className="flex h-24 items-center justify-center rounded-2xl border border-zinc-100 bg-zinc-50 text-xs font-medium text-zinc-400">
-            No duels yet. Challenge a scout from today&apos;s drop.
+            Inga dueller ännu. Utmana en scout från dagens kluring.
           </div>
         ) : (
           duels.map((duel) => {
