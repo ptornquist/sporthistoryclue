@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ScopeToggle } from "@/components/ScopeToggle";
 import { ScoutAvatar } from "@/components/game/ScoutAvatar";
-import type { BoardScope } from "@/lib/board-scope";
 import { findCosmetic, titleClassName } from "@/lib/cosmetics";
 import { formatMessage } from "@/lib/i18n/format";
 import { useI18n } from "@/lib/i18n/use-i18n";
@@ -133,7 +131,6 @@ function groupedPoints(value: number): string {
 export default function StandingsPage() {
   const { locale, messages } = useI18n();
   const [mode, setMode] = useState<StandingMode>("week");
-  const [scope, setScope] = useState<BoardScope>("world");
   const [rows, setRows] = useState<StandingRow[]>([]);
   const [viewer, setViewer] = useState<StandingRow | null>(null);
   const [weekStart, setWeekStart] = useState<string | null>(null);
@@ -217,7 +214,7 @@ export default function StandingsPage() {
     };
   }, []);
 
-  const placed = placeScout(rows, viewer, mode, weekStart, scope);
+  const placed = placeScout(rows, viewer, mode, weekStart);
   const viewerScore = viewer ? scoreFor(viewer, mode, weekStart) : 0;
   const viewerTitle = viewer ? titleLabel(viewer.equipped_title) : "";
   const nextPoints = viewer ? pointsToNextTier(viewer.total_score) : null;
@@ -231,18 +228,10 @@ export default function StandingsPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">{messages.standings.title}</h1>
-              <p className="mt-1 text-sm text-zinc-500">
-                {scope === "se" ? messages.standings.subtitleSweden : messages.standings.subtitleWorld}
-              </p>
+              <p className="mt-1 text-sm text-zinc-500">{messages.standings.subtitleWorld}</p>
+              <p className="mt-1 text-xs font-medium text-zinc-400">{messages.standings.globalNote}</p>
             </div>
             <div className="flex flex-col gap-2">
-              <ScopeToggle
-                value={scope}
-                onChange={setScope}
-                swedenLabel={messages.scope.sweden}
-                worldLabel={messages.scope.international}
-                ariaLabel={messages.standings.scopeToggle}
-              />
               <div className="flex self-start rounded-2xl bg-zinc-100 p-1">
                 <button
                   type="button"

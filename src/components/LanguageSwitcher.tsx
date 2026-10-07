@@ -1,12 +1,12 @@
 "use client";
 
-import { useI18n } from "@/lib/i18n/use-i18n";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { Locale } from "@/lib/i18n/types";
 
 const LOCALES: Locale[] = ["sv", "en"];
 
 export function LanguageSwitcher() {
-  const { locale, messages, setLocale } = useI18n();
+  const { locale, messages, setLocale } = useLanguage();
 
   return (
     <div

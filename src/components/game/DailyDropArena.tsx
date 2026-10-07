@@ -18,7 +18,7 @@ import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
 import { presentClues } from '@/lib/present-clues';
-import { swedishAnswer } from '@/lib/decoy-options';
+import { localizeSurface, swedishAnswer } from '@/lib/decoy-options';
 import { swedishSurface } from '@/lib/swedish-surface';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
 import { cosmeticName } from '@/lib/cosmetics';
@@ -29,7 +29,8 @@ import { DailyDropWaitHub } from '@/components/game/DailyDropWaitHub';
 import { activeStreak, loadSolvedHistory, recordSolvedDate, utcDateKey } from '@/lib/utc-streak';
 import { formatArchiveDate, isDateKey } from '@/lib/archive-calendar';
 import { formatMessage } from '@/lib/i18n/format';
-import { useI18n } from '@/lib/i18n/use-i18n';
+import { useLanguage } from '@/lib/i18n/language-context';
+import type { Locale } from '@/lib/i18n/types';
 import { rememberDailyCompletion } from '@/lib/daily-completions';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
 import {
@@ -49,18 +50,18 @@ interface DailyFixture {
   sportName?: string;
 }
 
-function cleanFixture(fixture: DailyFixture): DailyFixture {
+function cleanFixture(fixture: DailyFixture, locale: Locale = "sv"): DailyFixture {
   const file = findCase(fixture.id);
-  const category = swedishSurface(file?.context || fixture.category);
+  const category = localizeSurface(file?.context || fixture.category, locale);
   return {
     ...fixture,
     category,
-    options: (fixture.options ?? []).map((option) => swedishSurface(option)),
+    options: (fixture.options ?? []).map((option) => localizeSurface(option, locale)),
     clues: presentClues(fixture.id, fixture.clues ?? [], {
       title: file?.title || fixture.category,
       year: file?.year,
       category,
-    }),
+    }, locale),
   };
 }
 
@@ -169,7 +170,11 @@ export function DailyDropArena({
   const statsSent = useRef<string | null>(null);
   const duelLogged = useRef<string | null>(null);
   const { wallet, awardSolve } = useCosmeticWallet();
-  const { messages } = useI18n();
+  const { locale, messages } = useLanguage();
+  const sourceRef = useRef<DailyFixture | null>(initialFixture);
+  const optionSourceRef = useRef<string[]>(initialFixture?.options ?? []);
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
 
   const [challenge, setChallenge] = useState<DailyFixture | null>(
     initialFixture ? cleanFixture(initialFixture) : null,
@@ -192,6 +197,25 @@ export function DailyDropArena({
   const streakLock = useRef(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
   const [soundMuted, setSoundMuted] = useState(true);
+
+  useEffect(() => {
+    const source = sourceRef.current;
+    if (!source) return;
+    const next = cleanFixture(source, locale);
+    setChallenge((current) => (
+      current ? { ...current, category: next.category, clues: next.clues, options: next.options } : next
+    ));
+    const rawOptions = optionSourceRef.current.length > 0 ? optionSourceRef.current : source.options ?? [];
+    setChoiceOptions(rawOptions.map((option) => localizeSurface(option, locale)));
+    setSelectedWrong((prev) => prev.map((item) => {
+      const match = rawOptions.find((option) => (
+        option === item
+        || localizeSurface(option, "sv") === item
+        || localizeSurface(option, "en") === item
+      ));
+      return localizeSurface(match ?? item, locale);
+    }));
+  }, [locale]);
   const whistled = useRef(false);
 
   const showToast = (msg: string) => {
@@ -351,9 +375,13 @@ export function DailyDropArena({
           throw new Error('Daily drop unavailable');
         }
         const payload = (await response.json()) as DailyResponse;
-        const fixture = cleanFixture(payload.challenge ?? payload);
+        const raw = payload.challenge ?? payload;
+        sourceRef.current = raw;
+        const shuffled = setupOptions(raw.options ?? []);
+        optionSourceRef.current = shuffled;
+        const fixture = cleanFixture(raw, localeRef.current);
         whistled.current = false;
-        setChoiceOptions(setupOptions(fixture.options ?? []));
+        setChoiceOptions(shuffled.map((option) => localizeSurface(option, localeRef.current)));
         setChallenge(fixture);
       } catch {
         showToast('Kunde inte ladda kluringen.');

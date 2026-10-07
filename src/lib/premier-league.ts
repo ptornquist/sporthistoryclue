@@ -1,4 +1,5 @@
 import type { BoardScope } from "./board-scope";
+import type { ScoutCountry } from "./i18n/profile-preferences";
 
 export const FAVORITE_CLUB_KEY = "shc_favorite_club";
 
@@ -71,12 +72,40 @@ export const SWEDISH_CLUBS: readonly PremierLeagueClub[] = [
   { id: "degerfors", name: "Degerfors IF", color: "#E30613", badge: "🔴" },
 ] as const;
 
+/** Clubs offered when the profile country is the United States. */
+export const US_CLUBS: readonly PremierLeagueClub[] = [
+  { id: "inter-miami", name: "Inter Miami CF", color: "#F7B5CD", badge: "🩷" },
+  { id: "lafc", name: "Los Angeles FC", color: "#C39E6D", badge: "⚫" },
+  { id: "la-galaxy", name: "LA Galaxy", color: "#00245D", badge: "🔵" },
+  { id: "nycfc", name: "New York City FC", color: "#6CACE4", badge: "🩵" },
+  { id: "atlanta-united", name: "Atlanta United", color: "#80000A", badge: "🔴" },
+  { id: "seattle-sounders", name: "Seattle Sounders", color: "#5D9741", badge: "🟢" },
+  { id: "portland-timbers", name: "Portland Timbers", color: "#00482B", badge: "🟢" },
+  { id: "chicago-fire", name: "Chicago Fire", color: "#AF2626", badge: "🔴" },
+] as const;
+
+/** Clubs offered when the profile country is Canada. */
+export const CANADA_CLUBS: readonly PremierLeagueClub[] = [
+  { id: "toronto-fc", name: "Toronto FC", color: "#B81137", badge: "🔴" },
+  { id: "cf-montreal", name: "CF Montréal", color: "#0033A0", badge: "🔵" },
+  { id: "vancouver-whitecaps", name: "Vancouver Whitecaps", color: "#00245D", badge: "🔵" },
+] as const;
+
 const BY_ID = new Map(PREMIER_LEAGUE_CLUBS.map((club) => [club.id, club]));
 const SWEDISH_BY_ID = new Map(SWEDISH_CLUBS.map((club) => [club.id, club]));
-const ALL_BY_ID = new Map<string, PremierLeagueClub>([...BY_ID, ...SWEDISH_BY_ID]);
+const US_BY_ID = new Map(US_CLUBS.map((club) => [club.id, club]));
+const CANADA_BY_ID = new Map(CANADA_CLUBS.map((club) => [club.id, club]));
+const ALL_BY_ID = new Map<string, PremierLeagueClub>([...BY_ID, ...SWEDISH_BY_ID, ...US_BY_ID, ...CANADA_BY_ID]);
 
 export function clubsForScope(scope: BoardScope = "world"): readonly PremierLeagueClub[] {
   return scope === "se" ? SWEDISH_CLUBS : PREMIER_LEAGUE_CLUBS;
+}
+
+export function clubsForCountry(country: ScoutCountry): readonly PremierLeagueClub[] {
+  if (country === "se") return SWEDISH_CLUBS;
+  if (country === "us") return US_CLUBS;
+  if (country === "ca") return CANADA_CLUBS;
+  return PREMIER_LEAGUE_CLUBS;
 }
 
 export function findPremierLeagueClub(id: string | null | undefined): PremierLeagueClub | null {

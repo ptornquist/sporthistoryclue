@@ -68,6 +68,7 @@ export interface Messages {
     title: string;
     subtitleWorld: string;
     subtitleSweden: string;
+    globalNote: string;
     thisWeek: string;
     allTime: string;
     weekReset: string;
@@ -102,6 +103,21 @@ export interface Messages {
   profile: {
     languageTitle: string;
     languageHint: string;
+    settingsTitle: string;
+    primaryLanguage: string;
+    country: string;
+    countryHint: string;
+    favoriteClub: string;
+    guestReady: string;
+    loadFailed: string;
+    retry: string;
+  };
+  countries: {
+    se: string;
+    gb: string;
+    us: string;
+    ca: string;
+    world: string;
   };
   footer: {
     tagline: string;

@@ -1,3 +1,5 @@
+import { englishSurface } from "@/lib/i18n/english-surface";
+import type { Locale } from "@/lib/i18n/types";
 import { swedishSurface } from "@/lib/swedish-surface";
 
 export interface DecoyPeer {
@@ -175,6 +177,10 @@ export function correctOptionLabel(source: Pick<DecoyChallenge, "subject" | "yea
   return formatOption(source.year, shortEvent(source.category, sport), source.subject);
 }
 
+export function localizeSurface(value: string, locale: Locale): string {
+  return locale === "en" ? englishSurface(value) : swedishSurface(value);
+}
+
 export function optionMatchesChallenge(
   option: string,
   source: Pick<DecoyChallenge, "subject" | "year" | "category" | "sport">,
@@ -182,7 +188,9 @@ export function optionMatchesChallenge(
   const guess = option.trim().toLowerCase();
   const subject = source.subject.trim().toLowerCase();
   if (!guess || !subject) return false;
-  if (guess === correctOptionLabel(source).toLowerCase()) return true;
+  const correct = correctOptionLabel(source);
+  if (guess === correct.toLowerCase()) return true;
+  if (guess === englishSurface(correct).toLowerCase()) return true;
   if (guess === subject) return true;
   if (guess === `${subject} (${source.year})`) return true;
   const bare = subject.replace(/\s*\((-?\d{1,4})\)\s*$/, "").trim();

@@ -74,6 +74,14 @@ describe("standings board", () => {
     })).toBe("DIN PLATS: #9 · @icebreaker · Isanalytiker · 800 poäng · Nästa nivå om 9 200 poäng");
   });
 
+  it("keeps scouts from every club on one global board", () => {
+    const swedish = scout({ id: "se", username: "gnaget", total_score: 4000, favorite_club: "aik" });
+    const international = scout({ id: "en", username: "gunner", total_score: 5000, favorite_club: "arsenal" });
+    const placed = placeScout([swedish, international], null, "all", "2026-09-21");
+    expect(placed.board.some((row) => row.id === "se")).toBe(true);
+    expect(placed.board.some((row) => row.id === "en")).toBe(true);
+  });
+
   it("filters the Sweden board to Swedish clubs and Swedish legends", () => {
     const sweden = fillStandings([], "se");
     expect(sweden.map((row) => row.username)).toContain("zlatan");

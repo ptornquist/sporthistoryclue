@@ -87,14 +87,14 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Links */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-3 xl:gap-5">
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-xs font-bold uppercase tracking-wider transition-colors ${
+                className={`whitespace-nowrap text-xs font-bold uppercase tracking-wider transition-colors ${
                   isActive ? 'text-blue-600' : 'text-zinc-500 hover:text-black'
                 }`}
               >
@@ -127,13 +127,13 @@ export default function Navbar() {
             <div className="hidden sm:flex items-center gap-2">
               <Link
                 href="/login"
-                className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black transition-colors"
+                className="whitespace-nowrap px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black transition-colors"
               >
                 {messages.nav.login}
               </Link>
               <Link
                 href="/login?mode=signup"
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
+                className="whitespace-nowrap px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
               >
                 {messages.nav.join}
               </Link>

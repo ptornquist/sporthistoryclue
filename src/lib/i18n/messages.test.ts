@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { englishSurface } from "./english-surface";
+import { publishedEnglishClues } from "./english-clues";
 import { en } from "./en";
 import { formatMessage } from "./format";
 import { sv } from "./sv";
+import { optionMatchesChallenge } from "../decoy-options";
+import { presentClues } from "../present-clues";
+import { publishedSwedishClues } from "../sport-kluringar-pool";
 import type { Messages } from "./types";
 
 function paths(value: unknown, prefix = ""): string[] {
@@ -32,6 +37,27 @@ describe("interface copy", () => {
     expect(formatMessage(sv.play.clueProgress, { current: 1, total: 5 })).toBe("Ledtråd 1 av 5");
     expect(sv.scope.sweden).toBe("Sverige");
     expect(sv.scope.international).toBe("Internationellt");
+  });
+
+  it("switches authored clues and still grades the English option", () => {
+    const ids = ["miracle-1980", "athens-1896", "sverige-sovjet-1984", "leicester-2016"];
+    for (const id of ids) {
+      expect(publishedEnglishClues(id)).toHaveLength(5);
+      expect(publishedSwedishClues(id)).toHaveLength(5);
+      const english = presentClues(id, ["unused"], undefined, "en").join(" ");
+      const swedish = presentClues(id, ["unused"], undefined, "sv").join(" ");
+      expect(english).not.toBe(swedish);
+    }
+    expect(presentClues("athens-1896", [], undefined, "en")[4]).toContain("Spyridon Louis");
+    expect(englishSurface("1972 OS-hockey: Kanada mot Sovjetunionen")).toBe(
+      "1972 Olympic Hockey: Canada vs Soviet Union",
+    );
+    expect(optionMatchesChallenge("1972 Olympic Hockey: Canada vs Soviet Union", {
+      subject: "Canada vs Soviet Union (1972)",
+      year: 1972,
+      category: "Olympic Hockey",
+      sport: "ice_hockey",
+    })).toBe(true);
   });
 
   it("translates the same chrome into English", () => {

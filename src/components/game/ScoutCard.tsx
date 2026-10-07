@@ -42,28 +42,35 @@ export function ScoutCard({
   profileReady: boolean;
   onEquip: (itemId: string) => void;
 }) {
-  const level = scoutLevel(careerScore);
-  const average = solvedCount > 0 ? Math.round(careerScore / solvedCount) : 0;
-  const titleName = cosmeticName(wallet.equippedTitle) || "Arkivrookie";
-  const titleItem = TITLES.find((item) => item.id === wallet.equippedTitle);
-  const unlockedTitles = TITLES.filter((item) => wallet.unlockedTitles.includes(item.id));
-  const unlockedFrames = FRAMES.filter((item) => wallet.unlockedFrames.includes(item.id));
+  const safeScore = Number.isFinite(careerScore) ? careerScore : 0;
+  const safeSolved = Number.isFinite(solvedCount) ? solvedCount : 0;
+  const safeStreak = Number.isFinite(currentStreak) ? currentStreak : 0;
+  const safeBest = Number.isFinite(bestStreak) ? bestStreak : 0;
+  const coins = Number.isFinite(wallet?.coins) ? wallet.coins : 0;
+  const titleIds = Array.isArray(wallet?.unlockedTitles) ? wallet.unlockedTitles : ["rookie"];
+  const frameIds = Array.isArray(wallet?.unlockedFrames) ? wallet.unlockedFrames : ["standard"];
+  const level = scoutLevel(safeScore);
+  const average = safeSolved > 0 ? Math.round(safeScore / safeSolved) : 0;
+  const titleName = cosmeticName(wallet?.equippedTitle) || "Arkivrookie";
+  const titleItem = TITLES.find((item) => item.id === wallet?.equippedTitle);
+  const unlockedTitles = TITLES.filter((item) => titleIds.includes(item.id));
+  const unlockedFrames = FRAMES.filter((item) => frameIds.includes(item.id));
   const progress = `${Math.round(level.progress * 100)}%`;
 
   const stats = [
-    { label: "Totalpoäng", value: careerScore.toLocaleString("sv-SE") },
+    { label: "Totalpoäng", value: safeScore.toLocaleString("sv-SE") },
     { label: "Snitt", value: average.toLocaleString("sv-SE") },
-    { label: "Lösta matcher", value: solvedCount.toLocaleString("sv-SE") },
-    { label: "Mynt", value: wallet.coins.toLocaleString("sv-SE") },
-    { label: "Svit", value: `${currentStreak}` },
-    { label: "Bästa svit", value: `${bestStreak}` },
+    { label: "Lösta matcher", value: safeSolved.toLocaleString("sv-SE") },
+    { label: "Mynt", value: coins.toLocaleString("sv-SE") },
+    { label: "Svit", value: `${safeStreak}` },
+    { label: "Bästa svit", value: `${safeBest}` },
   ];
 
   return (
     <section className="space-y-6">
       <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <ScoutAvatar frameId={wallet.equippedFrame} avatarUrl={avatarUrl} label={handle} size="lg" />
+          <ScoutAvatar frameId={wallet?.equippedFrame} avatarUrl={avatarUrl} label={handle || "scout"} size="lg" />
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-black tracking-tight text-zinc-900">@{handle}</h1>
             <p className={`mt-2 inline-flex rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-bold uppercase tracking-wider ${titleClassName(wallet.equippedTitle)}`}>
@@ -74,7 +81,7 @@ export function ScoutCard({
               <div className="mb-1 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                 <span>Level {level.level}</span>
                 <span>
-                  {careerScore.toLocaleString()} / {level.nextScore.toLocaleString()} XP
+                  {safeScore.toLocaleString()} / {level.nextScore.toLocaleString()} XP
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-zinc-200">
@@ -117,7 +124,7 @@ export function ScoutCard({
             Equipped title
             <select
               aria-label="Equipped title"
-              value={wallet.equippedTitle}
+              value={wallet?.equippedTitle || "rookie"}
               onChange={(event) => onEquip(event.target.value)}
               className="mt-2 w-full rounded-xl bg-white border border-zinc-200 px-3 py-2 text-sm font-bold text-zinc-900"
             >
@@ -132,7 +139,7 @@ export function ScoutCard({
             Equipped frame
             <select
               aria-label="Equipped frame"
-              value={wallet.equippedFrame}
+              value={wallet?.equippedFrame || "standard"}
               onChange={(event) => onEquip(event.target.value)}
               className="mt-2 w-full rounded-xl bg-white border border-zinc-200 px-3 py-2 text-sm font-bold text-zinc-900"
             >
@@ -150,7 +157,12 @@ export function ScoutCard({
         <h2 className="mb-3 text-sm font-black uppercase tracking-tight text-zinc-900">Utvalda märken</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURED_BADGES.map((badge) => {
-            const unlocked = badgeUnlocked(badge.id, { ...wallet, matchesSolved: solvedCount, bestStreak }, solvedSlugs, solvedScores);
+            const unlocked = badgeUnlocked(
+              badge.id,
+              { ...wallet, matchesSolved: safeSolved, bestStreak: safeBest, duelWins: wallet?.duelWins ?? 0 },
+              Array.isArray(solvedSlugs) ? solvedSlugs : [],
+              Array.isArray(solvedScores) ? solvedScores : [],
+            );
             const unlockedAt = badgeTimes[badge.id];
             const when = unlockedAt ? new Date(unlockedAt) : null;
             const stamp = when && !Number.isNaN(when.getTime()) ? when.toLocaleDateString() : "";
