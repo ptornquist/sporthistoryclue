@@ -18,6 +18,8 @@ import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
 import { presentClues } from '@/lib/present-clues';
+import { optionLabels } from '@/lib/sport-kluring';
+import { sportKluringById } from '@/lib/sport-kluringar-pool';
 import { localizeSurface, swedishAnswer } from '@/lib/decoy-options';
 import { swedishSurface } from '@/lib/swedish-surface';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
@@ -51,6 +53,15 @@ interface DailyFixture {
 }
 
 function cleanFixture(fixture: DailyFixture, locale: Locale = "sv"): DailyFixture {
+  const kluring = sportKluringById(fixture.id);
+  if (kluring) {
+    return {
+      ...fixture,
+      category: kluring.category[locale],
+      options: optionLabels(kluring, locale),
+      clues: presentClues(fixture.id, fixture.clues ?? [], undefined, locale),
+    };
+  }
   const file = findCase(fixture.id);
   const category = localizeSurface(file?.context || fixture.category, locale);
   return {
@@ -63,6 +74,12 @@ function cleanFixture(fixture: DailyFixture, locale: Locale = "sv"): DailyFixtur
       category,
     }, locale),
   };
+}
+
+function choiceOptionsFor(fixture: DailyFixture, locale: Locale): string[] {
+  const kluring = sportKluringById(fixture.id);
+  if (kluring) return optionLabels(kluring, locale);
+  return (fixture.options ?? []).map((option) => localizeSurface(option, locale));
 }
 
 interface DailyResponse extends DailyFixture {
@@ -106,6 +123,8 @@ function MatchModeBanner({
   archiveDate?: string;
   training?: boolean;
 }) {
+  const { locale } = useLanguage();
+  const categoryLabel = locale === "en" ? category : swedishSurface(category);
   if (campaignId && campaignTitle) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-6 py-3 text-amber-950">
@@ -120,7 +139,7 @@ function MatchModeBanner({
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 bg-blue-50 px-6 py-3 text-blue-950">
         <span className="text-xs font-black uppercase tracking-wide">
-          📚 Sportarkiv{category ? ` · ${swedishSurface(category)}` : ''}
+          📚 Sportarkiv{categoryLabel ? ` · ${categoryLabel}` : ''}
         </span>
         <Link href="/disciplines" className="text-xs font-bold uppercase tracking-wider text-blue-800 hover:text-blue-950">
           ← Tillbaka till grenar
@@ -179,7 +198,9 @@ export function DailyDropArena({
   const [challenge, setChallenge] = useState<DailyFixture | null>(
     initialFixture ? cleanFixture(initialFixture) : null,
   );
-  const [choiceOptions, setChoiceOptions] = useState<string[]>(initialFixture?.options ?? []);
+  const [choiceOptions, setChoiceOptions] = useState<string[]>(
+    initialFixture ? choiceOptionsFor(initialFixture, "sv") : [],
+  );
   const activeArchiveDate = isDateKey(archiveDate) ? archiveDate : null;
   const [solution, setSolution] = useState<Solution | null>(null);
   const [currentClueIdx, setCurrentClueIdx] = useState(0);
@@ -205,6 +226,17 @@ export function DailyDropArena({
     setChallenge((current) => (
       current ? { ...current, category: next.category, clues: next.clues, options: next.options } : next
     ));
+    const kluring = sportKluringById(source.id);
+    if (kluring) {
+      setChoiceOptions(optionLabels(kluring, locale));
+      setSelectedWrong((prev) => prev.map((item) => {
+        const index = kluring.options.sv.indexOf(item) >= 0
+          ? kluring.options.sv.indexOf(item)
+          : kluring.options.en.indexOf(item);
+        return index >= 0 ? kluring.options[locale][index] : item;
+      }));
+      return;
+    }
     const rawOptions = optionSourceRef.current.length > 0 ? optionSourceRef.current : source.options ?? [];
     setChoiceOptions(rawOptions.map((option) => localizeSurface(option, locale)));
     setSelectedWrong((prev) => prev.map((item) => {
@@ -377,11 +409,14 @@ export function DailyDropArena({
         const payload = (await response.json()) as DailyResponse;
         const raw = payload.challenge ?? payload;
         sourceRef.current = raw;
-        const shuffled = setupOptions(raw.options ?? []);
+        const kluring = sportKluringById(raw.id);
+        const shuffled = kluring ? optionLabels(kluring, "sv") : setupOptions(raw.options ?? []);
         optionSourceRef.current = shuffled;
         const fixture = cleanFixture(raw, localeRef.current);
         whistled.current = false;
-        setChoiceOptions(shuffled.map((option) => localizeSurface(option, localeRef.current)));
+        setChoiceOptions(
+          kluring ? optionLabels(kluring, localeRef.current) : shuffled.map((option) => localizeSurface(option, localeRef.current)),
+        );
         setChallenge(fixture);
       } catch {
         showToast('Kunde inte ladda kluringen.');
@@ -771,12 +806,17 @@ export function DailyDropArena({
             </div>
 
             <div className="space-y-3 mb-6">
-              {challenge.clues.slice(0, currentClueIdx + 1).map((clue, idx) => (
+              {challenge.clues.slice(0, currentClueIdx + 1).map((clue, idx) => {
+                const cardTitle = sportKluringById(challenge.id)?.cards[idx]?.title[locale];
+                return (
                 <div key={idx} className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-sm font-medium text-zinc-800">
                   <span className="font-mono text-xs text-blue-600 font-bold mr-2">#{idx + 1}</span>
+                  {cardTitle ? <span className="mr-2 text-xs font-bold uppercase tracking-wide text-zinc-500">{cardTitle}</span> : null}
+                  {cardTitle ? " " : null}
                   {clue}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {!gameWon && !gameOver && currentClueIdx < challenge.clues.length - 1 && (
