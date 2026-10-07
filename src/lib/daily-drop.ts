@@ -20,6 +20,7 @@ import {
 import { swedishSurface } from "@/lib/swedish-surface";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
 import { presentClues } from "@/lib/present-clues";
+import { kluringGuessIsCorrect } from "@/lib/sport-kluringar-pool";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
@@ -221,6 +222,7 @@ export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
 }
 
 export function gradeOption(fixture: SecretDaily, option: string): boolean {
+  if (kluringGuessIsCorrect(fixture.id, option)) return true;
   return optionMatchesChallenge(option, {
     subject: fixture.subject,
     year: fixture.year,

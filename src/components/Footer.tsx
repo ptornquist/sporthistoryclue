@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useI18n } from '@/lib/i18n/use-i18n';
 
 const SOCIAL_LINKS = [
   {
@@ -44,6 +45,8 @@ const SOCIAL_LINKS = [
 ];
 
 export default function Footer() {
+  const { messages } = useI18n();
+
   return (
     <footer className="border-t border-zinc-200 bg-white mt-12">
       <div className="max-w-4xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-5">
@@ -52,7 +55,7 @@ export default function Footer() {
           <span className="font-black uppercase tracking-tight text-zinc-900">
             Sports<span className="text-blue-600">History</span>Clue
           </span>
-          <span> · Dagens sportkluring · Ny kluring 00:00 UTC</span>
+          <span> · {messages.footer.tagline}</span>
         </p>
 
         {/* Contact + Social Channels */}
@@ -65,7 +68,7 @@ export default function Footer() {
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <path d="m3 7 9 6 9-6" />
             </svg>
-            Kontakta redaktionen
+            {messages.footer.contact}
           </a>
 
           <div className="flex items-center gap-2.5">

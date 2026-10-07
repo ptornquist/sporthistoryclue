@@ -383,13 +383,15 @@ export function badgeUnlocked(
   solvedSlugs: string[],
   scores: number[] = [],
 ): boolean {
-  if (badgeId === "summit-stanley") return solvedAny(solvedSlugs, HOCKEY_IDS);
-  if (badgeId === "five-rings") return solvedAny(solvedSlugs, OLYMPIC_IDS);
-  if (badgeId === "jules-rimet") return solvedAny(solvedSlugs, WORLD_CUP_IDS);
-  if (badgeId === "rumble-centre") return solvedAny(solvedSlugs, RIVALRY_IDS);
-  if (badgeId === "showdown-victor") return wallet.duelWins >= 1;
-  if (badgeId === "iron-scout") return wallet.bestStreak >= 7 || wallet.streak >= 7;
-  if (badgeId === "first-clue-sniper") return scores.some((score) => score >= FIRST_CLUE_SCORE);
+  const slugs = Array.isArray(solvedSlugs) ? solvedSlugs : [];
+  const safeScores = Array.isArray(scores) ? scores : [];
+  if (badgeId === "summit-stanley") return solvedAny(slugs, HOCKEY_IDS);
+  if (badgeId === "five-rings") return solvedAny(slugs, OLYMPIC_IDS);
+  if (badgeId === "jules-rimet") return solvedAny(slugs, WORLD_CUP_IDS);
+  if (badgeId === "rumble-centre") return solvedAny(slugs, RIVALRY_IDS);
+  if (badgeId === "showdown-victor") return (wallet?.duelWins ?? 0) >= 1;
+  if (badgeId === "iron-scout") return (wallet?.bestStreak ?? 0) >= 7 || (wallet?.streak ?? 0) >= 7;
+  if (badgeId === "first-clue-sniper") return safeScores.some((score) => score >= FIRST_CLUE_SCORE);
   return false;
 }
 
@@ -427,13 +429,24 @@ export function loadWallet(): CosmeticWallet {
     const raw = window.localStorage.getItem(COSMETIC_STORAGE_KEY);
     if (!raw) return defaultWallet();
     const parsed = JSON.parse(raw) as Partial<CosmeticWallet>;
+    const base = defaultWallet();
+    const count = (value: unknown, fallback: number) => (
+      typeof value === "number" && Number.isFinite(value) ? value : fallback
+    );
     return {
-      ...defaultWallet(),
+      ...base,
       ...parsed,
+      coins: count(parsed.coins, base.coins),
+      totalScore: count(parsed.totalScore, base.totalScore),
+      matchesSolved: count(parsed.matchesSolved, base.matchesSolved),
+      streak: count(parsed.streak, base.streak),
+      bestStreak: count(parsed.bestStreak, base.bestStreak),
       unlockedTitles: unique([...(parsed.unlockedTitles ?? []), "rookie"]),
       unlockedFrames: unique([...(parsed.unlockedFrames ?? []), "standard"]),
-      grantedMatchIds: parsed.grantedMatchIds ?? [],
-      duelWins: parsed.duelWins ?? 0,
+      grantedMatchIds: Array.isArray(parsed.grantedMatchIds) ? parsed.grantedMatchIds : [],
+      duelWins: count(parsed.duelWins, 0),
+      equippedTitle: parsed.equippedTitle || base.equippedTitle,
+      equippedFrame: parsed.equippedFrame || base.equippedFrame,
     };
   } catch {
     return defaultWallet();

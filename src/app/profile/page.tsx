@@ -17,6 +17,8 @@ import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 import { ClubAllegianceCard } from '@/components/derby/ClubAllegianceCard';
+import { setLocale } from '@/lib/i18n/locale-store';
+import { isScoutCountry, setCountry } from '@/lib/i18n/profile-preferences';
 
 interface SessionUser {
   id: string;
@@ -31,6 +33,38 @@ interface Profile {
   streak?: number | null;
   total_score?: number | null;
   favorite_club?: string | null;
+  locale?: string | null;
+  country?: string | null;
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeProfile(raw: Partial<Profile> | null, fallbackId = ""): Profile | null {
+  if (!raw) return null;
+  const username = typeof raw.username === "string" && raw.username.trim() ? raw.username.trim() : "scout";
+  return {
+    id: raw.id || fallbackId || "guest",
+    username,
+    display_name: typeof raw.display_name === "string" && raw.display_name.trim() ? raw.display_name.trim() : username,
+    avatar_url: raw.avatar_url ?? null,
+    streak: asNumber(raw.streak),
+    total_score: asNumber(raw.total_score),
+    favorite_club: typeof raw.favorite_club === "string" ? raw.favorite_club : null,
+    locale: raw.locale ?? null,
+    country: raw.country ?? null,
+  };
+}
+
+function challengeOf(record: MatchRecord): { subject: string; year: number | ""; category: string } {
+  const value = record.challenges as MatchRecord["challenges"] | MatchRecord["challenges"][] | null | undefined;
+  const row = Array.isArray(value) ? value[0] : value;
+  return {
+    subject: row?.subject || "—",
+    year: typeof row?.year === "number" ? row.year : "",
+    category: row?.category || "",
+  };
 }
 
 interface MatchRecord {
@@ -67,53 +101,64 @@ export default function ProfilePage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadData = async () => {
-    if (!isSupabaseConfigured) {
-      setProfileReady(true);
-      return;
-    }
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      setUser(null);
-      setProfileReady(true);
-      return;
-    }
-    setUser(user);
+    try {
+      if (!isSupabaseConfigured) return;
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
+        setUser(null);
+        setProfile(null);
+        return;
+      }
+      setUser(user);
 
-    const { data: prof } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (prof) {
-      setProfile(prof);
-      setUsernameInput(prof.username || '');
-    }
-
-    const { data: matchHistory } = await supabaseClient
-      .from('match_history')
-      .select('id, score, clues_used, created_at, challenges(subject, year, category)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (matchHistory) {
-      setMatches(matchHistory as unknown as MatchRecord[]);
-      const sum = matchHistory.reduce((acc, curr) => acc + (curr.score || 0), 0);
-      setTotalScore(sum);
-    }
-
-    const ids = await getFollowingIds(user.id);
-    setFollowingIds(ids);
-    if (ids.length > 0) {
-      const { data: scoutProfiles } = await supabaseClient
+      const { data: prof } = await supabaseClient
         .from('profiles')
-        .select('id, username, avatar_url, streak, total_score')
-        .in('id', ids);
-      setNetwork((scoutProfiles as ScoutProfile[]) || []);
-    } else {
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const nextProfile = normalizeProfile((prof as Partial<Profile> | null) ?? null, user.id);
+      if (nextProfile) {
+        setProfile(nextProfile);
+        setUsernameInput(nextProfile.username === "scout" ? "" : nextProfile.username);
+        if (nextProfile.locale === "sv" || nextProfile.locale === "en") setLocale(nextProfile.locale);
+        if (isScoutCountry(nextProfile.country)) setCountry(nextProfile.country);
+      }
+
+      const { data: matchHistory } = await supabaseClient
+        .from('match_history')
+        .select('id, score, clues_used, created_at, challenges(subject, year, category)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (matchHistory) {
+        const rows = matchHistory as unknown as MatchRecord[];
+        setMatches(rows);
+        const sum = rows.reduce((acc, curr) => acc + asNumber(curr?.score), 0);
+        setTotalScore(sum);
+      }
+
+      const ids = await getFollowingIds(user.id);
+      const safeIds = Array.isArray(ids) ? ids : [];
+      setFollowingIds(safeIds);
+      if (safeIds.length > 0) {
+        const { data: scoutProfiles } = await supabaseClient
+          .from('profiles')
+          .select('id, username, avatar_url, streak, total_score')
+          .in('id', safeIds);
+        setNetwork((scoutProfiles as ScoutProfile[]) || []);
+      } else {
+        setNetwork([]);
+      }
+    } catch (error) {
+      console.error(error);
+      setUser(null);
+      setProfile(null);
+      setMatches([]);
       setNetwork([]);
+    } finally {
+      setProfileReady(true);
     }
-    setProfileReady(true);
   };
 
   useEffect(() => {
@@ -210,14 +255,14 @@ export default function ProfilePage() {
         )}
 
         <ScoutCard
-          handle={profile?.username || guestHandle}
+          handle={profile?.username || guestHandle || "scout"}
           email={user?.email}
           avatarUrl={profile?.avatar_url}
           wallet={wallet}
-          careerScore={Math.max(wallet.totalScore, profile?.total_score ?? 0, totalScore)}
-          solvedCount={Math.max(wallet.matchesSolved, matches.length)}
-          currentStreak={Math.max(wallet.streak, profile?.streak ?? 0)}
-          bestStreak={Math.max(wallet.bestStreak, wallet.streak, profile?.streak ?? 0)}
+          careerScore={Math.max(asNumber(wallet.totalScore), asNumber(profile?.total_score), totalScore)}
+          solvedCount={Math.max(asNumber(wallet.matchesSolved), matches.length)}
+          currentStreak={Math.max(asNumber(wallet.streak), asNumber(profile?.streak))}
+          bestStreak={Math.max(asNumber(wallet.bestStreak), asNumber(wallet.streak), asNumber(profile?.streak))}
           solvedSlugs={solvedSlugs}
           solvedScores={solvedScores}
           badgeTimes={badgeTimes}
@@ -376,26 +421,32 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
-              {matches.map((m) => (
-                <div key={m.id} className="py-4 flex justify-between items-center">
+              {matches.map((m) => {
+                const challenge = challengeOf(m);
+                const points = asNumber(m?.score);
+                const when = m?.created_at ? new Date(m.created_at) : null;
+                const stamp = when && !Number.isNaN(when.getTime()) ? when.toLocaleDateString() : "";
+                return (
+                <div key={m.id || `${challenge.subject}-${stamp}`} className="py-4 flex justify-between items-center">
                   <div>
                     <span className="text-sm font-black text-zinc-900 block">
-                      {m.challenges?.subject} ({m.challenges?.year})
+                      {challenge.subject}{challenge.year === "" ? "" : ` (${challenge.year})`}
                     </span>
                     <span className="text-[11px] font-medium text-zinc-400 uppercase">
-                      {m.challenges?.category?.replace('_', ' ')} · Solved on Clue {m.clues_used}
+                      {challenge.category.replace('_', ' ')} · Solved on Clue {asNumber(m?.clues_used)}
                     </span>
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-black font-mono text-blue-600">
-                      +{m.score.toLocaleString()}
+                      +{points.toLocaleString()}
                     </span>
                     <span className="text-[10px] font-mono text-zinc-400 block">
-                      {new Date(m.created_at).toLocaleDateString()}
+                      {stamp}
                     </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

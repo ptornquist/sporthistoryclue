@@ -3,25 +3,30 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ScopeToggle } from "@/components/ScopeToggle";
 import { SupportersTable } from "@/components/derby/SupportersTable";
+import type { BoardScope } from "@/lib/board-scope";
+import { useI18n } from "@/lib/i18n/use-i18n";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 import {
   FAVORITE_CLUB_KEY,
-  isPremierLeagueClub,
+  isKnownClub,
   rankClubs,
   type ClubMembership,
   type DerbyMode,
 } from "@/lib/premier-league";
 
 export default function DerbyPage() {
+  const { messages } = useI18n();
   const [mode, setMode] = useState<DerbyMode>("total");
+  const [scope, setScope] = useState<BoardScope>("world");
   const [memberships, setMemberships] = useState<ClubMembership[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       const saved = window.localStorage.getItem(FAVORITE_CLUB_KEY);
-      if (isPremierLeagueClub(saved)) setHighlightId(saved);
+      if (isKnownClub(saved)) setHighlightId(saved);
 
       if (!isSupabaseConfigured) return;
 
@@ -34,7 +39,7 @@ export default function DerbyPage() {
             .eq("id", auth.user.id)
             .maybeSingle();
           const clubId = profile?.favorite_club;
-          if (typeof clubId === "string" && isPremierLeagueClub(clubId)) {
+          if (typeof clubId === "string" && isKnownClub(clubId)) {
             setHighlightId(clubId);
             window.localStorage.setItem(FAVORITE_CLUB_KEY, clubId);
           }
@@ -61,7 +66,7 @@ export default function DerbyPage() {
     void load();
   }, []);
 
-  const rows = rankClubs(memberships, mode);
+  const rows = rankClubs(memberships, mode, scope);
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
@@ -70,38 +75,57 @@ export default function DerbyPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-900">
-              Supporterderbyt
+              {messages.derby.title}
             </h1>
             <p className="mt-1 max-w-xl text-sm text-zinc-500">
-              Vilken klubb har de skarpaste sportminnena?
+              {messages.derby.subtitle}
             </p>
           </div>
-          <div className="flex self-start rounded-2xl bg-zinc-100 p-1" role="group" aria-label="Table toggle">
-            <button
-              type="button"
-              aria-pressed={mode === "total"}
-              onClick={() => setMode("total")}
-              className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
-                mode === "total" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
-              }`}
-            >
-              Totalpoäng
-            </button>
-            <button
-              type="button"
-              aria-pressed={mode === "average"}
-              onClick={() => setMode("average")}
-              className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
-                mode === "average" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
-              }`}
-            >
-              Snitt
-            </button>
+          <div className="flex flex-col gap-2">
+            <ScopeToggle
+              value={scope}
+              onChange={setScope}
+              swedenLabel={messages.scope.sweden}
+              worldLabel={messages.scope.international}
+              ariaLabel={messages.derby.scopeToggle}
+            />
+            <div className="flex self-start rounded-2xl bg-zinc-100 p-1" role="group" aria-label={messages.derby.tableToggle}>
+              <button
+                type="button"
+                aria-pressed={mode === "total"}
+                onClick={() => setMode("total")}
+                className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
+                  mode === "total" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
+                }`}
+              >
+                {messages.derby.total}
+              </button>
+              <button
+                type="button"
+                aria-pressed={mode === "average"}
+                onClick={() => setMode("average")}
+                className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider ${
+                  mode === "average" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
+                }`}
+              >
+                {messages.derby.average}
+              </button>
+            </div>
           </div>
         </div>
 
         <section className="bg-white border border-zinc-200 rounded-3xl p-4 shadow-sm sm:p-6">
-          <SupportersTable rows={rows} highlightId={highlightId} />
+          <SupportersTable
+            rows={rows}
+            highlightId={highlightId}
+            labels={{
+              rank: messages.derby.rank,
+              club: messages.derby.club,
+              scouts: messages.derby.scouts,
+              points: messages.derby.clubPoints,
+              average: messages.derby.averagePerScout,
+            }}
+          />
         </section>
       </div>
       <Footer />

@@ -142,5 +142,5 @@ export function DuelHistory({
 function involves(username: string) {
   const handle = username.toLowerCase();
   return (row: DuelRecord) =>
-    row.challenger_username.toLowerCase() === handle || row.opponent_username.toLowerCase() === handle;
+    (row.challenger_username ?? "").toLowerCase() === handle || (row.opponent_username ?? "").toLowerCase() === handle;
 }
