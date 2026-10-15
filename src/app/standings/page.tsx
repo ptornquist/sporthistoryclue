@@ -122,7 +122,10 @@ function groupedPoints(value: number): string {
 
 export default function StandingsPage() {
   const { locale, messages } = useI18n();
-  const [mode, setMode] = useState<StandingMode>("week");
+  // Career points are the default: that is the column profiles saves on every solve.
+  // The weekly tab only appears once the database actually holds this week's points.
+  const [mode, setMode] = useState<StandingMode>("all");
+  const [weeklyAvailable, setWeeklyAvailable] = useState(false);
   const [rows, setRows] = useState<StandingRow[]>([]);
   const [viewer, setViewer] = useState<StandingRow | null>(null);
   const [weekStart, setWeekStart] = useState<string | null>(null);
@@ -150,7 +153,8 @@ export default function StandingsPage() {
 
       const { data: auth } = await supabaseClient.auth.getUser();
       const user = auth.user;
-      const { rows: everyone } = await fetchAllStandings(monday);
+      const { rows: everyone, weekly } = await fetchAllStandings(monday);
+      const hasWeekPoints = weekly && everyone.some((row) => row.week_start === monday && row.week_score > 0);
 
       const pool = new Map<string, StandingRow>();
       for (const row of everyone) pool.set(row.id, row);
@@ -184,6 +188,7 @@ export default function StandingsPage() {
 
       if (!cancelled) {
         setWeekStart(monday);
+        setWeeklyAvailable(hasWeekPoints);
         setRows([...pool.values()]);
         setViewer(viewerRow);
         setViewerId(user?.id ?? null);
@@ -213,6 +218,7 @@ export default function StandingsPage() {
               <p className="mt-1 text-sm text-zinc-500">{messages.standings.subtitleWorld}</p>
               <p className="mt-1 text-xs font-medium text-zinc-400">{messages.standings.globalNote}</p>
             </div>
+            {weeklyAvailable && (
             <div className="flex flex-col gap-2">
               <div className="flex self-start rounded-2xl bg-zinc-100 p-1">
                 <button
@@ -237,6 +243,7 @@ export default function StandingsPage() {
                 </button>
               </div>
             </div>
+            )}
           </div>
           {mode === "week" && (
             <p className="mt-2 text-[11px] font-medium text-zinc-400">{messages.standings.weekReset}</p>
