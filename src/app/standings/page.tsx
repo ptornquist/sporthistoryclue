@@ -18,46 +18,37 @@ import {
   placeScout,
   pointsToNextTier,
   scoreFor,
-  STANDINGS_LIMIT,
   type StandingMode,
   type StandingRow,
 } from "@/lib/standings";
+import {
+  PROFILE_COLUMNS,
+  PROFILE_COLUMNS_WITH_WEEK,
+  isStandingRow,
+  loadStandingsRows,
+  mapProfile,
+  type ProfileRow,
+  type StandingsClient,
+  type StandingsSnapshot,
+} from "@/lib/standings-source";
 import { loadSolvedHistory, mondayOfUtcWeek, utcDateKey } from "@/lib/utc-streak";
 
-const PROFILE_COLUMNS =
-  "id, username, total_score, streak, equipped_title, equipped_frame, matches_solved, avatar_url, favorite_club";
-const PROFILE_COLUMNS_NARROW =
-  "id, username, total_score, streak, equipped_title, equipped_frame, matches_solved, avatar_url";
-const PROFILE_COLUMNS_WITH_WEEK = `${PROFILE_COLUMNS}, week_score, week_start`;
-
-interface ProfileRow {
-  id: string;
-  username: string | null;
-  total_score: number | null;
-  streak: number | null;
-  equipped_title: string | null;
-  equipped_frame: string | null;
-  matches_solved: number | null;
-  avatar_url: string | null;
-  favorite_club?: string | null;
-  week_score?: number | null;
-  week_start?: string | null;
-}
-
-function mapProfile(row: ProfileRow): StandingRow {
-  return {
-    id: row.id,
-    username: (row.username || "scout").replace(/^@/, ""),
-    total_score: row.total_score ?? 0,
-    week_score: row.week_score ?? 0,
-    week_start: row.week_start ?? null,
-    streak: row.streak ?? 0,
-    equipped_title: row.equipped_title,
-    equipped_frame: row.equipped_frame,
-    matches_solved: row.matches_solved ?? 0,
-    avatar_url: row.avatar_url,
-    favorite_club: row.favorite_club ?? null,
-  };
+/**
+ * The server route reads with the service role and lists every profile.
+ * A browser query is the fallback; it only sees rows the select policy allows.
+ */
+async function fetchAllStandings(weekStart: string): Promise<StandingsSnapshot> {
+  try {
+    const response = await fetch(`/api/standings?week=${encodeURIComponent(weekStart)}`, { cache: "no-store" });
+    if (response.ok) {
+      const json = (await response.json()) as { rows?: unknown; weekly?: unknown };
+      const rows = Array.isArray(json.rows) ? json.rows.filter(isStandingRow) : [];
+      if (rows.length > 0) return { rows, weekly: json.weekly !== false };
+    }
+  } catch (error) {
+    console.error("Standings route failed:", error);
+  }
+  return loadStandingsRows(supabaseClient as unknown as StandingsClient, weekStart);
 }
 
 function titleLabel(titleId: string | null): string {
@@ -184,42 +175,10 @@ export default function StandingsPage() {
 
       const { data: auth } = await supabaseClient.auth.getUser();
       const user = auth.user;
-      const wide = await supabaseClient
-        .from("profiles")
-        .select(PROFILE_COLUMNS_WITH_WEEK)
-        .order("total_score", { ascending: false })
-        .limit(STANDINGS_LIMIT);
-
-      const weekly = !wide.error;
-      let listed = (wide.data ?? []) as unknown as ProfileRow[];
-      if (wide.error) {
-        const narrow = await supabaseClient
-          .from("profiles")
-          .select(PROFILE_COLUMNS)
-          .order("total_score", { ascending: false })
-          .limit(STANDINGS_LIMIT);
-        const retry = narrow.error
-          ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_NARROW).order("total_score", { ascending: false }).limit(STANDINGS_LIMIT)
-          : narrow;
-        listed = (retry.data ?? []) as unknown as ProfileRow[];
-      }
+      const { rows: everyone, weekly } = await fetchAllStandings(monday);
 
       const pool = new Map<string, StandingRow>();
-      for (const row of listed) pool.set(row.id, mapProfile(row));
-
-      if (weekly) {
-        const weekBoard = await supabaseClient
-          .from("profiles")
-          .select(PROFILE_COLUMNS_WITH_WEEK)
-          .eq("week_start", monday)
-          .order("week_score", { ascending: false })
-          .limit(STANDINGS_LIMIT);
-        if (!weekBoard.error) {
-          for (const row of (weekBoard.data ?? []) as unknown as ProfileRow[]) {
-            pool.set(row.id, mapProfile(row));
-          }
-        }
-      }
+      for (const row of everyone) pool.set(row.id, row);
 
       let viewerRow: StandingRow | null = null;
       if (user) {
