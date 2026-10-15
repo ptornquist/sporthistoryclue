@@ -38,6 +38,32 @@ function rpcMissing(error: { code?: string; message?: string } | null): boolean 
   );
 }
 
+interface ServerAward {
+  saved?: "rpc" | "direct" | "none";
+  earned?: number;
+  profile?: CosmeticPayload | null;
+}
+
+/**
+ * Saves the solve through the server, which can write profiles.total_score
+ * even when the award RPC is missing. Null means the server could not help
+ * (offline, signed out, or no service key) and the caller should fall back.
+ */
+async function awardOnServer(body: Record<string, unknown>): Promise<ServerAward | null> {
+  try {
+    const response = await fetch("/api/solve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as ServerAward;
+    return data.saved && data.saved !== "none" && data.profile ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 function payloadWallet(data: CosmeticPayload, grantedMatchIds: string[], duelWins: number): CosmeticWallet {
   return {
     ...walletFromProfile(data),
@@ -164,11 +190,31 @@ export function useCosmeticWallet() {
     duelWon: boolean;
     newStreak: number;
     sport?: string | null;
+    /** The chosen option and drop date let the server re-grade before saving. */
+    option?: string;
+    dateKey?: string | null;
   }) => {
     const current = walletRef.current;
     const preview = applySolveReward(current, input);
 
     if (userIdRef.current && isSupabaseConfigured) {
+      const server = await awardOnServer({
+        matchId: input.matchId,
+        pointScore: Math.max(0, Math.floor(input.pointScore)),
+        isDaily: input.isDaily,
+        streakContinued: input.streakContinued,
+        duelWon: input.duelWon,
+        newStreak: input.newStreak,
+        sport: input.sport ?? null,
+        option: input.option,
+        dateKey: input.dateKey ?? undefined,
+      });
+      if (server?.profile) {
+        const next = payloadWallet(server.profile, preview.wallet.grantedMatchIds, preview.wallet.duelWins);
+        commit(next);
+        return { wallet: next, earned: server.earned ?? preview.earned };
+      }
+
       const payload = {
         match_id: input.matchId,
         point_score: input.pointScore,

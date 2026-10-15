@@ -563,6 +563,8 @@ export function DailyDropArena({
           duelWon: Boolean(duelHandle) && score > duelPts,
           newStreak,
           sport: sportKluringById(challenge.id)?.sport ?? null,
+          option,
+          dateKey: isDateKey(challenge.date_key) ? challenge.date_key : null,
         });
         setCoinsEarned(reward.earned);
         logFinishedDuel(score);
