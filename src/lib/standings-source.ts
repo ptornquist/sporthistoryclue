@@ -84,13 +84,13 @@ interface Selected extends PromiseLike<QueryResult> {
   eq(column: string, value: string): Selected;
 }
 
-interface ProfilesQuery {
-  select(columns: "*"): Selected;
+interface TableQuery {
+  select(columns: string): Selected;
 }
 
 /** The smallest surface both the browser client and the service-role client share. */
 export interface StandingsClient {
-  from(table: "profiles"): ProfilesQuery;
+  from(table: "profiles" | "match_history"): TableQuery;
 }
 
 export interface StandingsSnapshot {
@@ -99,10 +99,57 @@ export interface StandingsSnapshot {
   weekly: boolean;
   /** Which column the database ordered by, or null when the client sorted everything. */
   scoreColumn: (typeof SCORE_COLUMNS)[number] | null;
+  /** True when match_history rows were folded into the scores. */
+  history: boolean;
 }
+
+/** Solved matches to fold in. Enough for a beta; the profile columns cover older totals. */
+export const HISTORY_LIMIT = 5000;
 
 function isProfileRow(value: unknown): value is ProfileRow {
   return Boolean(value) && typeof value === "object" && typeof (value as ProfileRow).id === "string";
+}
+
+interface HistoryRow {
+  user_id: string;
+  score?: number | string | null;
+}
+
+function isHistoryRow(value: unknown): value is HistoryRow {
+  return Boolean(value) && typeof value === "object" && typeof (value as HistoryRow).user_id === "string";
+}
+
+export interface HistoryTotals {
+  score: number;
+  solved: number;
+}
+
+/**
+ * Points per scout from solved matches. The game pages write one match_history
+ * row per solve, so this is the same total the profile page shows even when the
+ * profiles score column was never updated.
+ */
+export async function loadHistoryTotals(client: StandingsClient): Promise<Map<string, HistoryTotals> | null> {
+  const result = await client.from("match_history").select("user_id, score").limit(HISTORY_LIMIT);
+  if (result.error) return null;
+  const totals = new Map<string, HistoryTotals>();
+  for (const row of (result.data ?? []).filter(isHistoryRow)) {
+    const current = totals.get(row.user_id) ?? { score: 0, solved: 0 };
+    current.score += asCount(row.score) ?? 0;
+    current.solved += 1;
+    totals.set(row.user_id, current);
+  }
+  return totals;
+}
+
+/** The profile columns and the solved-match total describe the same career; the larger one is the saved one. */
+export function withHistory(row: StandingRow, totals: HistoryTotals | undefined): StandingRow {
+  if (!totals) return row;
+  return {
+    ...row,
+    total_score: Math.max(row.total_score, totals.score),
+    matches_solved: Math.max(row.matches_solved, totals.solved),
+  };
 }
 
 /**
@@ -143,7 +190,10 @@ export async function loadStandingsRows(client: StandingsClient, weekStart: stri
     }
   }
 
-  return { rows: sortByScore([...pool.values()]), weekly, scoreColumn };
+  const totals = await loadHistoryTotals(client);
+  const rows = [...pool.values()].map((row) => withHistory(row, totals?.get(row.id)));
+
+  return { rows: sortByScore(rows), weekly, scoreColumn, history: totals != null };
 }
 
 export function isStandingRow(value: unknown): value is StandingRow {

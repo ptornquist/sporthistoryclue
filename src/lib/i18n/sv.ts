@@ -13,6 +13,8 @@ export const sv: Messages = {
     login: "Logga in",
     join: "Gå med",
     logout: "Logga ut",
+    profile: "Min profil",
+    account: "Kontomeny",
     openMenu: "Öppna menyn",
     language: "Språk",
   },

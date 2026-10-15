@@ -157,10 +157,12 @@ export default function StandingsPage() {
       let viewerRow: StandingRow | null = null;
       if (user) {
         const ensured = await ensureScoutProfile(user);
-        const own = await supabaseClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
-        viewerRow = own.data
-          ? mapProfile(own.data as unknown as ProfileRow)
-          : pool.get(user.id) ?? {
+        const listed = pool.get(user.id);
+        const own = listed ? null : await supabaseClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
+        viewerRow = listed
+          ?? (own?.data
+            ? mapProfile(own.data as unknown as ProfileRow)
+            : {
               id: ensured.id,
               username: ensured.username,
               total_score: ensured.total_score,
@@ -172,7 +174,7 @@ export default function StandingsPage() {
               matches_solved: 0,
               avatar_url: ensured.avatar_url,
               favorite_club: ensured.favorite_club,
-            };
+            });
         if (!pool.has(viewerRow.id)) pool.set(viewerRow.id, viewerRow);
         const followed = await listFollowedIds(user.id);
         if (!cancelled) setFollowingIds(followed);

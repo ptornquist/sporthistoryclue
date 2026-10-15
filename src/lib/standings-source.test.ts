@@ -13,19 +13,23 @@ import {
 interface Options {
   /** Columns the fake database knows. Ordering by anything else fails like Postgres would. */
   columns: string[];
+  /** Solved-match rows. Undefined means the match_history table is missing. */
+  history?: Array<{ user_id: string; score: number }>;
 }
 
-function fakeClient(rows: ProfileRow[], options: Options = { columns: ["total_score", "week_score", "week_start"] }) {
+const DEFAULTS: Options = { columns: ["total_score", "week_score", "week_start"], history: [] };
+
+function fakeClient(rows: ProfileRow[], options: Options = DEFAULTS) {
   const calls: string[] = [];
-  const ok = (data: ProfileRow[]) => Promise.resolve({ data, error: null });
-  const missing = (column: string) =>
-    Promise.resolve({ data: null, error: { message: `column profiles.${column} does not exist`, code: "42703" } });
+  const ok = (data: unknown[]) => Promise.resolve({ data, error: null });
+  const missing = (what: string) =>
+    Promise.resolve({ data: null, error: { message: `${what} does not exist`, code: "42703" } });
   const selected = (subset: ProfileRow[]) => {
     const chain = {
       order(column: string) {
         calls.push(`order:${column}`);
         const known = options.columns.includes(column);
-        return { limit: () => (known ? ok(subset) : missing(column)) };
+        return { limit: () => (known ? ok(subset) : missing(`column profiles.${column}`)) };
       },
       limit: () => {
         calls.push("limit");
@@ -39,8 +43,16 @@ function fakeClient(rows: ProfileRow[], options: Options = { columns: ["total_sc
     };
     return chain;
   };
+  const history = () => ({
+    select: () => ({
+      limit: () => {
+        calls.push("history");
+        return options.history ? ok(options.history) : missing("relation match_history");
+      },
+    }),
+  });
   const client = {
-    from: () => ({ select: () => selected(rows) }),
+    from: (table: string) => (table === "match_history" ? history() : { select: () => selected(rows) }),
   } as unknown as StandingsClient;
   return { client, calls };
 }
@@ -59,19 +71,36 @@ describe("standings source", () => {
 
   it("reads career_score when the database has no total_score column", async () => {
     const rows = [row("eva", { career_score: 300 }), row("dan", { career_score: 900 })];
-    const { client, calls } = fakeClient(rows, { columns: ["career_score"] });
+    const { client, calls } = fakeClient(rows, { columns: ["career_score"], history: [] });
     const snapshot = await loadStandingsRows(client, "2026-10-12");
     expect(snapshot.scoreColumn).toBe("career_score");
     expect(snapshot.weekly).toBe(false);
     expect(snapshot.rows.map((r) => [r.username, r.total_score])).toEqual([["dan", 900], ["eva", 300]]);
-    expect(calls).toEqual(["order:total_score", "order:career_score"]);
+    expect(calls.slice(0, 2)).toEqual(["order:total_score", "order:career_score"]);
   });
 
   it("still lists everyone when neither score column can be ordered", async () => {
     const { client } = fakeClient([row("x"), row("y")], { columns: [] });
     const snapshot = await loadStandingsRows(client, "2026-10-12");
     expect(snapshot.scoreColumn).toBeNull();
+    expect(snapshot.history).toBe(false);
     expect(snapshot.rows).toHaveLength(2);
+  });
+
+  it("shows the solved-match total when the profiles score column was never updated", async () => {
+    const rows = [row("peter", { total_score: 0 }), row("anna", { total_score: 4000 }), row("nyx", { total_score: 0 })];
+    const history = [
+      { user_id: "peter", score: 30000 },
+      { user_id: "peter", score: 27000 },
+      { user_id: "anna", score: 1000 },
+    ];
+    const snapshot = await loadStandingsRows(fakeClient(rows, { ...DEFAULTS, history }).client, "2026-10-12");
+    expect(snapshot.history).toBe(true);
+    expect(snapshot.rows.map((r) => [r.username, r.total_score, r.matches_solved])).toEqual([
+      ["peter", 57000, 2],
+      ["anna", 4000, 1],
+      ["nyx", 0, 0],
+    ]);
   });
 
   it("merges this week's scorers when the weekly columns exist", async () => {

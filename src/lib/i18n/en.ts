@@ -13,6 +13,8 @@ export const en: Messages = {
     login: "Log in",
     join: "Join",
     logout: "Log out",
+    profile: "My profile",
+    account: "Account menu",
     openMenu: "Open menu",
     language: "Language",
   },

@@ -13,6 +13,8 @@ export interface Messages {
     login: string;
     join: string;
     logout: string;
+    profile: string;
+    account: string;
     openMenu: string;
     language: string;
   };
