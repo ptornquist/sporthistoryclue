@@ -10,10 +10,10 @@ import {
   isUnlocked,
   loadWallet,
   saveWallet,
-  walletFromProfile,
   type CosmeticWallet,
 } from "@/lib/cosmetics";
-import { awardDirectly, careerOf, type AwardClient } from "@/lib/solve-award";
+import { awardDirectly, type AwardClient } from "@/lib/solve-award";
+import { mergeWallet, profileFromRow, syncWalletToProfile, walletAhead } from "@/lib/wallet-sync";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 
 interface CosmeticPayload {
@@ -73,14 +73,6 @@ async function currentUserId(): Promise<string | null> {
   }
 }
 
-function payloadWallet(data: CosmeticPayload, grantedMatchIds: string[], duelWins: number): CosmeticWallet {
-  return {
-    ...walletFromProfile(data),
-    grantedMatchIds,
-    duelWins,
-  };
-}
-
 export function useCosmeticWallet() {
   const [wallet, setWallet] = useState<CosmeticWallet>(() => defaultWallet());
   const [userId, setUserId] = useState<string | null>(null);
@@ -113,9 +105,17 @@ export function useCosmeticWallet() {
         userIdRef.current = user.id;
         if (!cancelled) setUserId(user.id);
         const { data, error } = await supabaseClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
-        if (cancelled || error || !data) return;
-        const row = data as Record<string, unknown>;
-        commit(payloadWallet({ ...(row as CosmeticPayload), total_score: careerOf(row) }, local.grantedMatchIds, local.duelWins));
+        if (cancelled || error) return;
+        const row = (data as Record<string, unknown> | null) ?? null;
+        if (row) commit(mergeWallet(local, profileFromRow(row)));
+
+        // Points that only ever reached this browser are pushed onto the row,
+        // so the board reads the same total the profile card shows.
+        if (walletAhead(local, row)) {
+          const { data: session } = await supabaseClient.auth.getSession();
+          const synced = await syncWalletToProfile(local, session.session?.access_token);
+          if (synced && !cancelled) commit(mergeWallet(walletRef.current, synced));
+        }
       } catch {
         // Local wallet already covers guest and offline play.
       }
@@ -146,7 +146,7 @@ export function useCosmeticWallet() {
     if (userIdRef.current && isSupabaseConfigured) {
       const { data, error } = await supabaseClient.rpc("purchase_cosmetic", { item_id: itemId });
       if (!error && data && typeof data === "object") {
-        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds, current.duelWins);
+        const next = mergeWallet(current, data as CosmeticPayload);
         commit(next);
         return { wallet: next, ok: true as const };
       }
@@ -172,7 +172,7 @@ export function useCosmeticWallet() {
     if (userIdRef.current && isSupabaseConfigured) {
       const { data, error } = await supabaseClient.rpc("equip_cosmetic", { item_id: itemId });
       if (!error && data && typeof data === "object") {
-        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds, current.duelWins);
+        const next = mergeWallet(current, data as CosmeticPayload);
         commit(next);
         return next;
       }
@@ -216,7 +216,7 @@ export function useCosmeticWallet() {
         dateKey: input.dateKey ?? undefined,
       });
       if (server?.profile) {
-        const next = payloadWallet(server.profile, preview.wallet.grantedMatchIds, preview.wallet.duelWins);
+        const next = mergeWallet(preview.wallet, server.profile);
         commit(next);
         return { wallet: next, earned: server.earned ?? preview.earned };
       }
@@ -239,7 +239,7 @@ export function useCosmeticWallet() {
       const { data, error } = awarded;
       if (!error && data && typeof data === "object") {
         const payload = data as CosmeticPayload;
-        const next = payloadWallet(payload, preview.wallet.grantedMatchIds, preview.wallet.duelWins);
+        const next = mergeWallet(preview.wallet, payload);
         commit(next);
         return { wallet: next, earned: payload.earned ?? preview.earned };
       }
@@ -250,8 +250,7 @@ export function useCosmeticWallet() {
         { ...input, userId, pointScore: Math.max(0, Math.floor(input.pointScore)) },
       ).catch(() => null);
       if (direct?.saved) {
-        const row = { ...direct.profile, total_score: careerOf(direct.profile) } as CosmeticPayload;
-        const next = payloadWallet(row, preview.wallet.grantedMatchIds, preview.wallet.duelWins);
+        const next = mergeWallet(preview.wallet, profileFromRow(direct.profile));
         commit(next);
         return { wallet: next, earned: direct.earned };
       }

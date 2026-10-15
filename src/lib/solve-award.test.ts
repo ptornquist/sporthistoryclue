@@ -5,6 +5,8 @@ import {
   clampPoints,
   coinsFor,
   nextProfileValues,
+  raiseProfileTotals,
+  raisedProfileValues,
   safeStreak,
   type AwardClient,
   type ProfileValues,
@@ -159,6 +161,36 @@ describe("solve award", () => {
     const result = await awardDirectly(client, input);
     expect(result.saved).toBe(true);
     expect(profiles.get("u1")?.total_score).toBe(67000);
+  });
+
+  it("lifts browser-only points onto the row without ever lowering it", async () => {
+    const { client, profiles } = fakeClient({ profiles: { u1: { id: "u1", total_score: 0, matches_solved: 0, best_streak: 1 } } });
+    const totals = { totalScore: 77000, matchesSolved: 8, bestStreak: 4 };
+    const first = await raiseProfileTotals(client, "u1", totals);
+    expect(first).toMatchObject({ saved: true, duplicate: false });
+    expect(profiles.get("u1")).toMatchObject({ total_score: 77000, matches_solved: 8, best_streak: 4 });
+
+    const again = await raiseProfileTotals(client, "u1", totals);
+    expect(again).toMatchObject({ saved: true, duplicate: true });
+
+    const behind = await raiseProfileTotals(client, "u1", { totalScore: 1000, matchesSolved: 1, bestStreak: 0 });
+    expect(behind).toMatchObject({ saved: true, duplicate: true });
+    expect(profiles.get("u1")?.total_score).toBe(77000);
+  });
+
+  it("raises whichever career column the row has and creates missing rows", async () => {
+    expect(raisedProfileValues({ career_score: 500 }, { totalScore: 900, matchesSolved: 0, bestStreak: 0 })).toEqual({ career_score: 900 });
+    expect(raisedProfileValues({ total_score: 900 }, { totalScore: 900, matchesSolved: 0, bestStreak: 0 })).toBeNull();
+    const { client, profiles } = fakeClient();
+    const result = await raiseProfileTotals(client, "u1", { totalScore: 10000, matchesSolved: 1, bestStreak: 1 }, "peter");
+    expect(result.saved).toBe(true);
+    expect(profiles.get("u1")).toMatchObject({ username: "peter", total_score: 10000 });
+  });
+
+  it("reports when the guard trigger blocks the lift", async () => {
+    const { client } = fakeClient({ guarded: true, profiles: { u1: { id: "u1", total_score: 0 } } });
+    const result = await raiseProfileTotals(client, "u1", { totalScore: 77000, matchesSolved: 8, bestStreak: 0 });
+    expect(result).toMatchObject({ saved: false, reason: "guard" });
   });
 
   it("reports when the guard trigger swallowed the write", async () => {

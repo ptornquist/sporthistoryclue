@@ -43,6 +43,21 @@ export function sumDailyCompletions(rows: ReadonlyArray<{ solved: boolean; score
   );
 }
 
+/**
+ * The signed-in scout's board row, resolved exactly like the profile card:
+ * the saved total or the browser wallet, whichever is higher.
+ */
+export function withLocalWallet<T extends { total_score: number; matches_solved: number }>(
+  row: T,
+  wallet: { totalScore: number; matchesSolved: number },
+): T {
+  return {
+    ...row,
+    total_score: resolveCareerScore({ profile: row.total_score, local: wallet.totalScore }),
+    matches_solved: resolveSolvedCount({ profile: row.matches_solved, local: wallet.matchesSolved }),
+  };
+}
+
 /** Highest career score first; ties keep a stable alphabetical order. */
 export function compareByCareer<T extends { total_score: number; username: string }>(a: T, b: T): number {
   return b.total_score - a.total_score || a.username.localeCompare(b.username);

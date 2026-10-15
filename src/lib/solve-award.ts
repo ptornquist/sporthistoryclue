@@ -153,6 +153,72 @@ export function careerOf(row: ProfileValues | null): number {
   return Math.max(...CAREER_COLUMNS.map((column) => count(row[column])));
 }
 
+/** Totals the browser wallet holds; the profile is raised to these, never lowered. */
+export interface WalletTotals {
+  totalScore: number;
+  matchesSolved: number;
+  bestStreak: number;
+}
+
+/**
+ * Columns to raise so the row holds at least the wallet totals. Null when the
+ * row already has everything, so callers skip the write.
+ */
+export function raisedProfileValues(row: ProfileValues, totals: WalletTotals): ProfileValues | null {
+  const patch: ProfileValues = {};
+  const target = clampTotal(totals.totalScore);
+  const has = (column: string) => column in row;
+
+  for (const column of CAREER_COLUMNS) {
+    if (has(column) && count(row[column]) < target) patch[column] = target;
+  }
+  if (!CAREER_COLUMNS.some(has) && target > 0) patch.total_score = target;
+  if (has("matches_solved") && count(row.matches_solved) < count(totals.matchesSolved)) {
+    patch.matches_solved = count(totals.matchesSolved);
+  }
+  if (has("best_streak") && count(row.best_streak) < count(totals.bestStreak)) {
+    patch.best_streak = count(totals.bestStreak);
+  }
+  if (Object.keys(patch).length === 0) return null;
+  if (has("updated_at")) patch.updated_at = new Date().toISOString();
+  return patch;
+}
+
+function clampTotal(value: number): number {
+  return Math.min(count(value), 100_000_000);
+}
+
+/**
+ * Push points that only exist in a browser wallet onto the profiles row.
+ * Idempotent: a second call with the same totals changes nothing.
+ */
+export async function raiseProfileTotals(
+  client: AwardClient,
+  userId: string,
+  totals: WalletTotals,
+  username = "scout",
+): Promise<DirectAward> {
+  let row = await loadProfile(client, userId);
+  if (!row) {
+    await client.from("profiles").insert({ id: userId, username });
+    row = await loadProfile(client, userId);
+  }
+  if (!row) return { saved: false, reason: "profile", profile: null };
+
+  const patch = raisedProfileValues(row, totals);
+  if (!patch) return { saved: true, earned: 0, duplicate: true, profile: row };
+
+  const update = await client.from("profiles").update(patch).eq("id", userId);
+  if (update.error) return { saved: false, reason: "write", profile: row, message: update.error.message };
+
+  const after = (await loadProfile(client, userId)) ?? row;
+  const raisedScore = CAREER_COLUMNS.some((column) => column in patch);
+  if (raisedScore && careerOf(after) < clampTotal(totals.totalScore)) {
+    return { saved: false, reason: "guard", profile: after };
+  }
+  return { saved: true, earned: 0, duplicate: false, profile: after };
+}
+
 /**
  * Apply the solve straight to the profiles row with a privileged client.
  * Idempotent per (user, match) through coin_grants when that table exists.

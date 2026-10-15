@@ -7,7 +7,8 @@ import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import FindScouts from '@/components/game/FindScouts';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 import { followScout, getFollowingIds, unfollowScout } from '@/lib/supabase/network';
-import { cosmeticName, titleClassName } from '@/lib/cosmetics';
+import { withLocalWallet } from '@/lib/career-score';
+import { cosmeticName, loadWallet, titleClassName } from '@/lib/cosmetics';
 import { fetchAllStandings } from '@/lib/standings-client';
 import { mapProfile, type ProfileRow } from '@/lib/standings-source';
 import { isRealScout, type StandingRow } from '@/lib/standings';
@@ -39,10 +40,18 @@ function byScore(a: LeaderboardEntry, b: LeaderboardEntry): number {
   return b.total_score - a.total_score || a.username.localeCompare(b.username);
 }
 
-/** Every profile row, highest total first. Members with 0 points stay on the list. */
-async function loadAllProfiles(): Promise<LeaderboardEntry[]> {
+/**
+ * Every profile row, highest total first. Members with 0 points stay on the list.
+ * The viewer's own row is resolved like the profile card, wallet included.
+ */
+async function loadAllProfiles(viewerId: string | null): Promise<LeaderboardEntry[]> {
   const { rows } = await fetchAllStandings(mondayOfUtcWeek(utcDateKey(new Date())));
-  return rows.filter(isRealScout).map(toEntry).sort(byScore);
+  const wallet = loadWallet();
+  return rows
+    .filter(isRealScout)
+    .map((row) => (viewerId && row.id === viewerId ? withLocalWallet(row, wallet) : row))
+    .map(toEntry)
+    .sort(byScore);
 }
 
 /** Followed scouts who sit outside the loaded board still get their own profile row. */
@@ -79,7 +88,7 @@ export default function LeaderboardPage() {
         const { data: { user } } = await supabaseClient.auth.getUser();
         setCurrentUser(user);
 
-        const everyone = await loadAllProfiles();
+        const everyone = await loadAllProfiles(user?.id ?? null);
         setLeaders(everyone);
 
         if (user) {

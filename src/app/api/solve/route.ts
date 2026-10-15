@@ -1,4 +1,3 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { gradeOption, isMatchKey, loadArchiveMatch, loadDailyFixture, parseDateKey } from "@/lib/daily-drop";
 import {
@@ -11,8 +10,8 @@ import {
   type ProfileValues,
 } from "@/lib/solve-award";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { isSupabaseConfigured, SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/config";
-import { createPublicSupabaseClient, createServerSupabaseClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { resolveScout, type Scout } from "@/lib/supabase/scout-session";
 import { utcDateKey } from "@/lib/utc-streak";
 
 export const dynamic = "force-dynamic";
@@ -36,44 +35,10 @@ interface RpcClient {
   rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
 }
 
-interface Scout {
-  id: string;
-  username: string;
-  /** A client that acts as this scout, for the RPC and RLS-scoped writes. */
-  client: SupabaseClient;
-}
-
 function rpcMissing(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
   const message = (error.message ?? "").toLowerCase();
   return error.code === "PGRST202" || message.includes("could not find the function") || message.includes("does not exist");
-}
-
-function handleOf(email: string | undefined | null): string {
-  return email?.split("@")[0]?.trim() || "scout";
-}
-
-/**
- * Who is solving. A bearer token from the browser session wins; otherwise the
- * cookie session the proxy keeps fresh.
- */
-async function resolveScout(request: Request): Promise<Scout | null> {
-  const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  if (bearer) {
-    const byToken = await createPublicSupabaseClient().auth.getUser(bearer);
-    if (byToken.data.user) {
-      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: `Bearer ${bearer}` } },
-      });
-      return { id: byToken.data.user.id, username: handleOf(byToken.data.user.email), client };
-    }
-  }
-
-  const cookieClient = await createServerSupabaseClient();
-  const session = await cookieClient.auth.getUser();
-  if (!session.data.user) return null;
-  return { id: session.data.user.id, username: handleOf(session.data.user.email), client: cookieClient };
 }
 
 /** True when the chosen option really solves the kluring; null when nothing to check against. */

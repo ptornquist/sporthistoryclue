@@ -5,7 +5,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ScoutAvatar } from "@/components/game/ScoutAvatar";
-import { findCosmetic, titleClassName } from "@/lib/cosmetics";
+import { withLocalWallet } from "@/lib/career-score";
+import { findCosmetic, loadWallet, titleClassName } from "@/lib/cosmetics";
 import { formatMessage } from "@/lib/i18n/format";
 import { useI18n } from "@/lib/i18n/use-i18n";
 import { ensureScoutProfile } from "@/lib/ensure-profile";
@@ -175,7 +176,8 @@ export default function StandingsPage() {
               avatar_url: ensured.avatar_url,
               favorite_club: ensured.favorite_club,
             });
-        if (!pool.has(viewerRow.id)) pool.set(viewerRow.id, viewerRow);
+        viewerRow = withLocalWallet(viewerRow, loadWallet());
+        pool.set(viewerRow.id, viewerRow);
         const followed = await listFollowedIds(user.id);
         if (!cancelled) setFollowingIds(followed);
       }
