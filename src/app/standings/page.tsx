@@ -21,35 +21,9 @@ import {
   type StandingMode,
   type StandingRow,
 } from "@/lib/standings";
-import {
-  PROFILE_COLUMNS,
-  PROFILE_COLUMNS_WITH_WEEK,
-  isStandingRow,
-  loadStandingsRows,
-  mapProfile,
-  type ProfileRow,
-  type StandingsClient,
-  type StandingsSnapshot,
-} from "@/lib/standings-source";
+import { fetchAllStandings } from "@/lib/standings-client";
+import { PROFILE_COLUMNS, PROFILE_COLUMNS_WITH_WEEK, mapProfile, type ProfileRow } from "@/lib/standings-source";
 import { loadSolvedHistory, mondayOfUtcWeek, utcDateKey } from "@/lib/utc-streak";
-
-/**
- * The server route reads with the service role and lists every profile.
- * A browser query is the fallback; it only sees rows the select policy allows.
- */
-async function fetchAllStandings(weekStart: string): Promise<StandingsSnapshot> {
-  try {
-    const response = await fetch(`/api/standings?week=${encodeURIComponent(weekStart)}`, { cache: "no-store" });
-    if (response.ok) {
-      const json = (await response.json()) as { rows?: unknown; weekly?: unknown };
-      const rows = Array.isArray(json.rows) ? json.rows.filter(isStandingRow) : [];
-      if (rows.length > 0) return { rows, weekly: json.weekly !== false };
-    }
-  } catch (error) {
-    console.error("Standings route failed:", error);
-  }
-  return loadStandingsRows(supabaseClient as unknown as StandingsClient, weekStart);
-}
 
 function titleLabel(titleId: string | null): string {
   const item = titleId ? findCosmetic(titleId) : undefined;

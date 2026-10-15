@@ -3,11 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabaseClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import FindScouts from '@/components/game/FindScouts';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 import { followScout, getFollowingIds, unfollowScout } from '@/lib/supabase/network';
 import { cosmeticName, titleClassName } from '@/lib/cosmetics';
+import { fetchAllStandings } from '@/lib/standings-client';
+import { PROFILE_COLUMNS, mapProfile, type ProfileRow } from '@/lib/standings-source';
+import { isRealScout, type StandingRow } from '@/lib/standings';
+import { mondayOfUtcWeek, utcDateKey } from '@/lib/utc-streak';
 
 interface LeaderboardEntry {
   id: string;
@@ -19,29 +23,40 @@ interface LeaderboardEntry {
   equipped_frame?: string | null;
 }
 
-async function loadCosmeticMap(ids: string[]) {
-  const map = new Map<string, { equipped_title?: string | null; equipped_frame?: string | null }>();
-  if (ids.length === 0) return map;
-  const { data, error } = await supabaseClient
-    .from('profiles')
-    .select('id, equipped_title, equipped_frame')
-    .in('id', ids);
-  if (error || !data) return map;
-  for (const row of data) {
-    map.set(row.id, { equipped_title: row.equipped_title, equipped_frame: row.equipped_frame });
-  }
-  return map;
+function toEntry(row: StandingRow): LeaderboardEntry {
+  return {
+    id: row.id,
+    username: row.username,
+    display_name: row.username,
+    total_score: row.total_score,
+    matches_cleared: row.matches_solved,
+    equipped_title: row.equipped_title,
+    equipped_frame: row.equipped_frame,
+  };
 }
 
-function mergeCosmetics(
-  entries: LeaderboardEntry[],
-  cosmetics: Map<string, { equipped_title?: string | null; equipped_frame?: string | null }>,
-): LeaderboardEntry[] {
-  return entries.map((entry) => ({
-    ...entry,
-    equipped_title: cosmetics.get(entry.id)?.equipped_title ?? null,
-    equipped_frame: cosmetics.get(entry.id)?.equipped_frame ?? null,
-  }));
+function byScore(a: LeaderboardEntry, b: LeaderboardEntry): number {
+  return b.total_score - a.total_score || a.username.localeCompare(b.username);
+}
+
+/** Every profile row, highest total first. Members with 0 points stay on the list. */
+async function loadAllProfiles(): Promise<LeaderboardEntry[]> {
+  const { rows } = await fetchAllStandings(mondayOfUtcWeek(utcDateKey(new Date())));
+  return rows.filter(isRealScout).map(toEntry).sort(byScore);
+}
+
+/** Followed scouts who sit outside the loaded board still get their own profile row. */
+async function loadNetworkEntries(ids: string[], known: LeaderboardEntry[]): Promise<LeaderboardEntry[]> {
+  const wanted = new Set(ids);
+  const found = known.filter((entry) => wanted.has(entry.id));
+  const missing = ids.filter((id) => !found.some((entry) => entry.id === id) && /^[0-9a-f-]{36}$/i.test(id));
+  if (missing.length > 0 && isSupabaseConfigured) {
+    const { data, error } = await supabaseClient.from('profiles').select(PROFILE_COLUMNS).in('id', missing);
+    if (!error) {
+      for (const row of (data ?? []) as unknown as ProfileRow[]) found.push(toEntry(mapProfile(row)));
+    }
+  }
+  return found.sort(byScore);
 }
 
 export default function LeaderboardPage() {
@@ -56,35 +71,24 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      setCurrentUser(user);
-
-      const { data: globalData } = await supabaseClient
-        .from('leaderboard_view')
-        .select('*')
-        .order('total_score', { ascending: false })
-        .limit(50);
-
-      if (globalData) {
-        const cosmetics = await loadCosmeticMap(globalData.map((entry) => entry.id));
-        setLeaders(mergeCosmetics(globalData, cosmetics));
+      if (!isSupabaseConfigured) {
+        setLoading(false);
+        return;
       }
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        setCurrentUser(user);
 
-      if (user) {
-        const ids = await getFollowingIds(user.id);
-        setNetworkIds(ids);
-        if (ids.length > 0) {
-          const { data: networkScores } = await supabaseClient
-            .from('leaderboard_view')
-            .select('*')
-            .in('id', ids)
-            .order('total_score', { ascending: false });
-          const networkRows = networkScores ?? [];
-          const cosmetics = await loadCosmeticMap(networkRows.map((entry) => entry.id));
-          setNetworkLeaders(mergeCosmetics(networkRows, cosmetics));
-        } else {
-          setNetworkLeaders([]);
+        const everyone = await loadAllProfiles();
+        setLeaders(everyone);
+
+        if (user) {
+          const ids = await getFollowingIds(user.id).catch(() => [] as string[]);
+          setNetworkIds(ids);
+          setNetworkLeaders(ids.length > 0 ? await loadNetworkEntries(ids, everyone) : []);
         }
+      } catch (error) {
+        console.error(error);
       }
       setLoading(false);
     };
@@ -102,25 +106,19 @@ export default function LeaderboardPage() {
       return;
     }
     const already = networkIds.includes(targetId);
-    if (already) {
-      await unfollowScout(currentUser.id, targetId);
-    } else {
-      await followScout(currentUser.id, targetId);
-    }
-    const ids = await getFollowingIds(currentUser.id);
-    setNetworkIds(ids);
-    if (ids.length === 0) {
-      setNetworkLeaders([]);
+    try {
+      if (already) {
+        await unfollowScout(currentUser.id, targetId);
+      } else {
+        await followScout(currentUser.id, targetId);
+      }
+    } catch (error) {
+      console.error(error);
       return;
     }
-    const { data: networkScores } = await supabaseClient
-      .from('leaderboard_view')
-      .select('*')
-      .in('id', ids)
-      .order('total_score', { ascending: false });
-    const networkRows = networkScores ?? [];
-    const cosmetics = await loadCosmeticMap(networkRows.map((entry) => entry.id));
-    setNetworkLeaders(mergeCosmetics(networkRows, cosmetics));
+    const ids = await getFollowingIds(currentUser.id).catch(() => networkIds);
+    setNetworkIds(ids);
+    setNetworkLeaders(ids.length === 0 ? [] : await loadNetworkEntries(ids, leaders));
   };
 
   return (

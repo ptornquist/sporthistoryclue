@@ -7,6 +7,7 @@ import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
   followTarget,
   listFollowedIds,
+  loadScoutProfiles,
   searchScouts,
   unfollowTarget,
   type ScoutProfile,
@@ -139,18 +140,7 @@ export default function ProfilePage() {
       const ids = await listFollowedIds(user.id);
       const safeIds = Array.isArray(ids) ? ids : [];
       setFollowingIds(safeIds);
-      const profileIds = safeIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id));
-      let scouts: ScoutProfile[] = [];
-      if (profileIds.length > 0) {
-        const { data: scoutProfiles } = await supabaseClient
-          .from('profiles')
-          .select('id, username, avatar_url, streak, total_score')
-          .in('id', profileIds);
-        scouts = Array.isArray(scoutProfiles)
-          ? scoutProfiles.filter((scout) => scout && typeof scout.id === "string") as ScoutProfile[]
-          : [];
-      }
-      setNetwork(scouts);
+      setNetwork(await loadScoutProfiles(safeIds));
     } catch (error) {
       console.error(error);
       setMatches([]);
