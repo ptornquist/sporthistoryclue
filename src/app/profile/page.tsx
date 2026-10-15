@@ -17,6 +17,7 @@ import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 import { ClubAllegianceCard } from '@/components/derby/ClubAllegianceCard';
+import { ensureScoutProfile } from '@/lib/ensure-profile';
 import { setLocale } from '@/lib/i18n/locale-store';
 import { isScoutCountry, setCountry } from '@/lib/i18n/profile-preferences';
 
@@ -39,22 +40,6 @@ interface Profile {
 
 function asNumber(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function normalizeProfile(raw: Partial<Profile> | null, fallbackId = ""): Profile | null {
-  if (!raw) return null;
-  const username = typeof raw.username === "string" && raw.username.trim() ? raw.username.trim() : "scout";
-  return {
-    id: raw.id || fallbackId || "guest",
-    username,
-    display_name: typeof raw.display_name === "string" && raw.display_name.trim() ? raw.display_name.trim() : username,
-    avatar_url: raw.avatar_url ?? null,
-    streak: asNumber(raw.streak),
-    total_score: asNumber(raw.total_score),
-    favorite_club: typeof raw.favorite_club === "string" ? raw.favorite_club : null,
-    locale: raw.locale ?? null,
-    country: raw.country ?? null,
-  };
 }
 
 function challengeOf(record: MatchRecord): { subject: string; year: number | ""; category: string } {
@@ -111,19 +96,11 @@ export default function ProfilePage() {
       }
       setUser(user);
 
-      const { data: prof } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      const nextProfile = normalizeProfile((prof as Partial<Profile> | null) ?? null, user.id);
-      if (nextProfile) {
-        setProfile(nextProfile);
-        setUsernameInput(nextProfile.username === "scout" ? "" : nextProfile.username);
-        if (nextProfile.locale === "sv" || nextProfile.locale === "en") setLocale(nextProfile.locale);
-        if (isScoutCountry(nextProfile.country)) setCountry(nextProfile.country);
-      }
+      const nextProfile = await ensureScoutProfile(user);
+      setProfile(nextProfile);
+      setUsernameInput(nextProfile.username === "scout" ? "" : nextProfile.username);
+      if (nextProfile.locale === "sv" || nextProfile.locale === "en") setLocale(nextProfile.locale);
+      if (isScoutCountry(nextProfile.country)) setCountry(nextProfile.country);
 
       const { data: matchHistory } = await supabaseClient
         .from('match_history')
@@ -152,8 +129,6 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error(error);
-      setUser(null);
-      setProfile(null);
       setMatches([]);
       setNetwork([]);
     } finally {
@@ -433,7 +408,7 @@ export default function ProfilePage() {
                       {challenge.subject}{challenge.year === "" ? "" : ` (${challenge.year})`}
                     </span>
                     <span className="text-[11px] font-medium text-zinc-400 uppercase">
-                      {challenge.category.replace('_', ' ')} · Solved on Clue {asNumber(m?.clues_used)}
+                      {String(challenge.category || "").replace('_', ' ')} · Solved on Clue {asNumber(m?.clues_used)}
                     </span>
                   </div>
                   <div className="text-right">

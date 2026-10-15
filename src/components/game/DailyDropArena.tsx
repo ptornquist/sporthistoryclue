@@ -18,9 +18,9 @@ import { rememberSolvedCase } from '@/lib/solved-cases';
 import { arenaHref, nextStorylineMatch, storylineById } from '@/lib/storylines';
 import { findCase } from '@/lib/case-files';
 import { presentClues } from '@/lib/present-clues';
-import { optionLabels } from '@/lib/sport-kluring';
+import { correctOption, optionLabels } from '@/lib/sport-kluring';
 import { sportKluringById } from '@/lib/sport-kluringar-pool';
-import { localizeSurface, swedishAnswer } from '@/lib/decoy-options';
+import { localizeSurface } from '@/lib/decoy-options';
 import { swedishSurface } from '@/lib/swedish-surface';
 import { ChallengeFriendModal } from '@/components/ChallengeFriendModal';
 import { cosmeticName } from '@/lib/cosmetics';
@@ -508,7 +508,10 @@ export function DailyDropArena({
       const result = (await response.json()) as { correct?: boolean; subject?: string; year?: number };
 
       if (result.correct) {
-        if (result.subject && result.year) {
+        const solved = sportKluringById(challenge.id);
+        if (solved) {
+          setSolution({ subject: correctOption(solved, "sv"), year: solved.year });
+        } else if (result.subject && result.year) {
           setSolution({ subject: result.subject, year: result.year });
         }
         playVictoryFanfare();
@@ -916,7 +919,7 @@ export function DailyDropArena({
                 {gameWon ? messages.play.solved : messages.play.gameOver}
               </h2>
               <p className="text-xs text-zinc-500 mb-4">
-                {solution ? `${swedishAnswer(solution.subject)} (${solution.year})` : messages.play.sealed}
+                {solution ? localizeSurface(solution.subject, locale) : messages.play.sealed}
               </p>
 
               <div className="mx-auto mb-6 max-w-xs rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-center">

@@ -5,7 +5,8 @@ import { formatMessage } from "@/lib/i18n/format";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { isScoutCountry, type ScoutCountry } from "@/lib/i18n/profile-preferences";
 import type { Locale } from "@/lib/i18n/types";
-import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
+import { saveProfilePatch } from "@/lib/ensure-profile";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   FAVORITE_CLUB_KEY,
   clubsForCountry,
@@ -17,8 +18,7 @@ import {
 const LOCALES: Locale[] = ["sv", "en"];
 
 async function persistPreference(userId: string, patch: Record<string, string>) {
-  if (!isSupabaseConfigured) return;
-  await supabaseClient.from("profiles").update(patch).eq("id", userId);
+  await saveProfilePatch(userId, patch);
 }
 
 export function ClubAllegianceCard({
@@ -74,16 +74,10 @@ export function ClubAllegianceCard({
       return;
     }
     setSaving(true);
-    const { error } = await supabaseClient
-      .from("profiles")
-      .update({ favorite_club: club.id })
-      .eq("id", userId);
-    setSaving(false);
-    if (error) {
-      onSaved(messages.clubs.saveFailed);
-      return;
-    }
     window.localStorage.setItem(FAVORITE_CLUB_KEY, club.id);
+    setStoredClub(club.id);
+    await saveProfilePatch(userId, { favorite_club: club.id });
+    setSaving(false);
     onSaved(formatMessage(messages.clubs.saved, { name: club.name }), club.id);
   };
 
