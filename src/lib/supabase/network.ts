@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
+import { mapProfile, type ProfileRow } from '@/lib/standings-source';
 
 const LEGEND_FOLLOW_KEY = "shc_legend_follows";
 
@@ -204,24 +205,36 @@ export async function unfollowTarget(currentUserId: string, targetId: string): P
   }
 }
 
-export const SCOUT_PROFILE_COLUMNS = "id, username, avatar_url, streak, total_score";
+/** A profiles row reduced to what the network cards show. Score and handle resolve across column layouts. */
+export function toScoutProfile(row: ProfileRow): ScoutProfile {
+  const mapped = mapProfile(row);
+  return {
+    id: mapped.id,
+    username: mapped.username,
+    avatar_url: mapped.avatar_url,
+    streak: mapped.streak,
+    total_score: mapped.total_score,
+  };
+}
+
+function profileRows(data: unknown): ProfileRow[] {
+  return ((Array.isArray(data) ? data : []) as unknown[]).filter(
+    (row): row is ProfileRow => Boolean(row) && typeof (row as ProfileRow).id === "string",
+  );
+}
 
 /** Every followed scout's profile row, including members who have not scored yet. */
 export async function loadScoutProfiles(ids: string[]): Promise<ScoutProfile[]> {
   const profileIds = ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id));
   if (profileIds.length === 0 || !isSupabaseConfigured) return [];
-  const { data, error } = await supabaseClient
-    .from("profiles")
-    .select(SCOUT_PROFILE_COLUMNS)
-    .in("id", profileIds)
-    .order("total_score", { ascending: false });
+  const { data, error } = await supabaseClient.from("profiles").select("*").in("id", profileIds);
   if (error) {
     console.error(error);
     return [];
   }
-  return ((data ?? []) as unknown[]).filter(
-    (row): row is ScoutProfile => Boolean(row) && typeof (row as ScoutProfile).id === "string",
-  );
+  return profileRows(data)
+    .map(toScoutProfile)
+    .sort((a, b) => (b.total_score ?? 0) - (a.total_score ?? 0) || (a.username ?? "").localeCompare(b.username ?? ""));
 }
 
 export async function searchScouts(query: string, currentUserId?: string): Promise<ScoutProfile[]> {
@@ -230,7 +243,7 @@ export async function searchScouts(query: string, currentUserId?: string): Promi
 
   let request = supabaseClient
     .from('profiles')
-    .select(SCOUT_PROFILE_COLUMNS)
+    .select('*')
     .ilike('username', `%${needle}%`)
     .limit(10);
 
@@ -240,5 +253,5 @@ export async function searchScouts(query: string, currentUserId?: string): Promi
 
   const { data, error } = await request;
   if (error) throw error;
-  return (data ?? []) as ScoutProfile[];
+  return profileRows(data).map(toScoutProfile);
 }

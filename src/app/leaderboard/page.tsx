@@ -9,7 +9,7 @@ import { ScoutAvatar } from '@/components/game/ScoutAvatar';
 import { followScout, getFollowingIds, unfollowScout } from '@/lib/supabase/network';
 import { cosmeticName, titleClassName } from '@/lib/cosmetics';
 import { fetchAllStandings } from '@/lib/standings-client';
-import { PROFILE_COLUMNS, mapProfile, type ProfileRow } from '@/lib/standings-source';
+import { mapProfile, type ProfileRow } from '@/lib/standings-source';
 import { isRealScout, type StandingRow } from '@/lib/standings';
 import { mondayOfUtcWeek, utcDateKey } from '@/lib/utc-streak';
 
@@ -51,7 +51,7 @@ async function loadNetworkEntries(ids: string[], known: LeaderboardEntry[]): Pro
   const found = known.filter((entry) => wanted.has(entry.id));
   const missing = ids.filter((id) => !found.some((entry) => entry.id === id) && /^[0-9a-f-]{36}$/i.test(id));
   if (missing.length > 0 && isSupabaseConfigured) {
-    const { data, error } = await supabaseClient.from('profiles').select(PROFILE_COLUMNS).in('id', missing);
+    const { data, error } = await supabaseClient.from('profiles').select('*').in('id', missing);
     if (!error) {
       for (const row of (data ?? []) as unknown as ProfileRow[]) found.push(toEntry(mapProfile(row)));
     }

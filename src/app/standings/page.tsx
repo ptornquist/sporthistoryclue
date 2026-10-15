@@ -22,7 +22,7 @@ import {
   type StandingRow,
 } from "@/lib/standings";
 import { fetchAllStandings } from "@/lib/standings-client";
-import { PROFILE_COLUMNS, PROFILE_COLUMNS_WITH_WEEK, mapProfile, type ProfileRow } from "@/lib/standings-source";
+import { mapProfile, type ProfileRow } from "@/lib/standings-source";
 import { loadSolvedHistory, mondayOfUtcWeek, utcDateKey } from "@/lib/utc-streak";
 
 function titleLabel(titleId: string | null): string {
@@ -149,7 +149,7 @@ export default function StandingsPage() {
 
       const { data: auth } = await supabaseClient.auth.getUser();
       const user = auth.user;
-      const { rows: everyone, weekly } = await fetchAllStandings(monday);
+      const { rows: everyone } = await fetchAllStandings(monday);
 
       const pool = new Map<string, StandingRow>();
       for (const row of everyone) pool.set(row.id, row);
@@ -157,12 +157,10 @@ export default function StandingsPage() {
       let viewerRow: StandingRow | null = null;
       if (user) {
         const ensured = await ensureScoutProfile(user);
-        const own = weekly
-          ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_WITH_WEEK).eq("id", user.id).maybeSingle()
-          : await supabaseClient.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).maybeSingle();
+        const own = await supabaseClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
         viewerRow = own.data
           ? mapProfile(own.data as unknown as ProfileRow)
-          : {
+          : pool.get(user.id) ?? {
               id: ensured.id,
               username: ensured.username,
               total_score: ensured.total_score,

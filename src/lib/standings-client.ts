@@ -2,6 +2,7 @@ import { supabaseClient } from "@/lib/supabase/client";
 import {
   isStandingRow,
   loadStandingsRows,
+  sortByScore,
   type StandingsClient,
   type StandingsSnapshot,
 } from "@/lib/standings-source";
@@ -15,9 +16,12 @@ export async function fetchAllStandings(weekStart: string): Promise<StandingsSna
   try {
     const response = await fetch(`/api/standings?week=${encodeURIComponent(weekStart)}`, { cache: "no-store" });
     if (response.ok) {
-      const json = (await response.json()) as { rows?: unknown; weekly?: unknown };
+      const json = (await response.json()) as { rows?: unknown; weekly?: unknown; scoreColumn?: unknown };
       const rows = Array.isArray(json.rows) ? json.rows.filter(isStandingRow) : [];
-      if (rows.length > 0) return { rows, weekly: json.weekly !== false };
+      if (rows.length > 0) {
+        const scoreColumn = json.scoreColumn === "total_score" || json.scoreColumn === "career_score" ? json.scoreColumn : null;
+        return { rows: sortByScore(rows), weekly: json.weekly !== false, scoreColumn };
+      }
     }
   } catch (error) {
     console.error("Standings route failed:", error);
