@@ -34,6 +34,7 @@ import { formatMessage } from '@/lib/i18n/format';
 import { useLanguage } from '@/lib/i18n/language-context';
 import type { Locale } from '@/lib/i18n/types';
 import { rememberDailyCompletion } from '@/lib/daily-completions';
+import { findPriorSolve, type PriorSolve } from '@/lib/prior-solve';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
 import {
   derbyBoardForSport,
@@ -214,6 +215,7 @@ export function DailyDropArena({
   const [selectedWrong, setSelectedWrong] = useState<string[]>([]);
   const [gameWon, setGameWon] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [alreadySolved, setAlreadySolved] = useState<PriorSolve | null>(null);
   const [guessing, setGuessing] = useState(false);
   const [loading, setLoading] = useState(!initialFixture);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -354,7 +356,7 @@ export function DailyDropArena({
   }, []);
 
   useEffect(() => {
-    if ((!gameWon && !gameOver) || !challenge) return;
+    if ((!gameWon && !gameOver) || !challenge || alreadySolved) return;
     const marker = `${challenge.id}:${gameWon ? currentClueIdx + 1 : 0}`;
     if (statsSent.current === marker) return;
     statsSent.current = marker;
@@ -381,7 +383,7 @@ export function DailyDropArena({
     })
       .then(() => setStatsRefresh((value) => value + 1))
       .catch(() => setStatsRefresh((value) => value + 1));
-  }, [gameWon, gameOver, challenge, currentClueIdx]);
+  }, [gameWon, gameOver, challenge, currentClueIdx, alreadySolved]);
 
   useEffect(() => {
     if (!duelHandle || !isSupabaseConfigured) return;
@@ -411,6 +413,7 @@ export function DailyDropArena({
       setSelectedWrong([]);
       setGameWon(false);
       setGameOver(false);
+      setAlreadySolved(null);
       setCoinsEarned(0);
       try {
         const query = new URLSearchParams();
@@ -443,6 +446,47 @@ export function DailyDropArena({
 
     fetchChallenge();
   }, [activeArchiveDate, specificMatch]);
+
+  // A solved kluring stays solved: lock the board and show the recorded result
+  // instead of letting the same drop pay out again.
+  const challengeId = challenge?.id ?? null;
+  const challengeDate = challenge && isDateKey(challenge.date_key) ? challenge.date_key : null;
+  useEffect(() => {
+    if (!challengeId) return;
+    let cancelled = false;
+    const lock = async () => {
+      const prior = await findPriorSolve({
+        id: challengeId,
+        dropDate: specificMatch ? null : challengeDate,
+        userId: currentUser?.id ?? null,
+      });
+      if (cancelled || !prior) return;
+      setAlreadySolved(prior);
+      if (prior.score != null) setScore(prior.score);
+      setGameWon(true);
+      const kluring = sportKluringById(challengeId);
+      if (kluring) {
+        setSolution({ subject: correctOption(kluring, "sv"), year: kluring.year });
+        return;
+      }
+      try {
+        const reveal = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: challengeId, date_key: challengeDate, option: '-', reveal: true }),
+        });
+        if (!reveal.ok || cancelled) return;
+        const closedCase = (await reveal.json()) as { subject?: string; year?: number };
+        if (closedCase.subject && closedCase.year) setSolution({ subject: closedCase.subject, year: closedCase.year });
+      } catch {
+        // The lock still holds without the reveal.
+      }
+    };
+    void lock();
+    return () => {
+      cancelled = true;
+    };
+  }, [challengeId, challengeDate, specificMatch, currentUser?.id]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -507,7 +551,7 @@ export function DailyDropArena({
   };
 
   const handleGuess = async (option: string) => {
-    if (!challenge || gameWon || gameOver || guessing) return;
+    if (!challenge || gameWon || gameOver || guessing || alreadySolved) return;
     setGuessing(true);
     try {
       const response = await fetch('/api/verify', {
@@ -535,12 +579,6 @@ export function DailyDropArena({
         rememberSolvedCase(challenge.id, score);
         const today = utcDateKey(new Date());
         const solvedKey = isDateKey(challenge.date_key) ? challenge.date_key : today;
-        if (!specificMatch) {
-          void rememberDailyCompletion(
-            { dropDate: solvedKey, solved: true, score, challengeId: challenge.id },
-            currentUser?.id ?? null,
-          );
-        }
         const history = specificMatch ? loadSolvedHistory() : recordSolvedDate(solvedKey);
         const newStreak = specificMatch ? streak + 1 : activeStreak(history, today);
         streakLock.current = true;
@@ -567,6 +605,12 @@ export function DailyDropArena({
           dateKey: isDateKey(challenge.date_key) ? challenge.date_key : null,
         });
         setCoinsEarned(reward.earned);
+        if (!specificMatch) {
+          void rememberDailyCompletion(
+            { dropDate: solvedKey, solved: true, score, challengeId: challenge.id },
+            currentUser?.id ?? null,
+          );
+        }
         logFinishedDuel(score);
         return;
       }
@@ -937,6 +981,14 @@ export function DailyDropArena({
               <h2 className="text-2xl font-black uppercase tracking-tight mb-1 text-zinc-900">
                 {gameWon ? messages.play.solved : messages.play.gameOver}
               </h2>
+              {alreadySolved && (
+                <p
+                  role="status"
+                  className="mx-auto mb-3 inline-block rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-800"
+                >
+                  {messages.play.alreadySolved}
+                </p>
+              )}
               <p className="text-xs text-zinc-500 mb-4">
                 {solution ? localizeSurface(solution.subject, locale) : messages.play.sealed}
               </p>

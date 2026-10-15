@@ -40,8 +40,9 @@ function rpcMissing(error: { code?: string; message?: string } | null): boolean 
 }
 
 interface ServerAward {
-  saved?: "rpc" | "direct" | "none";
+  saved?: "rpc" | "direct" | "user" | "duplicate" | "none";
   earned?: number;
+  duplicate?: boolean;
   profile?: CosmeticPayload | null;
 }
 
@@ -216,9 +217,11 @@ export function useCosmeticWallet() {
         dateKey: input.dateKey ?? undefined,
       });
       if (server?.profile) {
-        const next = mergeWallet(preview.wallet, server.profile);
+        // A replayed kluring keeps the wallet as it was; nothing new was earned.
+        const base = server.duplicate ? current : preview.wallet;
+        const next = mergeWallet(base, server.profile);
         commit(next);
-        return { wallet: next, earned: server.earned ?? preview.earned };
+        return { wallet: next, earned: server.duplicate ? 0 : (server.earned ?? preview.earned) };
       }
 
       const payload = {

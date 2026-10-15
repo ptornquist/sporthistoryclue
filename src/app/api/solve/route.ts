@@ -79,6 +79,47 @@ async function awardViaRpc(client: RpcClient, body: Payload): Promise<{ profile:
   return { profile, earned };
 }
 
+/**
+ * True when this scout already solved the drop: a solved completion for the
+ * same day or id, or a paid grant for the match. Checked before any award so a
+ * replayed kluring never pays twice, whichever write path is in use.
+ */
+async function alreadySolved(scout: Scout, body: Payload): Promise<boolean> {
+  const reader = supabaseAdmin ?? scout.client;
+  try {
+    const grant = await reader
+      .from("coin_grants")
+      .select("match_id")
+      .eq("user_id", scout.id)
+      .eq("match_id", body.matchId)
+      .maybeSingle();
+    if (!grant.error && grant.data) return true;
+  } catch {
+    // Table missing or unreadable; the completions check below still applies.
+  }
+  if (!body.isDaily) return false;
+  const dropDate = parseDateKey(body.dateKey ?? null) ?? utcDateKey(new Date());
+  try {
+    const done = await reader
+      .from("user_daily_completions")
+      .select("solved, challenge_id")
+      .eq("user_id", scout.id)
+      .eq("drop_date", dropDate)
+      .maybeSingle();
+    return !done.error && done.data?.solved === true;
+  } catch {
+    return false;
+  }
+}
+
+async function currentProfile(scout: Scout): Promise<ProfileValues | null> {
+  const reader = supabaseAdmin ?? scout.client;
+  const { data, error } = await reader.from("profiles").select("*").eq("id", scout.id).maybeSingle();
+  if (error || !data) return null;
+  const row = data as ProfileValues;
+  return { ...row, total_score: careerOf(row) };
+}
+
 async function rememberDaily(scout: Scout, body: Payload): Promise<void> {
   if (!body.isDaily) return;
   const dropDate = parseDateKey(body.dateKey ?? null) ?? utcDateKey(new Date());
@@ -135,11 +176,18 @@ export async function POST(request: Request) {
   }
 
   const headers = { "Cache-Control": "no-store" };
-  await rememberDaily(scout, body);
+
+  if (await alreadySolved(scout, body)) {
+    const profile = await currentProfile(scout);
+    return Response.json({ saved: "duplicate", earned: 0, duplicate: true, profile }, { headers });
+  }
 
   try {
     const rpc = await awardViaRpc(scout.client as unknown as RpcClient, body);
-    if (rpc) return Response.json({ saved: "rpc", earned: rpc.earned, profile: rpc.profile }, { headers });
+    if (rpc) {
+      await rememberDaily(scout, body);
+      return Response.json({ saved: "rpc", earned: rpc.earned, profile: rpc.profile }, { headers });
+    }
   } catch (error) {
     console.error("award_solve_coins failed", error);
   }
@@ -165,6 +213,7 @@ export async function POST(request: Request) {
       { headers },
     );
   }
+  await rememberDaily(scout, body);
   const profile = { ...direct.profile, total_score: careerOf(direct.profile) };
   return Response.json({ saved, earned: direct.earned, duplicate: direct.duplicate, profile }, { headers });
 }

@@ -37,6 +37,7 @@ export const sv: Messages = {
     soundOn: "Slå på matchljud",
     soundOff: "Stäng av matchljud",
     solved: "Kluring löst!",
+    alreadySolved: "Redan löst. Poängen är registrerade och kluringen kan inte göras om.",
     gameOver: "Slutspelat",
     sealed: "Svaret är förseglat tills kluringen stängs.",
     finalScore: "Slutpoäng",

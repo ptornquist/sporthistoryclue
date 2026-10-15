@@ -37,6 +37,7 @@ export interface Messages {
     soundOn: string;
     soundOff: string;
     solved: string;
+    alreadySolved: string;
     gameOver: string;
     sealed: string;
     finalScore: string;

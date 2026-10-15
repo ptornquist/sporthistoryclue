@@ -37,6 +37,7 @@ export const en: Messages = {
     soundOn: "Turn match sound on",
     soundOff: "Turn match sound off",
     solved: "Clue solved!",
+    alreadySolved: "Already solved. Your points are recorded and this clue cannot be replayed.",
     gameOver: "Game over",
     sealed: "The answer stays sealed until the clue closes.",
     finalScore: "Final score",
