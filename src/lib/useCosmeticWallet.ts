@@ -163,19 +163,28 @@ export function useCosmeticWallet() {
     streakContinued: boolean;
     duelWon: boolean;
     newStreak: number;
+    sport?: string | null;
   }) => {
     const current = walletRef.current;
     const preview = applySolveReward(current, input);
 
     if (userIdRef.current && isSupabaseConfigured) {
-      const { data, error } = await supabaseClient.rpc("award_solve_coins", {
+      const payload = {
         match_id: input.matchId,
         point_score: input.pointScore,
         is_daily: input.isDaily,
         streak_continued: input.streakContinued,
         duel_won: input.duelWon,
         new_streak: input.newStreak,
+      };
+      let awarded = await supabaseClient.rpc("award_solve_coins", {
+        ...payload,
+        sport: input.sport ?? null,
       });
+      if (awarded.error && /sport|could not find the function|schema cache/i.test(awarded.error.message ?? "")) {
+        awarded = await supabaseClient.rpc("award_solve_coins", payload);
+      }
+      const { data, error } = awarded;
       if (!error && data && typeof data === "object") {
         const payload = data as CosmeticPayload;
         const next = payloadWallet(payload, preview.wallet.grantedMatchIds, preview.wallet.duelWins);

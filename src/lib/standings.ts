@@ -55,6 +55,10 @@ export const SWEDISH_LEGENDS: StandingRow[] = [
   { id: "legend-salming", username: "salming", total_score: 12400, week_score: 1800, week_start: null, streak: 5, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 15, avatar_url: null, favorite_club: "sirius", country: "se", legend: true },
 ];
 
+export function legendById(id: string): StandingRow | null {
+  return [...LEGEND_SCOUTS, ...SWEDISH_LEGENDS].find((row) => row.id === id) ?? null;
+}
+
 export function isNationalScout(row: StandingRow): boolean {
   return row.country === "se" || isSwedishClub(row.favorite_club);
 }

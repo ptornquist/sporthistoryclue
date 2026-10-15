@@ -66,6 +66,12 @@ create table if not exists public.profiles (
   streak integer not null default 0 check (streak >= 0),
   locale text not null default 'sv' check (locale in ('sv', 'en')),
   country text not null default 'world' check (country in ('se', 'gb', 'us', 'ca', 'world')),
+  hockey_club text,
+  football_club text,
+  international_club text,
+  hockey_score integer not null default 0 check (hockey_score >= 0),
+  football_score integer not null default 0 check (football_score >= 0),
+  international_score integer not null default 0 check (international_score >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -7,6 +7,10 @@ import {
   findPremierLeagueClub,
   isKnownClub,
   isPremierLeagueClub,
+  HOCKEY_CLUBS,
+  derbyBoardForSport,
+  membershipsForBoard,
+  rankBoard,
   rankClubs,
   supporterLabel,
 } from "./premier-league";
@@ -72,5 +76,36 @@ describe("Premier League derby", () => {
     expect(world).toHaveLength(20);
     expect(world[0].id).toBe("liverpool");
     expect(world.some((row) => row.id === "aik")).toBe(false);
+  });
+
+  it("sends hockey, football, and other clues to separate club boards", () => {
+    expect(HOCKEY_CLUBS.length).toBeGreaterThanOrEqual(14);
+    expect(derbyBoardForSport("ice_hockey")).toBe("hockey");
+    expect(derbyBoardForSport("football")).toBe("football");
+    expect(derbyBoardForSport("boxing")).toBe("international");
+
+    const rows = [
+      {
+        hockey_club: "farjestad",
+        hockey_score: 4000,
+        football_club: "aik",
+        football_score: 1500,
+        international_club: "arsenal",
+        international_score: 800,
+      },
+    ];
+    expect(rankBoard(membershipsForBoard(rows, "hockey"), "hockey", "total")[0]).toMatchObject({
+      id: "farjestad",
+      totalPoints: 4000,
+    });
+    expect(rankBoard(membershipsForBoard(rows, "football"), "football", "total")[0]).toMatchObject({
+      id: "aik",
+      totalPoints: 1500,
+    });
+    expect(rankBoard(membershipsForBoard(rows, "international"), "international", "total")[0]).toMatchObject({
+      id: "arsenal",
+      totalPoints: 800,
+    });
+    expect(rankBoard(membershipsForBoard(rows, "hockey"), "hockey", "total").some((row) => row.id === "aik")).toBe(false);
   });
 });

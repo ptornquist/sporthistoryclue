@@ -108,4 +108,19 @@ describe("standings board", () => {
     expect(placed.board.some((row) => row.id === "arsenal-fan")).toBe(false);
     expect(placed.rank).toBeGreaterThan(0);
   });
+
+  it("keeps a signed-in scout with no points on the table", () => {
+    const viewer = scout({
+      id: "me",
+      username: "ptornquist",
+      total_score: 0,
+      week_score: 0,
+      streak: 3,
+      matches_solved: 2,
+    });
+    const placed = placeScout([], viewer, "all", "2026-09-21");
+    const mine = placed.board.find((row) => row.id === "me");
+    expect(mine).toMatchObject({ username: "ptornquist", streak: 3, matches_solved: 2, total_score: 0 });
+    expect(placed.rank).toBeGreaterThan(0);
+  });
 });

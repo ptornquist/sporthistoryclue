@@ -3,30 +3,34 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ScopeToggle } from "@/components/ScopeToggle";
 import { SupportersTable } from "@/components/derby/SupportersTable";
-import type { BoardScope } from "@/lib/board-scope";
 import { useI18n } from "@/lib/i18n/use-i18n";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 import {
-  FAVORITE_CLUB_KEY,
-  isKnownClub,
-  rankClubs,
-  type ClubMembership,
+  isClubOnBoard,
+  membershipsForBoard,
+  rankBoard,
+  storageKeyForBoard,
+  type DerbyBoard,
   type DerbyMode,
+  type DerbyScoreRow,
 } from "@/lib/premier-league";
 
 export default function DerbyPage() {
   const { messages } = useI18n();
   const [mode, setMode] = useState<DerbyMode>("total");
-  const [scope, setScope] = useState<BoardScope>("world");
-  const [memberships, setMemberships] = useState<ClubMembership[]>([]);
-  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [board, setBoard] = useState<DerbyBoard>("hockey");
+  const [scoreRows, setScoreRows] = useState<DerbyScoreRow[]>([]);
+  const [highlights, setHighlights] = useState<Partial<Record<DerbyBoard, string>>>({});
 
   useEffect(() => {
     const load = async () => {
-      const saved = window.localStorage.getItem(FAVORITE_CLUB_KEY);
-      if (isKnownClub(saved)) setHighlightId(saved);
+      const stored: Partial<Record<DerbyBoard, string>> = {};
+      for (const name of ["hockey", "football", "international"] as const) {
+        const value = window.localStorage.getItem(storageKeyForBoard(name));
+        if (isClubOnBoard(value, name)) stored[name] = value;
+      }
+      setHighlights(stored);
 
       if (!isSupabaseConfigured) return;
 
@@ -35,38 +39,43 @@ export default function DerbyPage() {
         if (auth.user) {
           const { data: profile } = await supabaseClient
             .from("profiles")
-            .select("favorite_club")
+            .select("hockey_club, football_club, international_club, favorite_club")
             .eq("id", auth.user.id)
             .maybeSingle();
-          const clubId = profile?.favorite_club;
-          if (typeof clubId === "string" && isKnownClub(clubId)) {
-            setHighlightId(clubId);
-            window.localStorage.setItem(FAVORITE_CLUB_KEY, clubId);
+          const next = { ...stored };
+          for (const name of ["hockey", "football", "international"] as const) {
+            const column = profile?.[`${name}_club`];
+            const value = typeof column === "string" ? column : name === "football" ? profile?.favorite_club : null;
+            if (typeof value === "string" && isClubOnBoard(value, name)) {
+              next[name] = value;
+              window.localStorage.setItem(storageKeyForBoard(name), value);
+            }
           }
+          setHighlights(next);
         }
 
-        const { data, error } = await supabaseClient
+        const wide = await supabaseClient
+          .from("profiles")
+          .select("hockey_club, football_club, international_club, hockey_score, football_score, international_score, favorite_club, total_score");
+        if (!wide.error && wide.data) {
+          setScoreRows(wide.data as DerbyScoreRow[]);
+          return;
+        }
+        const narrow = await supabaseClient
           .from("profiles")
           .select("favorite_club, total_score")
           .not("favorite_club", "is", null);
-        if (!error && data) {
-          setMemberships(
-            data.flatMap((row) => {
-              const favorite = row.favorite_club;
-              if (typeof favorite !== "string") return [];
-              return [{ favorite_club: favorite, total_score: row.total_score ?? 0 }];
-            }),
-          );
-        }
+        if (!narrow.error && narrow.data) setScoreRows(narrow.data as DerbyScoreRow[]);
       } catch {
-        setMemberships([]);
+        setScoreRows([]);
       }
     };
 
     void load();
   }, []);
 
-  const rows = rankClubs(memberships, mode, scope);
+  const rows = rankBoard(membershipsForBoard(scoreRows, board), board, mode);
+  const highlightId = highlights[board] ?? null;
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans selection:bg-blue-600 selection:text-white">
@@ -82,13 +91,25 @@ export default function DerbyPage() {
             </p>
           </div>
           <div className="flex flex-col gap-2">
-            <ScopeToggle
-              value={scope}
-              onChange={setScope}
-              swedenLabel={messages.scope.sweden}
-              worldLabel={messages.scope.international}
-              ariaLabel={messages.derby.scopeToggle}
-            />
+            <div className="flex self-start rounded-2xl bg-zinc-100 p-1" role="group" aria-label={messages.derby.scopeToggle}>
+              {([
+                ["hockey", messages.derby.boardHockey],
+                ["football", messages.derby.boardFootball],
+                ["international", messages.derby.boardInternational],
+              ] as const).map(([name, label]) => (
+                <button
+                  key={name}
+                  type="button"
+                  aria-pressed={board === name}
+                  onClick={() => setBoard(name)}
+                  className={`rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wider ${
+                    board === name ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="flex self-start rounded-2xl bg-zinc-100 p-1" role="group" aria-label={messages.derby.tableToggle}>
               <button
                 type="button"

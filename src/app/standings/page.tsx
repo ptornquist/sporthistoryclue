@@ -8,7 +8,9 @@ import { ScoutAvatar } from "@/components/game/ScoutAvatar";
 import { findCosmetic, titleClassName } from "@/lib/cosmetics";
 import { formatMessage } from "@/lib/i18n/format";
 import { useI18n } from "@/lib/i18n/use-i18n";
+import { ensureScoutProfile } from "@/lib/ensure-profile";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
+import { followTarget, listFollowedIds, unfollowTarget } from "@/lib/supabase/network";
 import {
   DIVISION_TIERS,
   divisionFor,
@@ -70,7 +72,19 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="font-mono text-sm font-bold text-zinc-400">#{rank}</span>;
 }
 
-function ScoutModal({ scout, onClose }: { scout: StandingRow; onClose: () => void }) {
+function ScoutModal({
+  scout,
+  onClose,
+  canFollow,
+  following,
+  onToggleFollow,
+}: {
+  scout: StandingRow;
+  onClose: () => void;
+  canFollow: boolean;
+  following: boolean;
+  onToggleFollow: () => void;
+}) {
   const { messages } = useI18n();
   const division = divisionFor(scout.total_score);
   const title = titleLabel(scout.equipped_title);
@@ -112,6 +126,17 @@ function ScoutModal({ scout, onClose }: { scout: StandingRow; onClose: () => voi
           🔥 {formatMessage(messages.standings.streakDays, { count: scout.streak })} ·{" "}
           {formatMessage(messages.standings.solvedCount, { count: scout.matches_solved })}
         </p>
+        {canFollow && (
+          <button
+            type="button"
+            onClick={onToggleFollow}
+            className={`mt-5 min-h-11 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider ${
+              following ? "border border-zinc-200 bg-white text-zinc-700" : "bg-blue-600 text-white"
+            }`}
+          >
+            {following ? messages.standings.following : messages.standings.follow}
+          </button>
+        )}
         <button
           type="button"
           onClick={onClose}
@@ -136,6 +161,8 @@ export default function StandingsPage() {
   const [weekStart, setWeekStart] = useState<string | null>(null);
   const [playedToday, setPlayedToday] = useState<boolean | null>(null);
   const [openScout, setOpenScout] = useState<StandingRow | null>(null);
+  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -195,16 +222,35 @@ export default function StandingsPage() {
 
       let viewerRow: StandingRow | null = null;
       if (user) {
+        const ensured = await ensureScoutProfile(user);
         const own = weekly
           ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_WITH_WEEK).eq("id", user.id).maybeSingle()
           : await supabaseClient.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).maybeSingle();
-        if (own.data) viewerRow = mapProfile(own.data as unknown as ProfileRow);
+        viewerRow = own.data
+          ? mapProfile(own.data as unknown as ProfileRow)
+          : {
+              id: ensured.id,
+              username: ensured.username,
+              total_score: ensured.total_score,
+              week_score: 0,
+              week_start: null,
+              streak: ensured.streak,
+              equipped_title: null,
+              equipped_frame: null,
+              matches_solved: 0,
+              avatar_url: ensured.avatar_url,
+              favorite_club: ensured.favorite_club,
+            };
+        if (!pool.has(viewerRow.id)) pool.set(viewerRow.id, viewerRow);
+        const followed = await listFollowedIds(user.id);
+        if (!cancelled) setFollowingIds(followed);
       }
 
       if (!cancelled) {
         setWeekStart(monday);
         setRows([...pool.values()]);
         setViewer(viewerRow);
+        setViewerId(user?.id ?? null);
       }
     };
 
@@ -365,7 +411,21 @@ export default function StandingsPage() {
           </div>
         </div>
       )}
-      {openScout && <ScoutModal scout={openScout} onClose={() => setOpenScout(null)} />}
+      {openScout && (
+        <ScoutModal
+          scout={openScout}
+          canFollow={Boolean(viewerId) && openScout.id !== viewerId}
+          following={followingIds.includes(openScout.id)}
+          onToggleFollow={() => {
+            if (!viewerId) return;
+            const target = openScout.id;
+            const next = followingIds.includes(target);
+            setFollowingIds((current) => next ? current.filter((id) => id !== target) : [...current, target]);
+            void (next ? unfollowTarget(viewerId, target) : followTarget(viewerId, target));
+          }}
+          onClose={() => setOpenScout(null)}
+        />
+      )}
     </main>
   );
 }

@@ -2,6 +2,11 @@ import type { BoardScope } from "./board-scope";
 import type { ScoutCountry } from "./i18n/profile-preferences";
 
 export const FAVORITE_CLUB_KEY = "shc_favorite_club";
+export const HOCKEY_CLUB_KEY = "shc_hockey_club";
+export const FOOTBALL_CLUB_KEY = "shc_football_club";
+export const INTERNATIONAL_CLUB_KEY = "shc_international_club";
+
+export type DerbyBoard = "hockey" | "football" | "international";
 
 export interface PremierLeagueClub {
   id: string;
@@ -13,6 +18,17 @@ export interface PremierLeagueClub {
 export interface ClubMembership {
   favorite_club: string | null;
   total_score: number | null;
+}
+
+export interface DerbyScoreRow {
+  hockey_club?: string | null;
+  football_club?: string | null;
+  international_club?: string | null;
+  hockey_score?: number | null;
+  football_score?: number | null;
+  international_score?: number | null;
+  favorite_club?: string | null;
+  total_score?: number | null;
 }
 
 export interface ClubStanding {
@@ -91,11 +107,42 @@ export const CANADA_CLUBS: readonly PremierLeagueClub[] = [
   { id: "vancouver-whitecaps", name: "Vancouver Whitecaps", color: "#00245D", badge: "🔵" },
 ] as const;
 
+/** SHL clubs. Ids stay distinct from the Allsvenskan list. */
+export const HOCKEY_CLUBS: readonly PremierLeagueClub[] = [
+  { id: "farjestad", name: "Färjestad BK", color: "#FFD100", badge: "🟡" },
+  { id: "frolunda", name: "Frölunda HC", color: "#C8102E", badge: "🔴" },
+  { id: "lulea", name: "Luleå HF", color: "#000000", badge: "⚫" },
+  { id: "dif-hockey", name: "Djurgården Hockey", color: "#00529F", badge: "🔵" },
+  { id: "skelleftea", name: "Skellefteå AIK", color: "#FFD200", badge: "🟡" },
+  { id: "vaxjo", name: "Växjö Lakers", color: "#F36F21", badge: "🟠" },
+  { id: "hv71", name: "HV71", color: "#FFD100", badge: "🟡" },
+  { id: "linkoping", name: "Linköping HC", color: "#0033A0", badge: "🔵" },
+  { id: "rogle", name: "Rögle BK", color: "#006B3F", badge: "🟢" },
+  { id: "leksand", name: "Leksands IF", color: "#003DA5", badge: "🔵" },
+  { id: "malmo-redhawks", name: "Malmö Redhawks", color: "#C8102E", badge: "🔴" },
+  { id: "brynas", name: "Brynäs IF", color: "#000000", badge: "⚫" },
+  { id: "orebro", name: "Örebro Hockey", color: "#E30613", badge: "🔴" },
+  { id: "timra", name: "Timrå IK", color: "#E30613", badge: "🔴" },
+] as const;
+
 const BY_ID = new Map(PREMIER_LEAGUE_CLUBS.map((club) => [club.id, club]));
 const SWEDISH_BY_ID = new Map(SWEDISH_CLUBS.map((club) => [club.id, club]));
 const US_BY_ID = new Map(US_CLUBS.map((club) => [club.id, club]));
 const CANADA_BY_ID = new Map(CANADA_CLUBS.map((club) => [club.id, club]));
-const ALL_BY_ID = new Map<string, PremierLeagueClub>([...BY_ID, ...SWEDISH_BY_ID, ...US_BY_ID, ...CANADA_BY_ID]);
+const HOCKEY_BY_ID = new Map(HOCKEY_CLUBS.map((club) => [club.id, club]));
+const ALL_BY_ID = new Map<string, PremierLeagueClub>([
+  ...BY_ID,
+  ...SWEDISH_BY_ID,
+  ...US_BY_ID,
+  ...CANADA_BY_ID,
+  ...HOCKEY_BY_ID,
+]);
+
+const BOARD_KEYS: Record<DerbyBoard, { club: "hockey_club" | "football_club" | "international_club"; score: "hockey_score" | "football_score" | "international_score"; storage: string }> = {
+  hockey: { club: "hockey_club", score: "hockey_score", storage: HOCKEY_CLUB_KEY },
+  football: { club: "football_club", score: "football_score", storage: FOOTBALL_CLUB_KEY },
+  international: { club: "international_club", score: "international_score", storage: INTERNATIONAL_CLUB_KEY },
+};
 
 export function clubsForScope(scope: BoardScope = "world"): readonly PremierLeagueClub[] {
   return scope === "se" ? SWEDISH_CLUBS : PREMIER_LEAGUE_CLUBS;
@@ -130,6 +177,61 @@ export function isKnownClub(id: string | null | undefined): id is string {
   return Boolean(id && ALL_BY_ID.has(id));
 }
 
+export function isHockeyClub(id: string | null | undefined): id is string {
+  return Boolean(id && HOCKEY_BY_ID.has(id));
+}
+
+export function isFootballClub(id: string | null | undefined): id is string {
+  return Boolean(id && SWEDISH_BY_ID.has(id));
+}
+
+export function isInternationalClub(id: string | null | undefined): id is string {
+  return Boolean(id && (BY_ID.has(id) || US_BY_ID.has(id) || CANADA_BY_ID.has(id)));
+}
+
+export function clubsForBoard(board: DerbyBoard): readonly PremierLeagueClub[] {
+  if (board === "hockey") return HOCKEY_CLUBS;
+  if (board === "football") return SWEDISH_CLUBS;
+  return PREMIER_LEAGUE_CLUBS;
+}
+
+export function isClubOnBoard(id: string | null | undefined, board: DerbyBoard): id is string {
+  if (board === "hockey") return isHockeyClub(id);
+  if (board === "football") return isFootballClub(id);
+  return isInternationalClub(id);
+}
+
+export function derbyBoardForSport(sport: string | null | undefined): DerbyBoard {
+  if (sport === "ice_hockey") return "hockey";
+  if (sport === "football") return "football";
+  return "international";
+}
+
+export function storageKeyForBoard(board: DerbyBoard): string {
+  return BOARD_KEYS[board].storage;
+}
+
+export function membershipsForBoard(
+  rows: readonly DerbyScoreRow[],
+  board: DerbyBoard,
+): { clubId: string | null; points: number | null }[] {
+  const keys = BOARD_KEYS[board];
+  return rows.flatMap((row) => {
+    const hasSpecific = keys.club in row || keys.score in row;
+    const specific = row[keys.club];
+    if (typeof specific === "string" && isClubOnBoard(specific, board)) {
+      const points = row[keys.score];
+      return [{ clubId: specific, points: typeof points === "number" ? points : 0 }];
+    }
+    if (hasSpecific) return [];
+    const fallback = row.favorite_club;
+    if (typeof fallback === "string" && isClubOnBoard(fallback, board)) {
+      return [{ clubId: fallback, points: row.total_score ?? 0 }];
+    }
+    return [];
+  });
+}
+
 export function supporterLabel(club: PremierLeagueClub): string {
   return `${club.badge} ${club.name} Supporter`;
 }
@@ -139,23 +241,43 @@ export function derbyContributionLine(score: number, clubName: string): string {
   return `⚽ +${points} poäng till ${clubName} i supporterderbyt!`;
 }
 
+export function rankBoard(
+  memberships: readonly { clubId: string | null; points: number | null }[],
+  board: DerbyBoard,
+  mode: DerbyMode,
+): ClubStanding[] {
+  return rankListed(memberships, clubsForBoard(board), mode);
+}
+
 export function rankClubs(
   memberships: readonly ClubMembership[],
   mode: DerbyMode,
   scope: BoardScope = "world",
 ): ClubStanding[] {
   const clubs = clubsForScope(scope);
+  return rankListed(
+    memberships.map((row) => ({ clubId: row.favorite_club, points: row.total_score })),
+    clubs,
+    mode,
+  );
+}
+
+function rankListed(
+  memberships: readonly { clubId: string | null; points: number | null }[],
+  clubs: readonly PremierLeagueClub[],
+  mode: DerbyMode,
+): ClubStanding[] {
   const known = new Map(clubs.map((club) => [club.id, club]));
   const totals = new Map<string, { scouts: number; points: number }>();
   for (const club of clubs) totals.set(club.id, { scouts: 0, points: 0 });
 
   for (const row of memberships) {
-    const club = row.favorite_club ? known.get(row.favorite_club) : undefined;
+    const club = row.clubId ? known.get(row.clubId) : undefined;
     if (!club) continue;
     const bucket = totals.get(club.id);
     if (!bucket) continue;
     bucket.scouts += 1;
-    const points = row.total_score ?? 0;
+    const points = row.points ?? 0;
     if (Number.isFinite(points) && points > 0) bucket.points += points;
   }
 

@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
-  followScout,
-  getFollowingIds,
+  followTarget,
+  listFollowedIds,
   searchScouts,
-  unfollowScout,
+  unfollowTarget,
   type ScoutProfile,
 } from '@/lib/supabase/network';
+import { uploadProfileAvatar } from '@/lib/avatar-upload';
+import { legendById } from '@/lib/standings';
 import { ScoutCard } from '@/components/game/ScoutCard';
 import { DuelHistory } from '@/components/game/DuelHistory';
 import { duelHandleName } from '@/lib/duels';
@@ -18,6 +20,8 @@ import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 import { ClubAllegianceCard } from '@/components/derby/ClubAllegianceCard';
 import { ensureScoutProfile, localScoutProfile, saveProfilePatch } from '@/lib/ensure-profile';
+import type { DerbyBoard } from '@/lib/premier-league';
+import { useI18n } from '@/lib/i18n/use-i18n';
 import { setLocale } from '@/lib/i18n/locale-store';
 import { isScoutCountry, setCountry } from '@/lib/i18n/profile-preferences';
 
@@ -34,6 +38,9 @@ interface Profile {
   streak?: number | null;
   total_score?: number | null;
   favorite_club?: string | null;
+  hockey_club?: string | null;
+  football_club?: string | null;
+  international_club?: string | null;
   locale?: string | null;
   country?: string | null;
 }
@@ -74,7 +81,11 @@ interface MatchRecord {
 }
 
 export default function ProfilePage() {
+  const { messages } = useI18n();
+  const photoInput = useRef<HTMLInputElement>(null);
   const { wallet, equip } = useCosmeticWallet();
+  const [signingOut, setSigningOut] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [guestHandle, setGuestHandle] = useState('scout');
@@ -125,19 +136,32 @@ export default function ProfilePage() {
       setMatches(rows);
       setTotalScore(rows.reduce((acc, curr) => acc + asNumber(curr?.score), 0));
 
-      const ids = await getFollowingIds(user.id);
+      const ids = await listFollowedIds(user.id);
       const safeIds = Array.isArray(ids) ? ids : [];
       setFollowingIds(safeIds);
-      if (safeIds.length > 0) {
+      const profileIds = safeIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+      const legends = safeIds
+        .map((id) => legendById(id))
+        .filter((row): row is NonNullable<ReturnType<typeof legendById>> => Boolean(row))
+        .map((row) => ({
+          id: row.id,
+          username: row.username,
+          avatar_url: row.avatar_url,
+          streak: row.streak,
+          total_score: row.total_score,
+        }));
+      let scouts: ScoutProfile[] = [];
+      if (profileIds.length > 0) {
         const { data: scoutProfiles } = await supabaseClient
           .from('profiles')
           .select('id, username, avatar_url, streak, total_score')
-          .in('id', safeIds);
-        const scouts = Array.isArray(scoutProfiles) ? scoutProfiles.filter((scout) => scout && typeof scout.id === "string") : [];
-        setNetwork(scouts as ScoutProfile[]);
-      } else {
-        setNetwork([]);
+          .in('id', profileIds);
+        scouts = Array.isArray(scoutProfiles)
+          ? scoutProfiles.filter((scout) => scout && typeof scout.id === "string") as ScoutProfile[]
+          : [];
       }
+      const seen = new Set(scouts.map((scout) => scout.id));
+      setNetwork([...scouts, ...legends.filter((row) => !seen.has(row.id))]);
     } catch (error) {
       console.error(error);
       setMatches([]);
@@ -225,11 +249,35 @@ export default function ProfilePage() {
   const toggleFollow = async (targetId: string) => {
     if (!user) return;
     if (followingIds.includes(targetId)) {
-      await unfollowScout(user.id, targetId);
+      await unfollowTarget(user.id, targetId);
     } else {
-      await followScout(user.id, targetId);
+      await followTarget(user.id, targetId);
     }
     await loadData();
+  };
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (error) {
+      console.error(error);
+    }
+    window.location.href = "/";
+  };
+
+  const handlePhoto = async (file: File | undefined) => {
+    if (!file || !user) return;
+    setUploadingPhoto(true);
+    const url = await uploadProfileAvatar(user.id, file);
+    setUploadingPhoto(false);
+    if (!url) {
+      setActionMessage(messages.profile.photoFailed);
+    } else {
+      setProfile((prev) => (prev ? { ...prev, avatar_url: url } : prev));
+      setActionMessage(messages.profile.photoSaved);
+    }
+    window.setTimeout(() => setActionMessage(null), 3000);
   };
 
   return (
@@ -260,13 +308,51 @@ export default function ProfilePage() {
           onEquip={(itemId) => { void equip(itemId); }}
         />
 
+        {user && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              ref={photoInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                void handlePhoto(file);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => photoInput.current?.click()}
+              disabled={uploadingPhoto}
+              className="min-h-11 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-wider text-zinc-800 hover:border-blue-600"
+            >
+              {uploadingPhoto ? messages.clubs.saving : messages.profile.changePhoto}
+            </button>
+            <button
+              type="button"
+              onClick={() => { void handleSignOut(); }}
+              disabled={signingOut}
+              className="min-h-11 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
+            >
+              {signingOut ? messages.clubs.saving : messages.nav.logout}
+            </button>
+          </div>
+        )}
+
         <ClubAllegianceCard
           userId={user?.id ?? null}
-          initialClubId={profile?.favorite_club ?? null}
-          onSaved={(message, clubId) => {
+          initialClubs={{
+            hockey: profile?.hockey_club,
+            football: profile?.football_club,
+            international: profile?.international_club,
+          }}
+          onSaved={(message, clubId, board?: DerbyBoard) => {
             setActionMessage(message);
             window.setTimeout(() => setActionMessage(null), 3000);
-            if (clubId) setProfile((prev) => (prev ? { ...prev, favorite_club: clubId } : prev));
+            if (!clubId || !board) return;
+            const column = board === "hockey" ? "hockey_club" : board === "football" ? "football_club" : "international_club";
+            setProfile((prev) => (prev ? { ...prev, [column]: clubId, favorite_club: clubId } : prev));
           }}
         />
 
