@@ -5,7 +5,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ScoutAvatar } from "@/components/game/ScoutAvatar";
-import { findCosmetic, titleClassName } from "@/lib/cosmetics";
+import { withLocalWallet } from "@/lib/career-score";
+import { findCosmetic, loadWallet, titleClassName } from "@/lib/cosmetics";
 import { formatMessage } from "@/lib/i18n/format";
 import { useI18n } from "@/lib/i18n/use-i18n";
 import { ensureScoutProfile } from "@/lib/ensure-profile";
@@ -21,43 +22,9 @@ import {
   type StandingMode,
   type StandingRow,
 } from "@/lib/standings";
+import { fetchAllStandings } from "@/lib/standings-client";
+import { mapProfile, type ProfileRow } from "@/lib/standings-source";
 import { loadSolvedHistory, mondayOfUtcWeek, utcDateKey } from "@/lib/utc-streak";
-
-const PROFILE_COLUMNS =
-  "id, username, total_score, streak, equipped_title, equipped_frame, matches_solved, avatar_url, favorite_club";
-const PROFILE_COLUMNS_NARROW =
-  "id, username, total_score, streak, equipped_title, equipped_frame, matches_solved, avatar_url";
-const PROFILE_COLUMNS_WITH_WEEK = `${PROFILE_COLUMNS}, week_score, week_start`;
-
-interface ProfileRow {
-  id: string;
-  username: string | null;
-  total_score: number | null;
-  streak: number | null;
-  equipped_title: string | null;
-  equipped_frame: string | null;
-  matches_solved: number | null;
-  avatar_url: string | null;
-  favorite_club?: string | null;
-  week_score?: number | null;
-  week_start?: string | null;
-}
-
-function mapProfile(row: ProfileRow): StandingRow {
-  return {
-    id: row.id,
-    username: (row.username || "scout").replace(/^@/, ""),
-    total_score: row.total_score ?? 0,
-    week_score: row.week_score ?? 0,
-    week_start: row.week_start ?? null,
-    streak: row.streak ?? 0,
-    equipped_title: row.equipped_title,
-    equipped_frame: row.equipped_frame,
-    matches_solved: row.matches_solved ?? 0,
-    avatar_url: row.avatar_url,
-    favorite_club: row.favorite_club ?? null,
-  };
-}
 
 function titleLabel(titleId: string | null): string {
   const item = titleId ? findCosmetic(titleId) : undefined;
@@ -155,7 +122,10 @@ function groupedPoints(value: number): string {
 
 export default function StandingsPage() {
   const { locale, messages } = useI18n();
-  const [mode, setMode] = useState<StandingMode>("week");
+  // Career points are the default: that is the column profiles saves on every solve.
+  // The weekly tab only appears once the database actually holds this week's points.
+  const [mode, setMode] = useState<StandingMode>("all");
+  const [weeklyAvailable, setWeeklyAvailable] = useState(false);
   const [rows, setRows] = useState<StandingRow[]>([]);
   const [viewer, setViewer] = useState<StandingRow | null>(null);
   const [weekStart, setWeekStart] = useState<string | null>(null);
@@ -183,52 +153,21 @@ export default function StandingsPage() {
 
       const { data: auth } = await supabaseClient.auth.getUser();
       const user = auth.user;
-      const wide = await supabaseClient
-        .from("profiles")
-        .select(PROFILE_COLUMNS_WITH_WEEK)
-        .order("total_score", { ascending: false })
-        .limit(50);
-
-      const weekly = !wide.error;
-      let listed = (wide.data ?? []) as unknown as ProfileRow[];
-      if (wide.error) {
-        const narrow = await supabaseClient
-          .from("profiles")
-          .select(PROFILE_COLUMNS)
-          .order("total_score", { ascending: false })
-          .limit(50);
-        const retry = narrow.error
-          ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_NARROW).order("total_score", { ascending: false }).limit(50)
-          : narrow;
-        listed = (retry.data ?? []) as unknown as ProfileRow[];
-      }
+      const { rows: everyone, weekly } = await fetchAllStandings(monday);
+      const hasWeekPoints = weekly && everyone.some((row) => row.week_start === monday && row.week_score > 0);
 
       const pool = new Map<string, StandingRow>();
-      for (const row of listed) pool.set(row.id, mapProfile(row));
-
-      if (weekly) {
-        const weekBoard = await supabaseClient
-          .from("profiles")
-          .select(PROFILE_COLUMNS_WITH_WEEK)
-          .eq("week_start", monday)
-          .order("week_score", { ascending: false })
-          .limit(50);
-        if (!weekBoard.error) {
-          for (const row of (weekBoard.data ?? []) as unknown as ProfileRow[]) {
-            pool.set(row.id, mapProfile(row));
-          }
-        }
-      }
+      for (const row of everyone) pool.set(row.id, row);
 
       let viewerRow: StandingRow | null = null;
       if (user) {
         const ensured = await ensureScoutProfile(user);
-        const own = weekly
-          ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_WITH_WEEK).eq("id", user.id).maybeSingle()
-          : await supabaseClient.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).maybeSingle();
-        viewerRow = own.data
-          ? mapProfile(own.data as unknown as ProfileRow)
-          : {
+        const listed = pool.get(user.id);
+        const own = listed ? null : await supabaseClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
+        viewerRow = listed
+          ?? (own?.data
+            ? mapProfile(own.data as unknown as ProfileRow)
+            : {
               id: ensured.id,
               username: ensured.username,
               total_score: ensured.total_score,
@@ -240,14 +179,16 @@ export default function StandingsPage() {
               matches_solved: 0,
               avatar_url: ensured.avatar_url,
               favorite_club: ensured.favorite_club,
-            };
-        if (!pool.has(viewerRow.id)) pool.set(viewerRow.id, viewerRow);
+            });
+        viewerRow = withLocalWallet(viewerRow, loadWallet());
+        pool.set(viewerRow.id, viewerRow);
         const followed = await listFollowedIds(user.id);
         if (!cancelled) setFollowingIds(followed);
       }
 
       if (!cancelled) {
         setWeekStart(monday);
+        setWeeklyAvailable(hasWeekPoints);
         setRows([...pool.values()]);
         setViewer(viewerRow);
         setViewerId(user?.id ?? null);
@@ -277,6 +218,7 @@ export default function StandingsPage() {
               <p className="mt-1 text-sm text-zinc-500">{messages.standings.subtitleWorld}</p>
               <p className="mt-1 text-xs font-medium text-zinc-400">{messages.standings.globalNote}</p>
             </div>
+            {weeklyAvailable && (
             <div className="flex flex-col gap-2">
               <div className="flex self-start rounded-2xl bg-zinc-100 p-1">
                 <button
@@ -301,6 +243,7 @@ export default function StandingsPage() {
                 </button>
               </div>
             </div>
+            )}
           </div>
           {mode === "week" && (
             <p className="mt-2 text-[11px] font-medium text-zinc-400">{messages.standings.weekReset}</p>
@@ -326,6 +269,9 @@ export default function StandingsPage() {
           </div>
 
           <section className="mt-6 bg-white border border-zinc-200 rounded-3xl p-4 sm:p-6 shadow-sm">
+            {placed.board.length === 0 && (
+              <p className="px-2 py-8 text-center text-sm font-medium text-zinc-500">{messages.standings.empty}</p>
+            )}
             <div className="space-y-2">
               {placed.board.map((row, index) => {
                 const rank = index + 1;

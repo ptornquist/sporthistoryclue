@@ -13,6 +13,8 @@ export interface Messages {
     login: string;
     join: string;
     logout: string;
+    profile: string;
+    account: string;
     openMenu: string;
     language: string;
   };
@@ -35,6 +37,7 @@ export interface Messages {
     soundOn: string;
     soundOff: string;
     solved: string;
+    alreadySolved: string;
     gameOver: string;
     sealed: string;
     finalScore: string;
@@ -84,6 +87,7 @@ export interface Messages {
     close: string;
     follow: string;
     following: string;
+    empty: string;
     ranges: {
       bronze: string;
       silver: string;

@@ -10,9 +10,10 @@ import {
   isUnlocked,
   loadWallet,
   saveWallet,
-  walletFromProfile,
   type CosmeticWallet,
 } from "@/lib/cosmetics";
+import { awardDirectly, type AwardClient } from "@/lib/solve-award";
+import { mergeWallet, profileFromRow, syncWalletToProfile, walletAhead } from "@/lib/wallet-sync";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 
 interface CosmeticPayload {
@@ -38,12 +39,39 @@ function rpcMissing(error: { code?: string; message?: string } | null): boolean 
   );
 }
 
-function payloadWallet(data: CosmeticPayload, grantedMatchIds: string[], duelWins: number): CosmeticWallet {
-  return {
-    ...walletFromProfile(data),
-    grantedMatchIds,
-    duelWins,
-  };
+interface ServerAward {
+  saved?: "rpc" | "direct" | "user" | "duplicate" | "none";
+  earned?: number;
+  duplicate?: boolean;
+  profile?: CosmeticPayload | null;
+}
+
+/**
+ * Saves the solve through the server, which can write profiles.total_score
+ * even when the award RPC is missing. Null means the server could not help
+ * (offline, signed out, or no service key) and the caller should fall back.
+ */
+async function awardOnServer(body: Record<string, unknown>): Promise<ServerAward | null> {
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const { data: auth } = await supabaseClient.auth.getSession();
+    if (auth.session?.access_token) headers.Authorization = `Bearer ${auth.session.access_token}`;
+    const response = await fetch("/api/solve", { method: "POST", headers, body: JSON.stringify(body) });
+    if (!response.ok) return null;
+    const data = (await response.json()) as ServerAward;
+    return data.saved && data.saved !== "none" && data.profile ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+async function currentUserId(): Promise<string | null> {
+  try {
+    const { data } = await supabaseClient.auth.getUser();
+    return data.user?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function useCosmeticWallet() {
@@ -77,15 +105,18 @@ export function useCosmeticWallet() {
         if (!user || cancelled) return;
         userIdRef.current = user.id;
         if (!cancelled) setUserId(user.id);
-        const { data, error } = await supabaseClient
-          .from("profiles")
-          .select(
-            "coins, unlocked_titles, unlocked_frames, equipped_title, equipped_frame, total_score, matches_solved, streak, best_streak",
-          )
-          .eq("id", user.id)
-          .maybeSingle();
-        if (cancelled || error || !data) return;
-        commit(payloadWallet(data, local.grantedMatchIds, local.duelWins));
+        const { data, error } = await supabaseClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
+        if (cancelled || error) return;
+        const row = (data as Record<string, unknown> | null) ?? null;
+        if (row) commit(mergeWallet(local, profileFromRow(row)));
+
+        // Points that only ever reached this browser are pushed onto the row,
+        // so the board reads the same total the profile card shows.
+        if (walletAhead(local, row)) {
+          const { data: session } = await supabaseClient.auth.getSession();
+          const synced = await syncWalletToProfile(local, session.session?.access_token);
+          if (synced && !cancelled) commit(mergeWallet(walletRef.current, synced));
+        }
       } catch {
         // Local wallet already covers guest and offline play.
       }
@@ -116,7 +147,7 @@ export function useCosmeticWallet() {
     if (userIdRef.current && isSupabaseConfigured) {
       const { data, error } = await supabaseClient.rpc("purchase_cosmetic", { item_id: itemId });
       if (!error && data && typeof data === "object") {
-        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds, current.duelWins);
+        const next = mergeWallet(current, data as CosmeticPayload);
         commit(next);
         return { wallet: next, ok: true as const };
       }
@@ -142,7 +173,7 @@ export function useCosmeticWallet() {
     if (userIdRef.current && isSupabaseConfigured) {
       const { data, error } = await supabaseClient.rpc("equip_cosmetic", { item_id: itemId });
       if (!error && data && typeof data === "object") {
-        const next = payloadWallet(data as CosmeticPayload, current.grantedMatchIds, current.duelWins);
+        const next = mergeWallet(current, data as CosmeticPayload);
         commit(next);
         return next;
       }
@@ -164,11 +195,35 @@ export function useCosmeticWallet() {
     duelWon: boolean;
     newStreak: number;
     sport?: string | null;
+    /** The chosen option and drop date let the server re-grade before saving. */
+    option?: string;
+    dateKey?: string | null;
   }) => {
     const current = walletRef.current;
     const preview = applySolveReward(current, input);
 
-    if (userIdRef.current && isSupabaseConfigured) {
+    const userId = userIdRef.current ?? (isSupabaseConfigured ? await currentUserId() : null);
+    if (userId && isSupabaseConfigured) {
+      userIdRef.current = userId;
+      const server = await awardOnServer({
+        matchId: input.matchId,
+        pointScore: Math.max(0, Math.floor(input.pointScore)),
+        isDaily: input.isDaily,
+        streakContinued: input.streakContinued,
+        duelWon: input.duelWon,
+        newStreak: input.newStreak,
+        sport: input.sport ?? null,
+        option: input.option,
+        dateKey: input.dateKey ?? undefined,
+      });
+      if (server?.profile) {
+        // A replayed kluring keeps the wallet as it was; nothing new was earned.
+        const base = server.duplicate ? current : preview.wallet;
+        const next = mergeWallet(base, server.profile);
+        commit(next);
+        return { wallet: next, earned: server.duplicate ? 0 : (server.earned ?? preview.earned) };
+      }
+
       const payload = {
         match_id: input.matchId,
         point_score: input.pointScore,
@@ -187,9 +242,20 @@ export function useCosmeticWallet() {
       const { data, error } = awarded;
       if (!error && data && typeof data === "object") {
         const payload = data as CosmeticPayload;
-        const next = payloadWallet(payload, preview.wallet.grantedMatchIds, preview.wallet.duelWins);
+        const next = mergeWallet(preview.wallet, payload);
         commit(next);
         return { wallet: next, earned: payload.earned ?? preview.earned };
+      }
+
+      // Last resort: UPDATE profiles as the scout. Works wherever the score guard trigger is absent.
+      const direct = await awardDirectly(
+        supabaseClient as unknown as AwardClient,
+        { ...input, userId, pointScore: Math.max(0, Math.floor(input.pointScore)) },
+      ).catch(() => null);
+      if (direct?.saved) {
+        const next = mergeWallet(preview.wallet, profileFromRow(direct.profile));
+        commit(next);
+        return { wallet: next, earned: direct.earned };
       }
       if (error && !rpcMissing(error)) {
         return { wallet: current, earned: 0 };

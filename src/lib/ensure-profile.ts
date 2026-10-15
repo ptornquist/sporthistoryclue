@@ -8,6 +8,7 @@ import {
   storageKeyForBoard,
   type DerbyBoard,
 } from "@/lib/premier-league";
+import { scoreOf } from "@/lib/standings-source";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 
 export interface ScoutProfileRow {
@@ -90,7 +91,7 @@ export function profileFromRow(raw: Record<string, unknown>, fallback: ScoutProf
     display_name: display,
     avatar_url: typeof raw.avatar_url === "string" ? raw.avatar_url : null,
     streak: asNumber(raw.streak),
-    total_score: asNumber(raw.total_score),
+    total_score: scoreOf({ total_score: raw.total_score as number | string | null, career_score: raw.career_score as number | string | null }),
     favorite_club: favorite,
     hockey_club: clubOn("hockey", raw.hockey_club, fallback.hockey_club),
     football_club: clubOn("football", raw.football_club, fallback.football_club),

@@ -7,13 +7,16 @@ import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
   followTarget,
   listFollowedIds,
+  loadScoutProfiles,
   searchScouts,
   unfollowTarget,
   type ScoutProfile,
 } from '@/lib/supabase/network';
 import { uploadProfileAvatar } from '@/lib/avatar-upload';
-import { legendById } from '@/lib/standings';
+import { resolveCareerScore, resolveSolvedCount, sumDailyCompletions, type DailyTotals } from '@/lib/career-score';
+import { loadRemoteCompletions } from '@/lib/daily-completions';
 import { ScoutCard } from '@/components/game/ScoutCard';
+import { ProfileAccountBar } from '@/components/profile/ProfileAccountBar';
 import { DuelHistory } from '@/components/game/DuelHistory';
 import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
@@ -97,6 +100,7 @@ export default function ProfilePage() {
   const [savingUsername, setSavingUsername] = useState(false);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [totalScore, setTotalScore] = useState(0);
+  const [dailyTotals, setDailyTotals] = useState<DailyTotals>({ score: 0, solved: 0 });
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -135,33 +139,12 @@ export default function ProfilePage() {
         .filter((row): row is MatchRecord => Boolean(row) && typeof row === "object");
       setMatches(rows);
       setTotalScore(rows.reduce((acc, curr) => acc + asNumber(curr?.score), 0));
+      setDailyTotals(sumDailyCompletions(await loadRemoteCompletions(user.id)));
 
       const ids = await listFollowedIds(user.id);
       const safeIds = Array.isArray(ids) ? ids : [];
       setFollowingIds(safeIds);
-      const profileIds = safeIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id));
-      const legends = safeIds
-        .map((id) => legendById(id))
-        .filter((row): row is NonNullable<ReturnType<typeof legendById>> => Boolean(row))
-        .map((row) => ({
-          id: row.id,
-          username: row.username,
-          avatar_url: row.avatar_url,
-          streak: row.streak,
-          total_score: row.total_score,
-        }));
-      let scouts: ScoutProfile[] = [];
-      if (profileIds.length > 0) {
-        const { data: scoutProfiles } = await supabaseClient
-          .from('profiles')
-          .select('id, username, avatar_url, streak, total_score')
-          .in('id', profileIds);
-        scouts = Array.isArray(scoutProfiles)
-          ? scoutProfiles.filter((scout) => scout && typeof scout.id === "string") as ScoutProfile[]
-          : [];
-      }
-      const seen = new Set(scouts.map((scout) => scout.id));
-      setNetwork([...scouts, ...legends.filter((row) => !seen.has(row.id))]);
+      setNetwork(await loadScoutProfiles(safeIds));
     } catch (error) {
       console.error(error);
       setMatches([]);
@@ -291,13 +274,48 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {user && (
+          <>
+            <input
+              ref={photoInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              aria-label={messages.profile.changePhoto}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                void handlePhoto(file);
+              }}
+            />
+            <ProfileAccountBar
+              changePhotoLabel={messages.profile.changePhoto}
+              logoutLabel={messages.nav.logout}
+              busyLabel={messages.clubs.saving}
+              uploading={uploadingPhoto}
+              signingOut={signingOut}
+              onChangePhoto={() => photoInput.current?.click()}
+              onSignOut={() => { void handleSignOut(); }}
+            />
+          </>
+        )}
+
         <ScoutCard
           handle={profile?.username || guestHandle || "scout"}
           email={user?.email}
           avatarUrl={profile?.avatar_url}
           wallet={wallet}
-          careerScore={Math.max(asNumber(wallet.totalScore), asNumber(profile?.total_score), totalScore)}
-          solvedCount={Math.max(asNumber(wallet.matchesSolved), matches.length)}
+          careerScore={resolveCareerScore({
+            local: asNumber(wallet.totalScore),
+            profile: asNumber(profile?.total_score),
+            history: totalScore,
+            daily: dailyTotals.score,
+          })}
+          solvedCount={resolveSolvedCount({
+            local: asNumber(wallet.matchesSolved),
+            history: matches.length,
+            daily: dailyTotals.solved,
+          })}
           currentStreak={Math.max(asNumber(wallet.streak), asNumber(profile?.streak))}
           bestStreak={Math.max(asNumber(wallet.bestStreak), asNumber(wallet.streak), asNumber(profile?.streak))}
           solvedSlugs={solvedSlugs}
@@ -306,39 +324,9 @@ export default function ProfilePage() {
           signedIn={Boolean(user)}
           profileReady={profileReady}
           onEquip={(itemId) => { void equip(itemId); }}
+          onChangePhoto={user ? () => photoInput.current?.click() : undefined}
+          changePhotoLabel={messages.profile.changePhoto}
         />
-
-        {user && (
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              ref={photoInput}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                void handlePhoto(file);
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => photoInput.current?.click()}
-              disabled={uploadingPhoto}
-              className="min-h-11 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-wider text-zinc-800 hover:border-blue-600"
-            >
-              {uploadingPhoto ? messages.clubs.saving : messages.profile.changePhoto}
-            </button>
-            <button
-              type="button"
-              onClick={() => { void handleSignOut(); }}
-              disabled={signingOut}
-              className="min-h-11 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
-            >
-              {signingOut ? messages.clubs.saving : messages.nav.logout}
-            </button>
-          </div>
-        )}
 
         <ClubAllegianceCard
           userId={user?.id ?? null}
