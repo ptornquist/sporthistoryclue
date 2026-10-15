@@ -136,6 +136,12 @@ function isMissingRelation(error: ErrorLike | null): boolean {
   return error.code === "42P01" || error.code === "PGRST205" || /does not exist|schema cache/i.test(error.message);
 }
 
+/** The browser may not insert grants (RLS allows only select); it still gets to save the score. */
+function isForbidden(error: ErrorLike | null): boolean {
+  if (!error) return false;
+  return error.code === "42501" || /permission denied|row-level security/i.test(error.message);
+}
+
 async function loadProfile(client: AwardClient, userId: string): Promise<ProfileValues | null> {
   const result = await client.from("profiles").select("*").eq("id", userId).maybeSingle();
   return result.error ? null : result.data;
@@ -164,7 +170,7 @@ export async function awardDirectly(client: AwardClient, input: SolveInput, user
   if (grant.error && isDuplicate(grant.error)) {
     return { saved: true, earned: 0, duplicate: true, profile: row };
   }
-  if (grant.error && !isMissingRelation(grant.error)) {
+  if (grant.error && !isMissingRelation(grant.error) && !isForbidden(grant.error)) {
     return { saved: false, reason: "write", profile: row, message: grant.error.message };
   }
 

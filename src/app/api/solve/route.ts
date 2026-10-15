@@ -1,3 +1,4 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { gradeOption, isMatchKey, loadArchiveMatch, loadDailyFixture, parseDateKey } from "@/lib/daily-drop";
 import {
@@ -6,11 +7,12 @@ import {
   MATCH_ID,
   MAX_SOLVE_POINTS,
   type AwardClient,
+  type DirectAward,
   type ProfileValues,
 } from "@/lib/solve-award";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured, SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/config";
+import { createPublicSupabaseClient, createServerSupabaseClient } from "@/lib/supabase/server";
 import { utcDateKey } from "@/lib/utc-streak";
 
 export const dynamic = "force-dynamic";
@@ -34,10 +36,44 @@ interface RpcClient {
   rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
 }
 
+interface Scout {
+  id: string;
+  username: string;
+  /** A client that acts as this scout, for the RPC and RLS-scoped writes. */
+  client: SupabaseClient;
+}
+
 function rpcMissing(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
   const message = (error.message ?? "").toLowerCase();
   return error.code === "PGRST202" || message.includes("could not find the function") || message.includes("does not exist");
+}
+
+function handleOf(email: string | undefined | null): string {
+  return email?.split("@")[0]?.trim() || "scout";
+}
+
+/**
+ * Who is solving. A bearer token from the browser session wins; otherwise the
+ * cookie session the proxy keeps fresh.
+ */
+async function resolveScout(request: Request): Promise<Scout | null> {
+  const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
+  if (bearer) {
+    const byToken = await createPublicSupabaseClient().auth.getUser(bearer);
+    if (byToken.data.user) {
+      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      });
+      return { id: byToken.data.user.id, username: handleOf(byToken.data.user.email), client };
+    }
+  }
+
+  const cookieClient = await createServerSupabaseClient();
+  const session = await cookieClient.auth.getUser();
+  if (!session.data.user) return null;
+  return { id: session.data.user.id, username: handleOf(session.data.user.email), client: cookieClient };
 }
 
 /** True when the chosen option really solves the kluring; null when nothing to check against. */
@@ -50,7 +86,7 @@ async function verified(body: Payload): Promise<boolean | null> {
   const dateKey = parseDateKey(body.dateKey ?? null);
   if (!dateKey) return null;
   const fixture = await loadDailyFixture(dateKey);
-  if (fixture.id !== body.matchId) return false;
+  if (fixture.id !== body.matchId) return null;
   return gradeOption(fixture, body.option);
 }
 
@@ -78,11 +114,33 @@ async function awardViaRpc(client: RpcClient, body: Payload): Promise<{ profile:
   return { profile, earned };
 }
 
+async function rememberDaily(scout: Scout, body: Payload): Promise<void> {
+  if (!body.isDaily) return;
+  const dropDate = parseDateKey(body.dateKey ?? null) ?? utcDateKey(new Date());
+  const writer = supabaseAdmin ?? scout.client;
+  try {
+    await writer.from("user_daily_completions").upsert(
+      {
+        user_id: scout.id,
+        drop_date: dropDate,
+        solved: true,
+        score: body.pointScore,
+        challenge_id: body.matchId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,drop_date" },
+    );
+  } catch {
+    // The browser already keeps this record; the profile row is what the board needs.
+  }
+}
+
 /**
  * Saves a solved kluring to the scout's profile right away.
- * Tries the award RPC as the user first; when the database lacks it, the
- * service-role client applies the same update directly so the board and the
- * profile read the points from profiles.total_score.
+ *
+ * Order: the award RPC as the scout; the same update with the service role when
+ * the RPC is missing; and finally the update as the scout through RLS, which
+ * works in databases that never got the score guard trigger.
  */
 export async function POST(request: Request) {
   if (!isSupabaseConfigured) {
@@ -101,24 +159,8 @@ export async function POST(request: Request) {
   }
   const body = parsed.data;
 
-  const userClient = await createServerSupabaseClient();
-  let userId: string | null = null;
-  let username = "scout";
-  const session = await userClient.auth.getUser();
-  if (session.data.user) {
-    userId = session.data.user.id;
-    username = session.data.user.email?.split("@")[0] ?? username;
-  } else {
-    const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-    if (bearer && supabaseAdmin) {
-      const byToken = await supabaseAdmin.auth.getUser(bearer);
-      if (byToken.data.user) {
-        userId = byToken.data.user.id;
-        username = byToken.data.user.email?.split("@")[0] ?? username;
-      }
-    }
-  }
-  if (!userId) {
+  const scout = await resolveScout(request);
+  if (!scout) {
     return Response.json({ error: "Sign in to save points" }, { status: 401 });
   }
 
@@ -128,39 +170,27 @@ export async function POST(request: Request) {
   }
 
   const headers = { "Cache-Control": "no-store" };
+  await rememberDaily(scout, body);
 
-  if (session.data.user) {
-    try {
-      const rpc = await awardViaRpc(userClient as unknown as RpcClient, body);
-      if (rpc) return Response.json({ saved: "rpc", earned: rpc.earned, profile: rpc.profile }, { headers });
-    } catch (error) {
-      console.error("award_solve_coins failed", error);
-    }
+  try {
+    const rpc = await awardViaRpc(scout.client as unknown as RpcClient, body);
+    if (rpc) return Response.json({ saved: "rpc", earned: rpc.earned, profile: rpc.profile }, { headers });
+  } catch (error) {
+    console.error("award_solve_coins failed", error);
   }
 
-  if (!supabaseAdmin) {
-    return Response.json({ saved: "none", earned: 0, profile: null, reason: "service-key" }, { headers });
+  const input = { ...body, userId: scout.id, today: utcDateKey(new Date()) };
+  let direct: DirectAward | null = null;
+  let saved: "direct" | "user" = "direct";
+
+  if (supabaseAdmin) {
+    direct = await awardDirectly(supabaseAdmin as unknown as AwardClient, input, scout.username);
   }
-
-  const admin = supabaseAdmin as unknown as AwardClient;
-  const direct = await awardDirectly(admin, { ...body, userId, today: utcDateKey(new Date()) }, username);
-
-  if (body.isDaily) {
-    const dropDate = parseDateKey(body.dateKey ?? null) ?? utcDateKey(new Date());
-    try {
-      await supabaseAdmin.from("user_daily_completions").upsert(
-        {
-          user_id: userId,
-          drop_date: dropDate,
-          solved: true,
-          score: body.pointScore,
-          challenge_id: body.matchId,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,drop_date" },
-      );
-    } catch {
-      // The browser already keeps this record; the profile row is what the board needs.
+  if (!direct?.saved) {
+    const asScout = await awardDirectly(scout.client as unknown as AwardClient, input, scout.username);
+    if (asScout.saved || !direct) {
+      direct = asScout;
+      saved = "user";
     }
   }
 
@@ -171,5 +201,5 @@ export async function POST(request: Request) {
     );
   }
   const profile = { ...direct.profile, total_score: careerOf(direct.profile) };
-  return Response.json({ saved: "direct", earned: direct.earned, duplicate: direct.duplicate, profile }, { headers });
+  return Response.json({ saved, earned: direct.earned, duplicate: direct.duplicate, profile }, { headers });
 }

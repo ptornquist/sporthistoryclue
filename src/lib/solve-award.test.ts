@@ -26,8 +26,8 @@ const input: SolveInput = {
 interface Options {
   /** Existing profiles rows by id. */
   profiles?: Record<string, ProfileValues>;
-  /** Whether coin_grants exists; the set holds already granted "user:match" keys. */
-  grants?: Set<string> | null;
+  /** coin_grants state: a set of granted "user:match" keys, null when the table is missing, or RLS-forbidden. */
+  grants?: Set<string> | null | "forbidden";
   /** Simulates the guard trigger: score columns never change on update. */
   guarded?: boolean;
 }
@@ -50,7 +50,8 @@ function fakeClient(options: Options = {}) {
         insert: (values: ProfileValues) => {
           writes.push({ table, values });
           if (table === "coin_grants") {
-            if (!grants) return Promise.resolve({ data: null, error: { message: "relation coin_grants does not exist", code: "42P01" } });
+            if (grants === null) return Promise.resolve({ data: null, error: { message: "relation coin_grants does not exist", code: "42P01" } });
+            if (grants === "forbidden") return Promise.resolve({ data: null, error: { message: "new row violates row-level security policy", code: "42501" } });
             const key = `${values.user_id}:${values.match_id}`;
             if (grants.has(key)) return Promise.resolve({ data: null, error: { message: "duplicate key", code: "23505" } });
             grants.add(key);
@@ -151,6 +152,13 @@ describe("solve award", () => {
     const result = await awardDirectly(client, input);
     expect(result.saved).toBe(true);
     expect(profiles.get("u1")?.total_score).toBe(10000);
+  });
+
+  it("still saves from the browser when RLS forbids writing grants", async () => {
+    const { client, profiles } = fakeClient({ grants: "forbidden", profiles: { u1: { id: "u1", total_score: 57000 } } });
+    const result = await awardDirectly(client, input);
+    expect(result.saved).toBe(true);
+    expect(profiles.get("u1")?.total_score).toBe(67000);
   });
 
   it("reports when the guard trigger swallowed the write", async () => {
