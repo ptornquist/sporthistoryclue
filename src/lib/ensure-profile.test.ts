@@ -9,6 +9,9 @@ const fallback: ScoutProfileRow = {
   streak: 0,
   total_score: 0,
   favorite_club: null,
+  hockey_club: null,
+  football_club: null,
+  international_club: null,
   locale: "sv",
   country: "world",
 };
@@ -30,6 +33,8 @@ describe("default scout profile", () => {
     expect(saved.locale).toBe("en");
     expect(saved.country).toBe("se");
     expect(saved.favorite_club).toBe("aik");
+    expect(saved.football_club).toBe("aik");
+    expect(saved.hockey_club).toBeNull();
     expect(saved.streak).toBe(2);
     expect(saved.total_score).toBe(400);
   });

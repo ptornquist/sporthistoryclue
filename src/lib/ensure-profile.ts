@@ -1,7 +1,13 @@
 import { getLocaleSnapshot } from "@/lib/i18n/locale-store";
 import { getCountrySnapshot, isScoutCountry, type ScoutCountry } from "@/lib/i18n/profile-preferences";
 import type { Locale } from "@/lib/i18n/types";
-import { FAVORITE_CLUB_KEY, isKnownClub } from "@/lib/premier-league";
+import {
+  FAVORITE_CLUB_KEY,
+  isClubOnBoard,
+  isKnownClub,
+  storageKeyForBoard,
+  type DerbyBoard,
+} from "@/lib/premier-league";
 import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase/client";
 
 export interface ScoutProfileRow {
@@ -12,6 +18,9 @@ export interface ScoutProfileRow {
   streak: number;
   total_score: number;
   favorite_club: string | null;
+  hockey_club: string | null;
+  football_club: string | null;
+  international_club: string | null;
   locale: Locale | null;
   country: ScoutCountry | null;
 }
@@ -20,6 +29,15 @@ export function handleFromEmail(email?: string | null): string {
   const local = (email ?? "").split("@")[0] ?? "";
   const clean = local.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 24);
   return clean || "scout";
+}
+
+function storedBoardClub(board: DerbyBoard): string | null {
+  try {
+    const stored = window.localStorage.getItem(storageKeyForBoard(board));
+    return isClubOnBoard(stored, board) ? stored : null;
+  } catch {
+    return null;
+  }
 }
 
 export function localScoutProfile(user: { id: string; email?: string | null }): ScoutProfileRow {
@@ -31,6 +49,9 @@ export function localScoutProfile(user: { id: string; email?: string | null }): 
   } catch {
     favorite = null;
   }
+  const hockey = storedBoardClub("hockey");
+  const football = storedBoardClub("football") ?? (isClubOnBoard(favorite, "football") ? favorite : null);
+  const international = storedBoardClub("international") ?? (isClubOnBoard(favorite, "international") ? favorite : null);
   return {
     id: user.id,
     username,
@@ -39,6 +60,9 @@ export function localScoutProfile(user: { id: string; email?: string | null }): 
     streak: 0,
     total_score: 0,
     favorite_club: favorite,
+    hockey_club: hockey,
+    football_club: football,
+    international_club: international,
     locale: getLocaleSnapshot(),
     country: getCountrySnapshot(),
   };
@@ -53,7 +77,12 @@ export function profileFromRow(raw: Record<string, unknown>, fallback: ScoutProf
   const locale = raw.locale === "sv" || raw.locale === "en" ? raw.locale : fallback.locale;
   const countryValue = typeof raw.country === "string" ? raw.country : null;
   const country = isScoutCountry(countryValue) ? countryValue : fallback.country;
-  const club = typeof raw.favorite_club === "string" && isKnownClub(raw.favorite_club) ? raw.favorite_club : fallback.favorite_club;
+  const favorite = typeof raw.favorite_club === "string" && isKnownClub(raw.favorite_club) ? raw.favorite_club : fallback.favorite_club;
+  const clubOn = (board: DerbyBoard, value: unknown, fallbackClub: string | null) => {
+    if (typeof value === "string" && isClubOnBoard(value, board)) return value;
+    if (isClubOnBoard(favorite, board)) return favorite;
+    return fallbackClub;
+  };
   const display = typeof raw.display_name === "string" && raw.display_name.trim() ? raw.display_name.trim() : username;
   return {
     id: typeof raw.id === "string" && raw.id ? raw.id : fallback.id,
@@ -62,7 +91,10 @@ export function profileFromRow(raw: Record<string, unknown>, fallback: ScoutProf
     avatar_url: typeof raw.avatar_url === "string" ? raw.avatar_url : null,
     streak: asNumber(raw.streak),
     total_score: asNumber(raw.total_score),
-    favorite_club: club,
+    favorite_club: favorite,
+    hockey_club: clubOn("hockey", raw.hockey_club, fallback.hockey_club),
+    football_club: clubOn("football", raw.football_club, fallback.football_club),
+    international_club: clubOn("international", raw.international_club, fallback.international_club),
     locale,
     country,
   };
@@ -104,6 +136,9 @@ async function writeOptionalFields(profile: ScoutProfileRow): Promise<void> {
   if (profile.locale) fields.push({ locale: profile.locale });
   if (profile.country) fields.push({ country: profile.country });
   if (profile.favorite_club) fields.push({ favorite_club: profile.favorite_club });
+  if (profile.hockey_club) fields.push({ hockey_club: profile.hockey_club });
+  if (profile.football_club) fields.push({ football_club: profile.football_club });
+  if (profile.international_club) fields.push({ international_club: profile.international_club });
   for (const patch of fields) {
     const { error } = await supabaseClient.from("profiles").update(patch).eq("id", profile.id);
     if (error) console.error("Profile preference error:", error);

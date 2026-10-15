@@ -36,10 +36,12 @@ import type { Locale } from '@/lib/i18n/types';
 import { rememberDailyCompletion } from '@/lib/daily-completions';
 import { decideWinner, duelHandleName, duelPrompt, rememberDuel } from '@/lib/duels';
 import {
-  FAVORITE_CLUB_KEY,
+  derbyBoardForSport,
   derbyContributionLine,
   findClub,
-  isKnownClub,
+  isClubOnBoard,
+  storageKeyForBoard,
+  type DerbyBoard,
 } from '@/lib/premier-league';
 
 interface DailyFixture {
@@ -184,7 +186,11 @@ export function DailyDropArena({
   const [duelPts, setDuelPts] = useState(initialDuelPts);
   const [opponentTitle, setOpponentTitle] = useState('');
   const [coinsEarned, setCoinsEarned] = useState(0);
-  const [favoriteClubId, setFavoriteClubId] = useState<string | null>(null);
+  const [clubByBoard, setClubByBoard] = useState<Record<DerbyBoard, string | null>>({
+    hockey: null,
+    football: null,
+    international: null,
+  });
   const [statsRefresh, setStatsRefresh] = useState(0);
   const statsSent = useRef<string | null>(null);
   const duelLogged = useRef<string | null>(null);
@@ -273,8 +279,12 @@ export function DailyDropArena({
     };
 
     const initPlayer = async () => {
-      const storedClub = localStorage.getItem(FAVORITE_CLUB_KEY);
-      if (isKnownClub(storedClub)) setFavoriteClubId(storedClub);
+      const storedBoards: Record<DerbyBoard, string | null> = { hockey: null, football: null, international: null };
+      for (const board of ["hockey", "football", "international"] as const) {
+        const stored = localStorage.getItem(storageKeyForBoard(board));
+        if (isClubOnBoard(stored, board)) storedBoards[board] = stored;
+      }
+      setClubByBoard(storedBoards);
 
       if (!isSupabaseConfigured) {
         const saved = localStorage.getItem('shc_handle');
@@ -298,14 +308,19 @@ export function DailyDropArena({
 
           const { data: allegiance } = await supabaseClient
             .from('profiles')
-            .select('favorite_club')
+            .select('hockey_club, football_club, international_club, favorite_club')
             .eq('id', user.id)
             .maybeSingle();
-          const clubId = allegiance?.favorite_club;
-          if (typeof clubId === 'string' && isKnownClub(clubId)) {
-            setFavoriteClubId(clubId);
-            localStorage.setItem(FAVORITE_CLUB_KEY, clubId);
+          const next = { ...storedBoards };
+          for (const board of ["hockey", "football", "international"] as const) {
+            const column = allegiance?.[`${board}_club`];
+            const value = typeof column === "string" ? column : board === "football" ? allegiance?.favorite_club : null;
+            if (typeof value === "string" && isClubOnBoard(value, board)) {
+              next[board] = value;
+              localStorage.setItem(storageKeyForBoard(board), value);
+            }
           }
+          setClubByBoard(next);
 
           applyStoredStreak(profile?.streak);
         } else {
@@ -547,6 +562,7 @@ export function DailyDropArena({
           streakContinued: newStreak >= 2,
           duelWon: Boolean(duelHandle) && score > duelPts,
           newStreak,
+          sport: sportKluringById(challenge.id)?.sport ?? null,
         });
         setCoinsEarned(reward.earned);
         logFinishedDuel(score);
@@ -664,7 +680,8 @@ export function DailyDropArena({
 
   const isDuelActive = Boolean(duelHandle);
   const userFinalScore = gameWon ? score : 0;
-  const pledgedClub = findClub(favoriteClubId);
+  const pledgedBoard = derbyBoardForSport(sportKluringById(challenge?.id ?? "")?.sport);
+  const pledgedClub = findClub(clubByBoard[pledgedBoard]);
   const isVictory = isDuelActive && userFinalScore > duelPts;
   const isDefeat = isDuelActive && userFinalScore < duelPts;
   const isTie = isDuelActive && userFinalScore === duelPts;

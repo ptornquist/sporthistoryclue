@@ -58,6 +58,9 @@ export interface Messages {
     average: string;
     tableToggle: string;
     scopeToggle: string;
+    boardHockey: string;
+    boardFootball: string;
+    boardInternational: string;
     rank: string;
     club: string;
     scouts: string;
@@ -79,6 +82,8 @@ export interface Messages {
     solved: string;
     solvedCount: string;
     close: string;
+    follow: string;
+    following: string;
     ranges: {
       bronze: string;
       silver: string;
@@ -91,6 +96,12 @@ export interface Messages {
     swedenHeading: string;
     internationalHeading: string;
     pledge: string;
+    hockey: string;
+    football: string;
+    international: string;
+    hockeyHint: string;
+    footballHint: string;
+    internationalHint: string;
     choose: string;
     clubLabel: string;
     save: string;
@@ -108,6 +119,9 @@ export interface Messages {
     country: string;
     countryHint: string;
     favoriteClub: string;
+    changePhoto: string;
+    photoSaved: string;
+    photoFailed: string;
     guestReady: string;
     loadFailed: string;
     retry: string;

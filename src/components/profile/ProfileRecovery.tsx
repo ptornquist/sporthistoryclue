@@ -16,7 +16,11 @@ export function ProfileRecovery({ onRetry }: { onRetry?: () => void }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [handle, setHandle] = useState("scout");
   const [email, setEmail] = useState<string | null>(null);
-  const [clubId, setClubId] = useState<string | null>(null);
+  const [clubs, setClubs] = useState<{ hockey: string | null; football: string | null; international: string | null }>({
+    hockey: null,
+    football: null,
+    international: null,
+  });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -41,7 +45,11 @@ export function ProfileRecovery({ onRetry }: { onRetry?: () => void }) {
         setUserId(user.id);
         setEmail(user.email ?? null);
         setHandle(profile.username || "scout");
-        setClubId(profile.favorite_club);
+        setClubs({
+          hockey: profile.hockey_club,
+          football: profile.football_club,
+          international: profile.international_club,
+        });
         if (profile.locale === "sv" || profile.locale === "en") setLocale(profile.locale);
         if (profile.country && isScoutCountry(profile.country)) setCountry(profile.country);
       } catch (error) {
@@ -78,7 +86,7 @@ export function ProfileRecovery({ onRetry }: { onRetry?: () => void }) {
           />
           <ClubAllegianceCard
             userId={userId}
-            initialClubId={clubId}
+            initialClubs={clubs}
             onSaved={() => {}}
           />
           {onRetry && (
