@@ -17,7 +17,7 @@ import { duelHandleName } from '@/lib/duels';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { FEATURED_BADGES, badgeUnlocked, loadBadgeTimes, rememberBadgeTimes } from '@/lib/cosmetics';
 import { ClubAllegianceCard } from '@/components/derby/ClubAllegianceCard';
-import { ensureScoutProfile } from '@/lib/ensure-profile';
+import { ensureScoutProfile, localScoutProfile, saveProfilePatch } from '@/lib/ensure-profile';
 import { setLocale } from '@/lib/i18n/locale-store';
 import { isScoutCountry, setCountry } from '@/lib/i18n/profile-preferences';
 
@@ -39,16 +39,25 @@ interface Profile {
 }
 
 function asNumber(value: unknown, fallback = 0): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
 }
 
-function challengeOf(record: MatchRecord): { subject: string; year: number | ""; category: string } {
-  const value = record.challenges as MatchRecord["challenges"] | MatchRecord["challenges"][] | null | undefined;
+function formatPoints(value: unknown): string {
+  return asNumber(value).toLocaleString("sv-SE");
+}
+
+function challengeOf(record: MatchRecord | null | undefined): { subject: string; year: number | ""; category: string } {
+  const value = record?.challenges as MatchRecord["challenges"] | MatchRecord["challenges"][] | null | undefined;
   const row = Array.isArray(value) ? value[0] : value;
   return {
     subject: row?.subject || "—",
     year: typeof row?.year === "number" ? row.year : "",
-    category: row?.category || "",
+    category: typeof row?.category === "string" ? row.category : "",
   };
 }
 
@@ -88,13 +97,16 @@ export default function ProfilePage() {
   const loadData = async () => {
     try {
       if (!isSupabaseConfigured) return;
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      const auth = await supabaseClient.auth.getUser();
+      const user = auth.data?.user ?? null;
       if (!user) {
         setUser(null);
         setProfile(null);
         return;
       }
-      setUser(user);
+      setUser({ id: user.id, email: user.email });
+      const fallback = localScoutProfile(user);
+      setProfile(fallback);
 
       const nextProfile = await ensureScoutProfile(user);
       setProfile(nextProfile);
@@ -108,12 +120,10 @@ export default function ProfilePage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (matchHistory) {
-        const rows = matchHistory as unknown as MatchRecord[];
-        setMatches(rows);
-        const sum = rows.reduce((acc, curr) => acc + asNumber(curr?.score), 0);
-        setTotalScore(sum);
-      }
+      const rows = ((Array.isArray(matchHistory) ? matchHistory : []) as unknown[])
+        .filter((row): row is MatchRecord => Boolean(row) && typeof row === "object");
+      setMatches(rows);
+      setTotalScore(rows.reduce((acc, curr) => acc + asNumber(curr?.score), 0));
 
       const ids = await getFollowingIds(user.id);
       const safeIds = Array.isArray(ids) ? ids : [];
@@ -123,7 +133,8 @@ export default function ProfilePage() {
           .from('profiles')
           .select('id, username, avatar_url, streak, total_score')
           .in('id', safeIds);
-        setNetwork((scoutProfiles as ScoutProfile[]) || []);
+        const scouts = Array.isArray(scoutProfiles) ? scoutProfiles.filter((scout) => scout && typeof scout.id === "string") : [];
+        setNetwork(scouts as ScoutProfile[]);
       } else {
         setNetwork([]);
       }
@@ -194,17 +205,20 @@ export default function ProfilePage() {
     setSavingUsername(true);
 
     const clean = usernameInput.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
-    const { error } = await supabaseClient
-      .from('profiles')
-      .upsert({ id: user.id, username: clean, display_name: clean });
-
-    if (error) {
-      alert(`Could not save username: ${error.message}`);
-    } else {
-      setProfile((prev) => (prev ? { ...prev, username: clean, display_name: clean } : prev));
-      setActionMessage('Username updated!');
-      setTimeout(() => setActionMessage(null), 3000);
+    if (!clean) {
+      setSavingUsername(false);
+      return;
     }
+    setProfile((prev) => (prev ? { ...prev, username: clean, display_name: clean } : prev));
+    const saved = await saveProfilePatch(user.id, { username: clean });
+    if (!saved) console.error("Profile username error: the handle is kept on this device.");
+    try {
+      window.localStorage.setItem("shc_handle", clean);
+    } catch {
+      // The in-memory handle still updates the card.
+    }
+    setActionMessage("Username updated!");
+    setTimeout(() => setActionMessage(null), 3000);
     setSavingUsername(false);
   };
 
@@ -305,14 +319,15 @@ export default function ProfilePage() {
           )}
           {(scoutQuery.trim() && user ? scoutHits : []).length > 0 && (
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {(scoutQuery.trim() && user ? scoutHits : []).map((scout) => {
-                const handle = scout.username || 'scout';
+              {(scoutQuery.trim() && user ? scoutHits : []).filter((scout) => scout && typeof scout.id === "string").map((scout) => {
+                const handle = typeof scout.username === "string" && scout.username ? scout.username : "scout";
+                const avatar = typeof scout.avatar_url === "string" ? scout.avatar_url : "";
                 const following = followingIds.includes(scout.id);
                 return (
                   <div key={scout.id} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      {scout.avatar_url ? (
-                        <img src={scout.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-200" />
+                      {avatar ? (
+                        <img src={avatar} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-200" />
                       ) : (
                         <span className="w-9 h-9 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
                           {handle.charAt(0).toUpperCase()}
@@ -346,15 +361,16 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {network.map((scout) => {
-                const handle = scout.username || 'scout';
-                const streak = scout.streak ?? 0;
-                const points = scout.total_score ?? 0;
+              {network.filter((scout) => scout && typeof scout.id === "string").map((scout) => {
+                const handle = typeof scout.username === "string" && scout.username ? scout.username : "scout";
+                const streak = asNumber(scout.streak);
+                const points = asNumber(scout.total_score);
+                const avatar = typeof scout.avatar_url === "string" ? scout.avatar_url : "";
                 return (
                   <div key={scout.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      {scout.avatar_url ? (
-                        <img src={scout.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border border-zinc-200" />
+                      {avatar ? (
+                        <img src={avatar} alt="" className="w-10 h-10 rounded-full object-cover border border-zinc-200" />
                       ) : (
                         <span className="w-10 h-10 rounded-full bg-blue-600 text-white text-sm font-black flex items-center justify-center shrink-0">
                           {handle.charAt(0).toUpperCase()}
@@ -366,7 +382,7 @@ export default function ProfilePage() {
                           {streak} day streak
                         </span>
                         <span className="text-[10px] font-mono text-zinc-500 font-bold">
-                          {points.toLocaleString()} PTS
+                          {formatPoints(points)} PTS
                         </span>
                       </div>
                     </div>
@@ -396,7 +412,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
-              {matches.map((m) => {
+              {matches.filter((row) => row && typeof row === "object").map((m) => {
                 const challenge = challengeOf(m);
                 const points = asNumber(m?.score);
                 const when = m?.created_at ? new Date(m.created_at) : null;
@@ -413,7 +429,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-black font-mono text-blue-600">
-                      +{points.toLocaleString()}
+                      +{formatPoints(points)}
                     </span>
                     <span className="text-[10px] font-mono text-zinc-400 block">
                       {stamp}

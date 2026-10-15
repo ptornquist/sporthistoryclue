@@ -67,4 +67,9 @@ describe("duel records", () => {
     const merged = mergeDuels(remote, local);
     expect(merged.map((row) => row.id)).toEqual(["local", "remote"]);
   });
+
+  it("drops a clash that cannot be rendered", () => {
+    const broken = duel({ id: "broken", winner_username: undefined as unknown as string });
+    expect(mergeDuels([broken], [])).toEqual([]);
+  });
 });

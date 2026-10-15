@@ -136,5 +136,14 @@ export function mergeDuels(remote: DuelRecord[], local: DuelRecord[]): DuelRecor
 function isDuelRecord(value: unknown): value is DuelRecord {
   if (!value || typeof value !== "object") return false;
   const row = value as DuelRecord;
-  return typeof row.id === "string" && typeof row.challenger_username === "string" && typeof row.opponent_username === "string";
+  return (
+    typeof row.id === "string" &&
+    typeof row.challenger_username === "string" &&
+    typeof row.opponent_username === "string" &&
+    typeof row.winner_username === "string" &&
+    typeof row.challenger_score === "number" &&
+    Number.isFinite(row.challenger_score) &&
+    typeof row.opponent_score === "number" &&
+    Number.isFinite(row.opponent_score)
+  );
 }

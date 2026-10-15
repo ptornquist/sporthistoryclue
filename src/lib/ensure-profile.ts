@@ -68,13 +68,35 @@ export function profileFromRow(raw: Record<string, unknown>, fallback: ScoutProf
   };
 }
 
+/** Base row only. Optional columns are written afterwards so a missing column cannot block creation. */
+export function profileInsertPayload(profile: Pick<ScoutProfileRow, "id" | "username">): { id: string; username: string } {
+  return { id: profile.id, username: profile.username || "scout" };
+}
+
+export function alternateUsername(username: string, userId: string): string {
+  const suffix = userId.replace(/[^a-z0-9]/gi, "").slice(0, 6).toLowerCase() || "scout";
+  const base = (username || "scout").replace(/[^a-z0-9_]/gi, "").slice(0, 16) || "scout";
+  return `${base}_${suffix}`.slice(0, 24);
+}
+
 async function insertDefaultRow(profile: ScoutProfileRow): Promise<void> {
-  const created = await supabaseClient.from("profiles").insert({
-    id: profile.id,
-    username: profile.username,
-  });
-  if (!created.error || created.error.code === "23505") return;
-  console.error("Profile create error:", created.error);
+  const attempts = [
+    profileInsertPayload(profile),
+    profileInsertPayload({ id: profile.id, username: alternateUsername(profile.username, profile.id) }),
+  ];
+  for (const payload of attempts) {
+    let created = await supabaseClient.from("profiles").insert(payload);
+    const text = `${created.error?.message ?? ""} ${created.error?.details ?? ""}`.toLowerCase();
+    if (text.includes("display_name")) {
+      created = await supabaseClient.from("profiles").insert({ ...payload, display_name: payload.username });
+    }
+    if (!created.error) return;
+    const failure = `${created.error.message ?? ""} ${created.error.details ?? ""}`.toLowerCase();
+    if (created.error.code === "23505" && !failure.includes("username")) return;
+    if (created.error.code === "23505") continue;
+    console.error("Profile create error:", created.error);
+    return;
+  }
 }
 
 async function writeOptionalFields(profile: ScoutProfileRow): Promise<void> {
@@ -113,21 +135,21 @@ export async function ensureScoutProfile(user: { id: string; email?: string | nu
 
 export async function saveProfilePatch(userId: string, patch: Record<string, string>): Promise<boolean> {
   if (!isSupabaseConfigured || !userId) return false;
-  const updated = await supabaseClient.from("profiles").update(patch).eq("id", userId).select("id");
-  if (!updated.error && Array.isArray(updated.data) && updated.data.length > 0) return true;
-  if (updated.error) console.error("Profile update error:", updated.error);
-  const created = await supabaseClient.from("profiles").insert({
-    id: userId,
-    username: "scout",
-    ...patch,
-  });
-  if (!created.error) return true;
-  if (created.error.code === "23505") {
+  try {
+    const updated = await supabaseClient.from("profiles").update(patch).eq("id", userId).select("id");
+    if (!updated.error && Array.isArray(updated.data) && updated.data.length > 0) return true;
+    if (updated.error) console.error("Profile update error:", updated.error);
+    const fallback = localScoutProfile({ id: userId });
+    await insertDefaultRow({
+      ...fallback,
+      username: typeof patch.username === "string" && patch.username ? patch.username : fallback.username,
+    });
     const retry = await supabaseClient.from("profiles").update(patch).eq("id", userId);
     if (!retry.error) return true;
     console.error("Profile retry error:", retry.error);
     return false;
+  } catch (error) {
+    console.error(error);
+    return false;
   }
-  console.error("Profile insert error:", created.error);
-  return false;
 }

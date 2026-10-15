@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { handleFromEmail, profileFromRow, type ScoutProfileRow } from "./ensure-profile";
+import { alternateUsername, handleFromEmail, profileFromRow, profileInsertPayload, type ScoutProfileRow } from "./ensure-profile";
 
 const fallback: ScoutProfileRow = {
   id: "user-1",
@@ -32,5 +32,11 @@ describe("default scout profile", () => {
     expect(saved.favorite_club).toBe("aik");
     expect(saved.streak).toBe(2);
     expect(saved.total_score).toBe(400);
+  });
+
+  it("creates a default row without optional columns when the database row is missing", () => {
+    expect(profileInsertPayload({ id: "user-1", username: "" })).toEqual({ id: "user-1", username: "scout" });
+    expect(profileInsertPayload(fallback)).toEqual({ id: "user-1", username: "scout" });
+    expect(alternateUsername("adascout", "1234abcd-0000")).toBe("adascout_1234ab");
   });
 });

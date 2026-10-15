@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ensureScoutProfile } from '@/lib/ensure-profile';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
@@ -22,15 +23,15 @@ export default function Navbar() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isSupabaseConfigured) return;
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      setUser(user);
-      if (user) {
-        const { data } = await supabaseClient
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', user.id)
-          .maybeSingle();
-        setProfile(data);
+      try {
+        const auth = await supabaseClient.auth.getUser();
+        const user = auth.data?.user ?? null;
+        setUser(user);
+        if (!user) return;
+        const profile = await ensureScoutProfile(user);
+        setProfile({ username: profile.username, avatar_url: profile.avatar_url ?? undefined });
+      } catch (error) {
+        console.error(error);
       }
     };
 
@@ -42,7 +43,17 @@ export default function Navbar() {
 
     const listener = isSupabaseConfigured
       ? supabaseClient.auth.onAuthStateChange((_event, session) => {
-          setUser(session?.user || null);
+          const next = session?.user ?? null;
+          setUser(next);
+          if (!next) {
+            setProfile(null);
+            return;
+          }
+          void ensureScoutProfile(next)
+            .then((profile) => {
+              setProfile({ username: profile.username, avatar_url: profile.avatar_url ?? undefined });
+            })
+            .catch((error) => console.error(error));
         })
       : null;
 
