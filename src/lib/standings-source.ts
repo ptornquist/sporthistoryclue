@@ -65,9 +65,19 @@ export function mapProfile(row: ProfileRow): StandingRow {
   };
 }
 
-/** Highest score first; ties fall back to the handle so the order is stable. */
+/** One row per scout; when the same id appears twice the higher-scoring row stays. */
+export function dedupeScouts(rows: StandingRow[]): StandingRow[] {
+  const byId = new Map<string, StandingRow>();
+  for (const row of rows) {
+    const seen = byId.get(row.id);
+    if (!seen || row.total_score > seen.total_score) byId.set(row.id, row);
+  }
+  return [...byId.values()];
+}
+
+/** Highest score first, one row per scout; ties fall back to the handle so the order is stable. */
 export function sortByScore(rows: StandingRow[]): StandingRow[] {
-  return [...rows].sort(compareByCareer);
+  return dedupeScouts(rows).sort(compareByCareer);
 }
 
 interface QueryResult {

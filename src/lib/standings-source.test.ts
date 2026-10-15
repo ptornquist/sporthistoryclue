@@ -161,4 +161,13 @@ describe("standings source", () => {
     expect(mapProfile(row("id", { username: null, display_name: "Dan" })).username).toBe("Dan");
     expect(sortByScore([mapped, mapProfile(row("z", { total_score: 5 }))])[0]?.id).toBe("z");
   });
+
+  it("keeps one row per scout, the higher-scoring one, before ranking", () => {
+    const rows = [
+      mapProfile(row("peter", { total_score: 0 })),
+      mapProfile(row("anna", { total_score: 4000 })),
+      mapProfile(row("peter", { total_score: 77000 })),
+    ];
+    expect(sortByScore(rows).map((r) => [r.id, r.total_score])).toEqual([["peter", 77000], ["anna", 4000]]);
+  });
 });
