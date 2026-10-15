@@ -84,6 +84,7 @@ export interface Messages {
     close: string;
     follow: string;
     following: string;
+    empty: string;
     ranges: {
       bronze: string;
       silver: string;

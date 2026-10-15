@@ -26,6 +26,8 @@ export function ScoutCard({
   signedIn,
   profileReady,
   onEquip,
+  onChangePhoto,
+  changePhotoLabel,
 }: {
   handle: string;
   email?: string | null;
@@ -41,6 +43,8 @@ export function ScoutCard({
   signedIn: boolean;
   profileReady: boolean;
   onEquip: (itemId: string) => void;
+  onChangePhoto?: () => void;
+  changePhotoLabel?: string;
 }) {
   const safeScore = Number.isFinite(careerScore) ? careerScore : 0;
   const safeSolved = Number.isFinite(solvedCount) ? solvedCount : 0;
@@ -70,7 +74,18 @@ export function ScoutCard({
     <section className="space-y-6">
       <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <ScoutAvatar frameId={wallet?.equippedFrame} avatarUrl={avatarUrl} label={handle || "scout"} size="lg" />
+          <div className="flex flex-col items-start gap-2">
+            <ScoutAvatar frameId={wallet?.equippedFrame} avatarUrl={avatarUrl} label={handle || "scout"} size="lg" />
+            {onChangePhoto && (
+              <button
+                type="button"
+                onClick={onChangePhoto}
+                className="text-xs font-black uppercase tracking-wider text-blue-700 hover:text-blue-900"
+              >
+                {changePhotoLabel || "Byt profilbild"}
+              </button>
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-black tracking-tight text-zinc-900">@{handle}</h1>
             <p className={`mt-2 inline-flex rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-bold uppercase tracking-wider ${titleClassName(wallet.equippedTitle)}`}>

@@ -129,10 +129,19 @@ export default function Navbar() {
                 label={displayName}
                 size="sm"
               />
-              <span className="text-xs font-black text-zinc-800 max-w-[220px] truncate group-hover:text-blue-600">
+              <span className="hidden max-w-[220px] truncate text-xs font-black text-zinc-800 group-hover:text-blue-600 sm:inline">
                 {pillLabel}
               </span>
             </Link>
+          )}
+          {user && (
+            <button
+              type="button"
+              onClick={() => { void handleSignOut(); }}
+              className="inline-flex whitespace-nowrap rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-rose-700 hover:bg-rose-100"
+            >
+              {messages.nav.logout}
+            </button>
           )}
           {!user && (
             <div className="hidden sm:flex items-center gap-2">

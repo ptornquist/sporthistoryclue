@@ -18,6 +18,7 @@ import {
   placeScout,
   pointsToNextTier,
   scoreFor,
+  STANDINGS_LIMIT,
   type StandingMode,
   type StandingRow,
 } from "@/lib/standings";
@@ -187,7 +188,7 @@ export default function StandingsPage() {
         .from("profiles")
         .select(PROFILE_COLUMNS_WITH_WEEK)
         .order("total_score", { ascending: false })
-        .limit(50);
+        .limit(STANDINGS_LIMIT);
 
       const weekly = !wide.error;
       let listed = (wide.data ?? []) as unknown as ProfileRow[];
@@ -196,9 +197,9 @@ export default function StandingsPage() {
           .from("profiles")
           .select(PROFILE_COLUMNS)
           .order("total_score", { ascending: false })
-          .limit(50);
+          .limit(STANDINGS_LIMIT);
         const retry = narrow.error
-          ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_NARROW).order("total_score", { ascending: false }).limit(50)
+          ? await supabaseClient.from("profiles").select(PROFILE_COLUMNS_NARROW).order("total_score", { ascending: false }).limit(STANDINGS_LIMIT)
           : narrow;
         listed = (retry.data ?? []) as unknown as ProfileRow[];
       }
@@ -212,7 +213,7 @@ export default function StandingsPage() {
           .select(PROFILE_COLUMNS_WITH_WEEK)
           .eq("week_start", monday)
           .order("week_score", { ascending: false })
-          .limit(50);
+          .limit(STANDINGS_LIMIT);
         if (!weekBoard.error) {
           for (const row of (weekBoard.data ?? []) as unknown as ProfileRow[]) {
             pool.set(row.id, mapProfile(row));
@@ -326,6 +327,9 @@ export default function StandingsPage() {
           </div>
 
           <section className="mt-6 bg-white border border-zinc-200 rounded-3xl p-4 sm:p-6 shadow-sm">
+            {placed.board.length === 0 && (
+              <p className="px-2 py-8 text-center text-sm font-medium text-zinc-500">{messages.standings.empty}</p>
+            )}
             <div className="space-y-2">
               {placed.board.map((row, index) => {
                 const rank = index + 1;

@@ -4,9 +4,15 @@ import { saveProfilePatch } from "@/lib/ensure-profile";
 const MAX_BYTES = 2 * 1024 * 1024;
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+export function avatarUploadIssue(file: { type: string; size: number }): "type" | "size" | null {
+  if (!TYPES.has(file.type)) return "type";
+  if (file.size <= 0 || file.size > MAX_BYTES) return "size";
+  return null;
+}
+
 export async function uploadProfileAvatar(userId: string, file: File): Promise<string | null> {
   if (!userId || !isSupabaseConfigured) return null;
-  if (!TYPES.has(file.type) || file.size <= 0 || file.size > MAX_BYTES) return null;
+  if (avatarUploadIssue(file)) return null;
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
   const path = `${userId}/avatar.${extension}`;
   const uploaded = await supabaseClient.storage.from("avatars").upload(path, file, {

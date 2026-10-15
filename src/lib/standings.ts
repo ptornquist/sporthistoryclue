@@ -35,29 +35,8 @@ export const DIVISION_TIERS: DivisionTier[] = [
   { id: "hall", emoji: "💎", name: "Hall of Fame", range: "60 000+ poäng", min: 60000, nextAt: null },
 ];
 
-export const LEGEND_SCOUTS: StandingRow[] = [
-  { id: "legend-pele", username: "pele", total_score: 84200, week_score: 9100, week_start: null, streak: 28, equipped_title: "hall-of-famer", equipped_frame: "golden-glow", matches_solved: 64, avatar_url: null, legend: true },
-  { id: "legend-gretzky", username: "gretzky", total_score: 71500, week_score: 6400, week_start: null, streak: 21, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 58, avatar_url: null, legend: true },
-  { id: "legend-jordan", username: "jordan", total_score: 68800, week_score: 12050, week_start: null, streak: 14, equipped_title: "record-breaker", equipped_frame: "arena-lights", matches_solved: 51, avatar_url: null, legend: true },
-  { id: "legend-serena", username: "serena", total_score: 54000, week_score: 8800, week_start: null, streak: 18, equipped_title: "hall-of-famer", equipped_frame: "velvet-rope", matches_solved: 47, avatar_url: null, legend: true },
-  { id: "legend-ali", username: "ali", total_score: 47200, week_score: 4200, week_start: null, streak: 11, equipped_title: "ringside", equipped_frame: "golden-glow", matches_solved: 39, avatar_url: null, legend: true },
-  { id: "legend-bolt", username: "bolt", total_score: 22100, week_score: 7600, week_start: null, streak: 9, equipped_title: "record-breaker", equipped_frame: "arena-lights", matches_solved: 22, avatar_url: null, legend: true },
-  { id: "legend-maradona", username: "maradona", total_score: 18400, week_score: 3100, week_start: null, streak: 6, equipped_title: "golden-boot", equipped_frame: "standard", matches_solved: 19, avatar_url: null, legend: true },
-  { id: "legend-orr", username: "orr", total_score: 9600, week_score: 2400, week_start: null, streak: 4, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 12, avatar_url: null, legend: true },
-];
-
-export const SWEDISH_LEGENDS: StandingRow[] = [
-  { id: "legend-zlatan", username: "zlatan", total_score: 76800, week_score: 8200, week_start: null, streak: 24, equipped_title: "golden-boot", equipped_frame: "golden-glow", matches_solved: 61, avatar_url: null, favorite_club: "malmo", country: "se", legend: true },
-  { id: "legend-forsberg", username: "forsberg", total_score: 64200, week_score: 5400, week_start: null, streak: 19, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 52, avatar_url: null, favorite_club: "aik", country: "se", legend: true },
-  { id: "legend-sundin", username: "sundin", total_score: 51300, week_score: 4100, week_start: null, streak: 16, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 44, avatar_url: null, favorite_club: "djurgarden", country: "se", legend: true },
-  { id: "legend-lidstrom", username: "lidstrom", total_score: 44700, week_score: 3600, week_start: null, streak: 13, equipped_title: "hall-of-famer", equipped_frame: "velvet-rope", matches_solved: 37, avatar_url: null, favorite_club: "ifk-goteborg", country: "se", legend: true },
-  { id: "legend-borg", username: "borg", total_score: 28900, week_score: 2700, week_start: null, streak: 8, equipped_title: "record-breaker", equipped_frame: "arena-lights", matches_solved: 26, avatar_url: null, favorite_club: "hammarby", country: "se", legend: true },
-  { id: "legend-salming", username: "salming", total_score: 12400, week_score: 1800, week_start: null, streak: 5, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 15, avatar_url: null, favorite_club: "sirius", country: "se", legend: true },
-];
-
-export function legendById(id: string): StandingRow | null {
-  return [...LEGEND_SCOUTS, ...SWEDISH_LEGENDS].find((row) => row.id === id) ?? null;
-}
+/** How many real profile rows the public board keeps, highest score first. */
+export const STANDINGS_LIMIT = 200;
 
 export function isNationalScout(row: StandingRow): boolean {
   return row.country === "se" || isSwedishClub(row.favorite_club);
@@ -84,19 +63,19 @@ export function nextTier(score: number): DivisionTier | null {
   return DIVISION_TIERS[index + 1] ?? null;
 }
 
-export function isActiveScout(row: StandingRow): boolean {
-  return !row.legend && row.username.trim().length > 0 && row.total_score > 0;
+/** A saved profile. Zero points still belong on the board. Hardcoded legend ids never do. */
+export function isRealScout(row: StandingRow): boolean {
+  if (row.legend || row.id.startsWith("legend-")) return false;
+  return row.username.trim().length > 0;
 }
 
-/** Keep a live board. Pad with legends when fewer than five scouts have points. */
+/** Real profiles only. The board is never padded with sample accounts. */
 export function fillStandings(rows: StandingRow[], scope: BoardScope = "world"): StandingRow[] {
-  const real = rows.filter(isActiveScout);
+  const real = rows.filter(isRealScout);
   const scoped = scope === "se" ? real.filter(isNationalScout) : real;
-  const legends = scope === "se" ? SWEDISH_LEGENDS : LEGEND_SCOUTS;
-  const pool = scoped.length >= 5 ? scoped : [...scoped, ...legends];
   const seen = new Set<string>();
   const unique: StandingRow[] = [];
-  for (const row of pool) {
+  for (const row of scoped) {
     if (seen.has(row.id)) continue;
     seen.add(row.id);
     unique.push(row);
@@ -106,7 +85,7 @@ export function fillStandings(rows: StandingRow[], scope: BoardScope = "world"):
 
 export function scoreFor(row: StandingRow, mode: StandingMode, weekStart: string | null): number {
   if (mode === "all") return row.total_score;
-  if (row.legend || !weekStart) return row.week_score;
+  if (!weekStart) return row.week_score;
   return row.week_start === weekStart ? row.week_score : 0;
 }
 
@@ -128,7 +107,7 @@ export function placeScout(
     return a.username.localeCompare(b.username);
   });
   const rank = viewer ? sorted.findIndex((row) => row.id === viewer.id) + 1 : null;
-  return { board: sorted.slice(0, 50), rank: rank && rank > 0 ? rank : null };
+  return { board: sorted.slice(0, STANDINGS_LIMIT), rank: rank && rank > 0 ? rank : null };
 }
 
 export function formatPositionLine(input: {

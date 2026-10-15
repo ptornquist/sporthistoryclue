@@ -84,6 +84,7 @@ export const sv: Messages = {
     close: "Stäng",
     follow: "Följ",
     following: "Följer",
+    empty: "Inga scouter i tabellen ännu. Varje konto som skapas syns här, sorterat efter poäng.",
     ranges: {
       bronze: "0–9 999 poäng",
       silver: "10 000–29 999 poäng",

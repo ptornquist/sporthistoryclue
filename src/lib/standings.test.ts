@@ -42,36 +42,34 @@ describe("division tiers", () => {
 });
 
 describe("standings board", () => {
-  it("fills an empty table with legends and leaves a full table alone", () => {
-    expect(fillStandings([])).toHaveLength(8);
-    const live = ["a", "b", "c", "d", "e"].map((id, index) =>
-      scout({ id, username: id, total_score: 1000 * (index + 1) }),
-    );
-    expect(fillStandings(live).every((row) => !row.legend)).toBe(true);
+  it("lists only real profiles, including members with zero points", () => {
+    const fake = scout({ id: "legend-pele", username: "pele", total_score: 84200, legend: true });
+    const quiet = scout({ id: "quiet", username: "quiet", total_score: 0 });
+    const live = scout({ id: "live", username: "live", total_score: 1200 });
+    expect(fillStandings([])).toEqual([]);
+    expect(fillStandings([fake, quiet, live]).map((row) => row.username)).toEqual(["quiet", "live"]);
   });
 
   it("ranks this week separately and drops a stale week", () => {
-    const bolt = scout({ id: "legend-bolt", username: "bolt", total_score: 22100, week_score: 7600, legend: true });
-    const pele = scout({ id: "legend-pele", username: "pele", total_score: 84200, week_score: 9100, legend: true });
-    expect(scoreFor(bolt, "week", "2026-09-21")).toBe(7600);
+    const fresh = scout({ id: "fresh", username: "fresh", total_score: 1000, week_score: 400, week_start: "2026-09-21" });
     const stale = scout({ id: "me", username: "me", total_score: 50000, week_score: 9000, week_start: "2026-09-14" });
+    expect(scoreFor(fresh, "week", "2026-09-21")).toBe(400);
     expect(scoreFor(stale, "week", "2026-09-21")).toBe(0);
-    const placed = placeScout([stale], null, "week", "2026-09-21");
-    expect(placed.board[0]?.username).not.toBe("me");
-    expect(pele.total_score).toBeGreaterThan(bolt.total_score);
+    const placed = placeScout([stale, fresh], null, "week", "2026-09-21");
+    expect(placed.board.map((row) => row.username)).toEqual(["fresh", "me"]);
   });
 
-  it("keeps a signed-in scout on the position line even below the top of the card", () => {
+  it("keeps a signed-in scout on the position line", () => {
     const viewer = scout({ id: "me", username: "icebreaker", total_score: 800, week_score: 800 });
     const placed = placeScout([], viewer, "all", "2026-09-21");
-    expect(placed.rank).toBe(9);
+    expect(placed.rank).toBe(1);
     expect(formatPositionLine({
       rank: placed.rank ?? 1,
       username: viewer.username,
       title: "Isanalytiker",
       score: 800,
       pointsToNext: 9200,
-    })).toBe("DIN PLATS: #9 · @icebreaker · Isanalytiker · 800 poäng · Nästa nivå om 9 200 poäng");
+    })).toBe("DIN PLATS: #1 · @icebreaker · Isanalytiker · 800 poäng · Nästa nivå om 9 200 poäng");
   });
 
   it("keeps scouts from every club on one global board", () => {
@@ -82,10 +80,8 @@ describe("standings board", () => {
     expect(placed.board.some((row) => row.id === "en")).toBe(true);
   });
 
-  it("filters the Sweden board to Swedish clubs and Swedish legends", () => {
-    const sweden = fillStandings([], "se");
-    expect(sweden.map((row) => row.username)).toContain("zlatan");
-    expect(sweden.some((row) => row.username === "pele")).toBe(false);
+  it("filters the Sweden board to Swedish clubs", () => {
+    expect(fillStandings([], "se")).toEqual([]);
 
     const international = scout({
       id: "arsenal-fan",

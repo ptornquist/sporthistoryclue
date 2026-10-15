@@ -84,6 +84,7 @@ export const en: Messages = {
     close: "Close",
     follow: "Follow",
     following: "Following",
+    empty: "No scouts on the board yet. Every account that is created shows up here, sorted by score.",
     ranges: {
       bronze: "0–9,999 pts",
       silver: "10,000–29,999 pts",
