@@ -1,9 +1,20 @@
+import { ENGLISH_CLUES } from "@/lib/i18n/english-clues";
+import { englishSurface } from "@/lib/i18n/english-surface";
+import { KLURING_META } from "@/lib/sport-kluring-meta";
+import { guessMatchesKluring, KLURING_CARD_TITLES, type SportKluring } from "@/lib/sport-kluring";
+
 /**
  * Balanserad pool. Varje rad har fem svenska kort: arena, epok, taktik,
  * avgörande skede och klimax. De fyra första håller namnet, de sista löser.
  * 2026-10-04 är dagsindex 20730, och längden 30 gör den dagen till första raden.
  */
-export const SPORT_KLURING_POOL = [
+type RawKluring = {
+  id: string;
+  sport: SportKluring["sport"];
+  clues: readonly [string, string, string, string, string];
+};
+
+const RAW_POOL: readonly RawKluring[] = [
   {
     id: "sverige-sovjet-1984",
     sport: "ice_hockey",
@@ -334,10 +345,38 @@ export const SPORT_KLURING_POOL = [
       "EM-finalen den 30 januari 2022 i Budapest. Sverige slår Spanien med 27–26 sedan Niclas Ekberg satt straffen efter signalen.",
     ],
   },
-] as const;
+];
 
-export type PoolKluring = (typeof SPORT_KLURING_POOL)[number];
-export type PoolSport = PoolKluring["sport"];
+function buildKluring(row: RawKluring): SportKluring {
+  const meta = KLURING_META[row.id];
+  const english = ENGLISH_CLUES[row.id];
+  if (!meta) throw new Error(`Missing kluring meta for ${row.id}`);
+  if (!english || english.length !== row.clues.length) {
+    throw new Error(`Missing English cards for ${row.id}`);
+  }
+  return {
+    id: row.id,
+    sport: row.sport,
+    title: meta.title,
+    category: meta.category,
+    year: meta.year,
+    cards: row.clues.map((text, index) => ({
+      step: index + 1,
+      title: KLURING_CARD_TITLES[index],
+      text: { sv: text, en: english[index] },
+    })),
+    options: {
+      sv: [...meta.options],
+      en: meta.options.map((option) => englishSurface(option)),
+    },
+    correctAnswerIndex: meta.correctAnswerIndex,
+  };
+}
+
+export const SPORT_KLURING_POOL: readonly SportKluring[] = RAW_POOL.map(buildKluring);
+
+export type PoolKluring = SportKluring;
+export type PoolSport = SportKluring["sport"];
 
 /** Same number the arena prints as KLURING #n. 2026-10-04 is 20730. */
 export function dayIndexFromKey(dateKey: string): number {
@@ -357,9 +396,18 @@ export function kluringForDay(dateKey: string, sport?: PoolSport): PoolKluring {
   return rows[dayIndexFromKey(dateKey) % rows.length];
 }
 
+export function sportKluringById(id: string): SportKluring | null {
+  return SPORT_KLURING_POOL.find((item) => item.id === id) ?? null;
+}
+
+export function kluringGuessIsCorrect(id: string, option: string): boolean {
+  const row = sportKluringById(id);
+  return row ? guessMatchesKluring(row, option) : false;
+}
+
 export function cluesForKluring(id: string): readonly string[] | null {
-  const row = SPORT_KLURING_POOL.find((item) => item.id === id);
-  return row ? row.clues : null;
+  const row = sportKluringById(id);
+  return row ? row.cards.map((card) => card.text.sv) : null;
 }
 
 /** Catalog fixtures that are not rows in the daily pool, still played in Swedish. */

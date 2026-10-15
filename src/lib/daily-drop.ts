@@ -20,6 +20,8 @@ import {
 import { swedishSurface } from "@/lib/swedish-surface";
 import { SPORT_LABEL, type Clue, type Puzzle, type Sport } from "@/lib/types";
 import { presentClues } from "@/lib/present-clues";
+import { clueTexts, correctOption, optionLabels } from "@/lib/sport-kluring";
+import { kluringForDay, kluringGuessIsCorrect } from "@/lib/sport-kluringar-pool";
 import { hashString } from "@/lib/utils";
 
 export interface PublicDaily {
@@ -210,17 +212,20 @@ export async function viewerCanOpenArchive(): Promise<boolean> {
 }
 
 export async function loadDailyFixture(dateKey: string): Promise<SecretDaily> {
-  const fromChallenges = await loadFromTable("challenges", dateKey);
-  const fixture = fromChallenges ?? (await loadFromTable("puzzles", dateKey)) ?? fromCatalog(dateKey);
-  const optionSource = await buildDecoySource(fixture);
+  const kluring = kluringForDay(dateKey);
   return {
-    ...fixture,
-    optionSource,
-    options: selectChallengeOptions(optionSource),
+    id: kluring.id,
+    date_key: dateKey,
+    category: kluring.category.sv,
+    clues: clueTexts(kluring, "sv"),
+    options: optionLabels(kluring, "sv"),
+    subject: correctOption(kluring, "sv"),
+    year: kluring.year,
   };
 }
 
 export function gradeOption(fixture: SecretDaily, option: string): boolean {
+  if (kluringGuessIsCorrect(fixture.id, option)) return true;
   return optionMatchesChallenge(option, {
     subject: fixture.subject,
     year: fixture.year,

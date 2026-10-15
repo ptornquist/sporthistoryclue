@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { InstallAppBanner } from '@/components/InstallAppBanner';
+import { LocaleBoot } from '@/components/LocaleBoot';
+import { LanguageProvider } from '@/lib/i18n/language-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -62,8 +64,11 @@ export default function RootLayout({
   return (
     <html lang="sv">
       <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white">
-        {children}
-        <InstallAppBanner />
+        <LanguageProvider>
+          {children}
+          <LocaleBoot />
+          <InstallAppBanner />
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -7,6 +7,8 @@ import {
   utcTodayKey,
 } from "@/lib/daily-drop";
 import { selectChallengeOptions } from "@/lib/decoy-options";
+import { clueTexts, optionLabels } from "@/lib/sport-kluring";
+import { sportKluringById } from "@/lib/sport-kluringar-pool";
 
 export const dynamic = "force-dynamic";
 
@@ -42,9 +44,11 @@ export async function GET(request: Request) {
 
   const fixture = await loadDailyFixture(dateKey);
   const payload = toPublicDaily(fixture);
+  const kluring = sportKluringById(fixture.id);
   return Response.json({
     ...payload,
-    options: fixture.optionSource ? selectChallengeOptions(fixture.optionSource) : payload.options,
-    clues: payload.clues,
+    category: kluring?.category.sv ?? payload.category,
+    options: kluring ? optionLabels(kluring, "sv") : fixture.optionSource ? selectChallengeOptions(fixture.optionSource) : payload.options,
+    clues: kluring ? clueTexts(kluring, "sv") : payload.clues,
   });
 }

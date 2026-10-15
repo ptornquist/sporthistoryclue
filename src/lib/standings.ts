@@ -1,3 +1,6 @@
+import type { BoardScope } from "./board-scope";
+import { isSwedishClub } from "./premier-league";
+
 export type StandingMode = "week" | "all";
 
 export interface StandingRow {
@@ -11,6 +14,8 @@ export interface StandingRow {
   equipped_frame: string | null;
   matches_solved: number;
   avatar_url: string | null;
+  favorite_club?: string | null;
+  country?: "se" | "world";
   legend?: boolean;
 }
 
@@ -41,6 +46,19 @@ export const LEGEND_SCOUTS: StandingRow[] = [
   { id: "legend-orr", username: "orr", total_score: 9600, week_score: 2400, week_start: null, streak: 4, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 12, avatar_url: null, legend: true },
 ];
 
+export const SWEDISH_LEGENDS: StandingRow[] = [
+  { id: "legend-zlatan", username: "zlatan", total_score: 76800, week_score: 8200, week_start: null, streak: 24, equipped_title: "golden-boot", equipped_frame: "golden-glow", matches_solved: 61, avatar_url: null, favorite_club: "malmo", country: "se", legend: true },
+  { id: "legend-forsberg", username: "forsberg", total_score: 64200, week_score: 5400, week_start: null, streak: 19, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 52, avatar_url: null, favorite_club: "aik", country: "se", legend: true },
+  { id: "legend-sundin", username: "sundin", total_score: 51300, week_score: 4100, week_start: null, streak: 16, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 44, avatar_url: null, favorite_club: "djurgarden", country: "se", legend: true },
+  { id: "legend-lidstrom", username: "lidstrom", total_score: 44700, week_score: 3600, week_start: null, streak: 13, equipped_title: "hall-of-famer", equipped_frame: "velvet-rope", matches_solved: 37, avatar_url: null, favorite_club: "ifk-goteborg", country: "se", legend: true },
+  { id: "legend-borg", username: "borg", total_score: 28900, week_score: 2700, week_start: null, streak: 8, equipped_title: "record-breaker", equipped_frame: "arena-lights", matches_solved: 26, avatar_url: null, favorite_club: "hammarby", country: "se", legend: true },
+  { id: "legend-salming", username: "salming", total_score: 12400, week_score: 1800, week_start: null, streak: 5, equipped_title: "ice-analyst", equipped_frame: "ice-rink", matches_solved: 15, avatar_url: null, favorite_club: "sirius", country: "se", legend: true },
+];
+
+export function isNationalScout(row: StandingRow): boolean {
+  return row.country === "se" || isSwedishClub(row.favorite_club);
+}
+
 export function divisionFor(score: number): DivisionTier {
   const safe = Math.max(0, Math.floor(score));
   if (safe >= 60000) return DIVISION_TIERS[3];
@@ -67,9 +85,11 @@ export function isActiveScout(row: StandingRow): boolean {
 }
 
 /** Keep a live board. Pad with legends when fewer than five scouts have points. */
-export function fillStandings(rows: StandingRow[]): StandingRow[] {
+export function fillStandings(rows: StandingRow[], scope: BoardScope = "world"): StandingRow[] {
   const real = rows.filter(isActiveScout);
-  const pool = real.length >= 5 ? real : [...real, ...LEGEND_SCOUTS];
+  const scoped = scope === "se" ? real.filter(isNationalScout) : real;
+  const legends = scope === "se" ? SWEDISH_LEGENDS : LEGEND_SCOUTS;
+  const pool = scoped.length >= 5 ? scoped : [...scoped, ...legends];
   const seen = new Set<string>();
   const unique: StandingRow[] = [];
   for (const row of pool) {
@@ -91,9 +111,11 @@ export function placeScout(
   viewer: StandingRow | null,
   mode: StandingMode,
   weekStart: string | null,
+  scope: BoardScope = "world",
 ): { board: StandingRow[]; rank: number | null } {
-  const pool = fillStandings(rows);
-  if (viewer && viewer.username.trim() && !pool.some((row) => row.id === viewer.id)) {
+  const pool = fillStandings(rows, scope);
+  const viewerFits = viewer && (scope === "world" || isNationalScout(viewer));
+  if (viewerFits && viewer.username.trim() && !pool.some((row) => row.id === viewer.id)) {
     pool.push(viewer);
   }
   const sorted = [...pool].sort((a, b) => {

@@ -3,13 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ensureScoutProfile } from '@/lib/ensure-profile';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import { cosmeticName } from '@/lib/cosmetics';
 import { useCosmeticWallet } from '@/lib/useCosmeticWallet';
 import { ScoutAvatar } from '@/components/game/ScoutAvatar';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useI18n } from '@/lib/i18n/use-i18n';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { messages } = useI18n();
   const { wallet } = useCosmeticWallet();
   const [user, setUser] = useState<{ id: string; email?: string | null } | null>(null);
   const [profile, setProfile] = useState<{ username?: string; avatar_url?: string } | null>(null);
@@ -19,15 +23,15 @@ export default function Navbar() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isSupabaseConfigured) return;
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      setUser(user);
-      if (user) {
-        const { data } = await supabaseClient
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', user.id)
-          .maybeSingle();
-        setProfile(data);
+      try {
+        const auth = await supabaseClient.auth.getUser();
+        const user = auth.data?.user ?? null;
+        setUser(user);
+        if (!user) return;
+        const profile = await ensureScoutProfile(user);
+        setProfile({ username: profile.username, avatar_url: profile.avatar_url ?? undefined });
+      } catch (error) {
+        console.error(error);
       }
     };
 
@@ -39,7 +43,17 @@ export default function Navbar() {
 
     const listener = isSupabaseConfigured
       ? supabaseClient.auth.onAuthStateChange((_event, session) => {
-          setUser(session?.user || null);
+          const next = session?.user ?? null;
+          setUser(next);
+          if (!next) {
+            setProfile(null);
+            return;
+          }
+          void ensureScoutProfile(next)
+            .then((profile) => {
+              setProfile({ username: profile.username, avatar_url: profile.avatar_url ?? undefined });
+            })
+            .catch((error) => console.error(error));
         })
       : null;
 
@@ -60,14 +74,14 @@ export default function Navbar() {
   const pillLabel = equippedTitle ? `@${displayName} · ${equippedTitle}` : `@${displayName}`;
 
   const NAV_LINKS = [
-    { name: 'Dagens kluring', href: '/' },
-    { name: 'Kalender', href: '/archive' },
-    { name: 'Utmaningar', href: '/campaigns' },
-    { name: 'Tabellen', href: '/standings' },
-    { name: 'Klubbar', href: '/clubs' },
-    { name: 'Derby', href: '/derby' },
-    { name: 'Grenar', href: '/disciplines' },
-    { name: 'Butiken', href: '/shop' },
+    { name: messages.nav.daily, href: '/' },
+    { name: messages.nav.calendar, href: '/archive' },
+    { name: messages.nav.campaigns, href: '/campaigns' },
+    { name: messages.nav.standings, href: '/standings' },
+    { name: messages.nav.clubs, href: '/clubs' },
+    { name: messages.nav.derby, href: '/derby' },
+    { name: messages.nav.disciplines, href: '/disciplines' },
+    { name: messages.nav.shop, href: '/shop' },
   ];
 
   return (
@@ -84,14 +98,14 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Links */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-3 xl:gap-5">
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-xs font-bold uppercase tracking-wider transition-colors ${
+                className={`whitespace-nowrap text-xs font-bold uppercase tracking-wider transition-colors ${
                   isActive ? 'text-blue-600' : 'text-zinc-500 hover:text-black'
                 }`}
               >
@@ -103,6 +117,7 @@ export default function Navbar() {
 
         {/* User Badge / Auth Buttons */}
         <div className="flex items-center gap-3">
+          <LanguageSwitcher />
           {(user || localHandle) && (
             <Link
               href="/profile"
@@ -123,15 +138,15 @@ export default function Navbar() {
             <div className="hidden sm:flex items-center gap-2">
               <Link
                 href="/login"
-                className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black transition-colors"
+                className="whitespace-nowrap px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-600 hover:text-black transition-colors"
               >
-                Logga in
+                {messages.nav.login}
               </Link>
               <Link
                 href="/login?mode=signup"
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
+                className="whitespace-nowrap px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
               >
-                Gå med
+                {messages.nav.join}
               </Link>
             </div>
           )}
@@ -140,7 +155,7 @@ export default function Navbar() {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-100 text-zinc-700"
-            aria-label="Öppna menyn"
+            aria-label={messages.nav.openMenu}
           >
             ☰
           </button>
@@ -167,14 +182,14 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}
                 className="text-center py-2 bg-zinc-100 rounded-lg text-xs font-bold uppercase text-zinc-800"
               >
-                Logga in
+                {messages.nav.login}
               </Link>
               <Link
                 href="/login?mode=signup"
                 onClick={() => setMenuOpen(false)}
                 className="text-center py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase"
               >
-                Gå med
+                {messages.nav.join}
               </Link>
             </div>
           ) : (
@@ -182,7 +197,7 @@ export default function Navbar() {
               onClick={() => { setMenuOpen(false); handleSignOut(); }}
               className="w-full text-left px-3 py-2 text-xs font-bold uppercase text-rose-600 hover:bg-rose-50 rounded-lg"
             >
-              Logga ut
+              {messages.nav.logout}
             </button>
           )}
         </div>

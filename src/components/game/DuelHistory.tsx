@@ -105,8 +105,11 @@ export function DuelHistory({
           </div>
         ) : (
           duels.map((duel) => {
-            const outcome = outcomeFor(username, duel);
+            const outcome = typeof duel.winner_username === "string" ? outcomeFor(username, duel) : "draw";
             const sides = sidesFor(username, duel);
+            const you = Number.isFinite(sides.you) ? sides.you : 0;
+            const them = Number.isFinite(sides.them) ? sides.them : 0;
+            const opponent = sides.opponent || "scout";
             return (
               <article key={duel.id} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -115,16 +118,16 @@ export function DuelHistory({
                       {OUTCOME_LABEL[outcome]}
                     </span>
                     <p className="mt-2 text-sm font-black text-zinc-900">
-                      @You <span className="font-bold text-zinc-400">vs</span> @{sides.opponent}
+                      @You <span className="font-bold text-zinc-400">vs</span> @{opponent}
                     </p>
                     <p className="mt-1 font-mono text-xs font-bold text-zinc-700">
-                      {sides.you.toLocaleString()} PTS <span className="text-zinc-400">vs</span> {sides.them.toLocaleString()} PTS
+                      {you.toLocaleString("sv-SE")} PTS <span className="text-zinc-400">vs</span> {them.toLocaleString("sv-SE")} PTS
                     </p>
                     <ClashTime iso={duel.created_at} />
                   </div>
                   <button
                     type="button"
-                    onClick={() => { void copyRematch(sides.you); }}
+                    onClick={() => { void copyRematch(you); }}
                     className="shrink-0 rounded-xl bg-blue-600 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-white hover:bg-blue-700"
                   >
                     Rematch
@@ -142,5 +145,5 @@ export function DuelHistory({
 function involves(username: string) {
   const handle = username.toLowerCase();
   return (row: DuelRecord) =>
-    row.challenger_username.toLowerCase() === handle || row.opponent_username.toLowerCase() === handle;
+    (row.challenger_username ?? "").toLowerCase() === handle || (row.opponent_username ?? "").toLowerCase() === handle;
 }
