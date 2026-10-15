@@ -15,9 +15,11 @@ interface Options {
   columns: string[];
   /** Solved-match rows. Undefined means the match_history table is missing. */
   history?: Array<{ user_id: string; score: number }>;
+  /** Daily-drop rows. Undefined means the user_daily_completions table is missing. */
+  daily?: Array<{ user_id: string; score: number; solved: boolean }>;
 }
 
-const DEFAULTS: Options = { columns: ["total_score", "week_score", "week_start"], history: [] };
+const DEFAULTS: Options = { columns: ["total_score", "week_score", "week_start"], history: [], daily: [] };
 
 function fakeClient(rows: ProfileRow[], options: Options = DEFAULTS) {
   const calls: string[] = [];
@@ -43,16 +45,20 @@ function fakeClient(rows: ProfileRow[], options: Options = DEFAULTS) {
     };
     return chain;
   };
-  const history = () => ({
+  const log = (name: string, data: unknown[] | undefined) => ({
     select: () => ({
       limit: () => {
-        calls.push("history");
-        return options.history ? ok(options.history) : missing("relation match_history");
+        calls.push(name);
+        return data ? ok(data) : missing(`relation ${name}`);
       },
     }),
   });
   const client = {
-    from: (table: string) => (table === "match_history" ? history() : { select: () => selected(rows) }),
+    from: (table: string) => {
+      if (table === "match_history") return log(table, options.history);
+      if (table === "user_daily_completions") return log(table, options.daily);
+      return { select: () => selected(rows) };
+    },
   } as unknown as StandingsClient;
   return { client, calls };
 }
@@ -84,7 +90,32 @@ describe("standings source", () => {
     const snapshot = await loadStandingsRows(client, "2026-10-12");
     expect(snapshot.scoreColumn).toBeNull();
     expect(snapshot.history).toBe(false);
+    expect(snapshot.daily).toBe(false);
     expect(snapshot.rows).toHaveLength(2);
+  });
+
+  it("counts daily-drop points when they were never written to the profile", async () => {
+    const rows = [row("lisa", { total_score: 0 }), row("olle", { total_score: 2500 })];
+    const daily = [
+      { user_id: "lisa", score: 8000, solved: true },
+      { user_id: "lisa", score: 6000, solved: true },
+      { user_id: "lisa", score: 0, solved: false },
+      { user_id: "olle", score: 1000, solved: true },
+    ];
+    const snapshot = await loadStandingsRows(fakeClient(rows, { ...DEFAULTS, daily }).client, "2026-10-12");
+    expect(snapshot.daily).toBe(true);
+    expect(snapshot.rows.map((r) => [r.username, r.total_score, r.matches_solved])).toEqual([
+      ["lisa", 14000, 2],
+      ["olle", 2500, 1],
+    ]);
+  });
+
+  it("never lowers a saved profile total below what the score logs add up to", async () => {
+    const rows = [row("max", { total_score: 9000 })];
+    const history = [{ user_id: "max", score: 4000 }];
+    const daily = [{ user_id: "max", score: 3000, solved: true }];
+    const snapshot = await loadStandingsRows(fakeClient(rows, { ...DEFAULTS, history, daily }).client, "2026-10-12");
+    expect(snapshot.rows[0]?.total_score).toBe(9000);
   });
 
   it("shows the solved-match total when the profiles score column was never updated", async () => {

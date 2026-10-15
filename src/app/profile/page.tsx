@@ -13,6 +13,8 @@ import {
   type ScoutProfile,
 } from '@/lib/supabase/network';
 import { uploadProfileAvatar } from '@/lib/avatar-upload';
+import { resolveCareerScore, resolveSolvedCount, sumDailyCompletions, type DailyTotals } from '@/lib/career-score';
+import { loadRemoteCompletions } from '@/lib/daily-completions';
 import { ScoutCard } from '@/components/game/ScoutCard';
 import { ProfileAccountBar } from '@/components/profile/ProfileAccountBar';
 import { DuelHistory } from '@/components/game/DuelHistory';
@@ -98,6 +100,7 @@ export default function ProfilePage() {
   const [savingUsername, setSavingUsername] = useState(false);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [totalScore, setTotalScore] = useState(0);
+  const [dailyTotals, setDailyTotals] = useState<DailyTotals>({ score: 0, solved: 0 });
 
   const [network, setNetwork] = useState<ScoutProfile[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -136,6 +139,7 @@ export default function ProfilePage() {
         .filter((row): row is MatchRecord => Boolean(row) && typeof row === "object");
       setMatches(rows);
       setTotalScore(rows.reduce((acc, curr) => acc + asNumber(curr?.score), 0));
+      setDailyTotals(sumDailyCompletions(await loadRemoteCompletions(user.id)));
 
       const ids = await listFollowedIds(user.id);
       const safeIds = Array.isArray(ids) ? ids : [];
@@ -301,8 +305,17 @@ export default function ProfilePage() {
           email={user?.email}
           avatarUrl={profile?.avatar_url}
           wallet={wallet}
-          careerScore={Math.max(asNumber(wallet.totalScore), asNumber(profile?.total_score), totalScore)}
-          solvedCount={Math.max(asNumber(wallet.matchesSolved), matches.length)}
+          careerScore={resolveCareerScore({
+            local: asNumber(wallet.totalScore),
+            profile: asNumber(profile?.total_score),
+            history: totalScore,
+            daily: dailyTotals.score,
+          })}
+          solvedCount={resolveSolvedCount({
+            local: asNumber(wallet.matchesSolved),
+            history: matches.length,
+            daily: dailyTotals.solved,
+          })}
           currentStreak={Math.max(asNumber(wallet.streak), asNumber(profile?.streak))}
           bestStreak={Math.max(asNumber(wallet.bestStreak), asNumber(wallet.streak), asNumber(profile?.streak))}
           solvedSlugs={solvedSlugs}

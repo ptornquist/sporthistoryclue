@@ -1,3 +1,4 @@
+import { compareByCareer, resolveCareerScore, resolveSolvedCount } from "./career-score";
 import { STANDINGS_LIMIT, type StandingRow } from "./standings";
 
 /**
@@ -66,7 +67,7 @@ export function mapProfile(row: ProfileRow): StandingRow {
 
 /** Highest score first; ties fall back to the handle so the order is stable. */
 export function sortByScore(rows: StandingRow[]): StandingRow[] {
-  return [...rows].sort((a, b) => b.total_score - a.total_score || a.username.localeCompare(b.username));
+  return [...rows].sort(compareByCareer);
 }
 
 interface QueryResult {
@@ -88,9 +89,12 @@ interface TableQuery {
   select(columns: string): Selected;
 }
 
+/** Tables the board reads. The two score logs are optional in older projects. */
+export type StandingsTable = "profiles" | "match_history" | "user_daily_completions";
+
 /** The smallest surface both the browser client and the service-role client share. */
 export interface StandingsClient {
-  from(table: "profiles" | "match_history"): TableQuery;
+  from(table: StandingsTable): TableQuery;
 }
 
 export interface StandingsSnapshot {
@@ -101,39 +105,36 @@ export interface StandingsSnapshot {
   scoreColumn: (typeof SCORE_COLUMNS)[number] | null;
   /** True when match_history rows were folded into the scores. */
   history: boolean;
+  /** True when user_daily_completions rows were folded into the scores. */
+  daily: boolean;
 }
 
-/** Solved matches to fold in. Enough for a beta; the profile columns cover older totals. */
+/** Score-log rows to fold in. Enough for a beta; the profile columns cover older totals. */
 export const HISTORY_LIMIT = 5000;
 
 function isProfileRow(value: unknown): value is ProfileRow {
   return Boolean(value) && typeof value === "object" && typeof (value as ProfileRow).id === "string";
 }
 
-interface HistoryRow {
+interface ScoreLogRow {
   user_id: string;
   score?: number | string | null;
+  solved?: boolean | null;
 }
 
-function isHistoryRow(value: unknown): value is HistoryRow {
-  return Boolean(value) && typeof value === "object" && typeof (value as HistoryRow).user_id === "string";
+function isScoreLogRow(value: unknown): value is ScoreLogRow {
+  return Boolean(value) && typeof value === "object" && typeof (value as ScoreLogRow).user_id === "string";
 }
 
-export interface HistoryTotals {
+export interface ScoreTotals {
   score: number;
   solved: number;
 }
 
-/**
- * Points per scout from solved matches. The game pages write one match_history
- * row per solve, so this is the same total the profile page shows even when the
- * profiles score column was never updated.
- */
-export async function loadHistoryTotals(client: StandingsClient): Promise<Map<string, HistoryTotals> | null> {
-  const result = await client.from("match_history").select("user_id, score").limit(HISTORY_LIMIT);
-  if (result.error) return null;
-  const totals = new Map<string, HistoryTotals>();
-  for (const row of (result.data ?? []).filter(isHistoryRow)) {
+function sumByUser(rows: unknown[], keep: (row: ScoreLogRow) => boolean): Map<string, ScoreTotals> {
+  const totals = new Map<string, ScoreTotals>();
+  for (const row of rows.filter(isScoreLogRow)) {
+    if (!keep(row)) continue;
     const current = totals.get(row.user_id) ?? { score: 0, solved: 0 };
     current.score += asCount(row.score) ?? 0;
     current.solved += 1;
@@ -142,13 +143,37 @@ export async function loadHistoryTotals(client: StandingsClient): Promise<Map<st
   return totals;
 }
 
-/** The profile columns and the solved-match total describe the same career; the larger one is the saved one. */
-export function withHistory(row: StandingRow, totals: HistoryTotals | undefined): StandingRow {
-  if (!totals) return row;
+/**
+ * Points per scout from match_history. The archive and daily pages write one
+ * row per solve, and the profile page sums the same rows for its career total.
+ */
+export async function loadHistoryTotals(client: StandingsClient): Promise<Map<string, ScoreTotals> | null> {
+  const result = await client.from("match_history").select("user_id, score").limit(HISTORY_LIMIT);
+  if (result.error) return null;
+  return sumByUser(result.data ?? [], () => true);
+}
+
+/**
+ * Points per scout from user_daily_completions. The arena writes one row per
+ * daily drop, so these points exist even when the award RPC never ran.
+ */
+export async function loadDailyTotals(client: StandingsClient): Promise<Map<string, ScoreTotals> | null> {
+  const result = await client.from("user_daily_completions").select("user_id, score, solved").limit(HISTORY_LIMIT);
+  if (result.error) return null;
+  return sumByUser(result.data ?? [], (row) => row.solved === true);
+}
+
+/** Resolve one scout's career from every source the board could read, with the shared profile logic. */
+export function withScoreLogs(
+  row: StandingRow,
+  history: ScoreTotals | undefined,
+  daily: ScoreTotals | undefined,
+): StandingRow {
+  if (!history && !daily) return row;
   return {
     ...row,
-    total_score: Math.max(row.total_score, totals.score),
-    matches_solved: Math.max(row.matches_solved, totals.solved),
+    total_score: resolveCareerScore({ profile: row.total_score, history: history?.score, daily: daily?.score }),
+    matches_solved: resolveSolvedCount({ profile: row.matches_solved, history: history?.solved, daily: daily?.solved }),
   };
 }
 
@@ -190,10 +215,10 @@ export async function loadStandingsRows(client: StandingsClient, weekStart: stri
     }
   }
 
-  const totals = await loadHistoryTotals(client);
-  const rows = [...pool.values()].map((row) => withHistory(row, totals?.get(row.id)));
+  const [history, daily] = await Promise.all([loadHistoryTotals(client), loadDailyTotals(client)]);
+  const rows = [...pool.values()].map((row) => withScoreLogs(row, history?.get(row.id), daily?.get(row.id)));
 
-  return { rows: sortByScore(rows), weekly, scoreColumn, history: totals != null };
+  return { rows: sortByScore(rows), weekly, scoreColumn, history: history != null, daily: daily != null };
 }
 
 export function isStandingRow(value: unknown): value is StandingRow {

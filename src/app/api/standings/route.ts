@@ -15,7 +15,7 @@ const WEEK_START = /^\d{4}-\d{2}-\d{2}$/;
  */
 export async function GET(request: Request) {
   if (!isSupabaseConfigured) {
-    return Response.json({ rows: [], weekly: false, scoreColumn: null, history: false, source: "none" });
+    return Response.json({ rows: [], weekly: false, scoreColumn: null, history: false, daily: false, source: "none" });
   }
 
   const requested = new URL(request.url).searchParams.get("week") ?? "";
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Standings read failed:", error);
     return Response.json(
-      { rows: [], weekly: false, scoreColumn: null, history: false, weekStart, source: "error" },
+      { rows: [], weekly: false, scoreColumn: null, history: false, daily: false, weekStart, source: "error" },
       { status: 200 },
     );
   }
