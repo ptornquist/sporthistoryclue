@@ -55,28 +55,34 @@ export default function ShopPage() {
 
   useEffect(() => {
     let active = true;
-    loadShopBalance().then((score) => {
-      if (active) setCareerScore(score);
-    });
+    if (!isSupabaseConfigured) return;
 
-    if (isSupabaseConfigured) {
-      const supabase = supabaseClient;
-      (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || !active) return;
-        const { data: ownedData } = await supabase
-          .from('user_badges')
-          .select('badge_id')
-          .eq('user_id', user.id);
-        const ownedIds = new Set(ownedData?.map((badge) => badge.badge_id) || []);
-        if (active) setOwnedBadges(ownedIds);
-      })().catch((error) => {
-        console.error('Failed to load owned badges:', error);
-      });
-    }
+    const supabase = supabaseClient;
+
+    const load = async () => {
+      const score = await loadShopBalance();
+      if (active) setCareerScore(score);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !active) return;
+      const { data: ownedData } = await supabase
+        .from('user_badges')
+        .select('badge_id')
+        .eq('user_id', user.id);
+      const ownedIds = new Set(ownedData?.map((badge) => badge.badge_id) || []);
+      if (active) setOwnedBadges(ownedIds);
+    };
+
+    // Wait for the session to hydrate from storage before reading it.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) void load();
+    });
+    // Also try immediately in case the session is already present.
+    void load();
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
   }, []);
 
