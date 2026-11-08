@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 import {
@@ -21,8 +21,6 @@ import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
 import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve } from '@/lib/fixture-solves';
 import { completeDailyChallenge } from '@/lib/daily-completions';
-import { useLanguage } from '@/context/LanguageContext';
-import { localizedClues } from '@/lib/tactical-clues';
 import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
@@ -103,14 +101,6 @@ export function DailyDropArena(props: {
   const [authGateOpen, setAuthGateOpen] = useState(false);
   const [soundMuted, setSoundMuted] = useState(true);
   const whistled = useRef(false);
-  const { language } = useLanguage();
-
-  // Server-rendered fixtures keep their raw clues; switch language locally.
-  const displayClues = useMemo(() => {
-    if (!challenge) return [] as string[];
-    const localized = localizedClues(challenge.clues, language);
-    return Array.isArray(localized) ? (localized as string[]) : challenge.clues;
-  }, [challenge, language]);
 
   useEffect(() => {
     challengeRef.current = challenge;
@@ -195,12 +185,11 @@ export function DailyDropArena(props: {
         const requestedMatch = lockedMatch || sportMatch || urlMatch;
         const activeDate = requestedMatch ? null : pinnedDrop ?? (isDateKey(urlDate) ? urlDate : null);
         const match = requestedMatch;
-        const langParam = `lang=${language}`;
         const query = match
-          ? `?match=${encodeURIComponent(match)}&${langParam}`
+          ? `?match=${encodeURIComponent(match)}`
           : activeDate && activeDate !== today
-            ? `?date=${encodeURIComponent(activeDate)}&${langParam}`
-            : `?${langParam}`;
+            ? `?date=${encodeURIComponent(activeDate)}`
+            : '';
         const response = await fetch(`/api/daily${query}`);
         if (cancelled) return;
         if (response.status === 401) {
@@ -242,7 +231,7 @@ export function DailyDropArena(props: {
     return () => {
       cancelled = true;
     };
-  }, [pinnedDrop, sportMatch, props.playMode, props.specificMatch, language]);
+  }, [pinnedDrop, sportMatch, props.playMode, props.specificMatch]);
 
   const openWithWhistle = () => {
     if (whistled.current || isSoundMuted()) return;
@@ -261,7 +250,7 @@ export function DailyDropArena(props: {
 
   const handleRevealClue = () => {
     if (!challenge || isSolved || gameWon || gameOver) return;
-    if (currentClueIdx < displayClues.length - 1) {
+    if (currentClueIdx < challenge.clues.length - 1) {
       playCluePenalty();
       triggerHaptic(20);
       setCurrentClueIdx(prev => prev + 1);
@@ -613,7 +602,7 @@ export function DailyDropArena(props: {
               </span>
             </div>
             <ClueStack
-              clues={displayClues}
+              clues={challenge.clues}
               revealedIndex={currentClueIdx}
               locked={isSolved || gameWon || gameOver}
               onReveal={handleRevealClue}

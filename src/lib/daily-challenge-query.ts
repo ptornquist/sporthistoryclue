@@ -1,5 +1,3 @@
-import { localizedClues, type ClueLanguage } from "@/lib/tactical-clues";
-
 export type ChallengeRow = Record<string, unknown>;
 
 type ChallengeFilter = {
@@ -56,9 +54,9 @@ export interface StoredChallengeFields {
 }
 
 /** Fields taken straight from a challenges row. `imageUrl` stays server-side. */
-export function readStoredChallenge(row: ChallengeRow, language: ClueLanguage = "sv"): StoredChallengeFields {
-  const tactical = asArray(localizedClues(row.tactical_clues, language)).map(textItem).filter(Boolean);
-  const clues = asArray(localizedClues(row.clues, language)).map(textItem).filter(Boolean);
+export function readStoredChallenge(row: ChallengeRow): StoredChallengeFields {
+  const tactical = asArray(row.tactical_clues).map(textItem).filter(Boolean);
+  const clues = asArray(row.clues).map(textItem).filter(Boolean);
   const imageUrl = text(row.image_url);
   return {
     title: text(row.title),

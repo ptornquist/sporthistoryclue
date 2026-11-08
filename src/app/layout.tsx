@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { InstallAppBanner } from '@/components/InstallAppBanner';
-import { LanguageProvider } from '@/context/LanguageContext';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -63,7 +62,7 @@ export default function RootLayout({
   return (
     <html lang="sv" className="overflow-x-hidden w-full max-w-full">
       <body className="antialiased bg-[#fafafa] text-zinc-900 selection:bg-blue-600 selection:text-white overflow-x-hidden w-full max-w-full">
-        <LanguageProvider>{children}</LanguageProvider>
+        {children}
         <InstallAppBanner />
       </body>
     </html>

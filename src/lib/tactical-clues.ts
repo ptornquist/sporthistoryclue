@@ -190,31 +190,6 @@ function readStructuredSlots(source: unknown): string[] | null {
   return null;
 }
 
-export type ClueLanguage = 'sv' | 'en';
-
-function isClueLanguage(value: unknown): value is ClueLanguage {
-  return value === 'sv' || value === 'en';
-}
-
-/**
- * A clues column may be a JSONB object keyed by language, such as
- * `{ "sv": [...], "en": [...] }`. Picks the requested language and falls
- * back to Swedish, then to the first available list.
- */
-export function localizedClues(source: unknown, language: ClueLanguage = 'sv'): unknown {
-  const parsed = parseMaybeJson(source);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return source;
-  const record = parsed as Record<string, unknown>;
-  const sv = record.sv;
-  const en = record.en;
-  const hasSv = Array.isArray(sv) && sv.length > 0;
-  const hasEn = Array.isArray(en) && en.length > 0;
-  if (!hasSv && !hasEn) return source;
-  if (isClueLanguage(language) && language === 'en' && hasEn) return en;
-  if (hasSv) return sv;
-  return en;
-}
-
 /** Five clue strings in arena → era → lineup → image → climax order. */
 export function resolveTacticalClueList(source: unknown): string[] {
   const structured = readStructuredSlots(source);
