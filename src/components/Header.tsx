@@ -25,6 +25,12 @@ export function MobileNavDropdown({ onNavigate }: { onNavigate: () => void }) {
           {link.name}
         </Link>
       ))}
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5">
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500">
+          Språk / Language
+        </span>
+        <LanguageToggle />
+      </div>
     </div>
   );
 }
