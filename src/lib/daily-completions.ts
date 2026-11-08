@@ -61,6 +61,70 @@ export async function rememberDailyCompletion(next: DailyCompletion, userId: str
   }
 }
 
+export interface CompleteDailyResult {
+  error: string | null;
+  alreadySolved: boolean;
+}
+
+/**
+ * Saves a solved drop once per scout and day, then moves the earned points
+ * onto profiles.total_score through the increment_user_score RPC.
+ */
+export async function completeDailyChallenge(
+  next: DailyCompletion,
+  userId: string | null,
+): Promise<CompleteDailyResult> {
+  writeLocalCompletion(next);
+  if (!userId || !isSupabaseConfigured || !isDateKey(next.dropDate)) {
+    return { error: null, alreadySolved: false };
+  }
+  try {
+    const { data: existingCompletion } = await supabaseClient
+      .from("user_daily_completions")
+      .select("id, solved")
+      .eq("user_id", userId)
+      .eq("drop_date", next.dropDate)
+      .maybeSingle();
+
+    if (existingCompletion?.solved) {
+      return { error: "Du har redan löst dagens kluring!", alreadySolved: true };
+    }
+
+    const row = {
+      user_id: userId,
+      challenge_id: next.challengeId ?? null,
+      drop_date: next.dropDate,
+      score: next.score,
+      solved: true,
+      updated_at: new Date().toISOString(),
+    };
+    const { error: saveError } = existingCompletion
+      ? await supabaseClient
+          .from("user_daily_completions")
+          .update(row)
+          .eq("user_id", userId)
+          .eq("drop_date", next.dropDate)
+      : await supabaseClient.from("user_daily_completions").insert(row);
+    if (saveError) {
+      console.error("Failed to save daily completion:", saveError);
+      return { error: "Kunde inte spara resultatet.", alreadySolved: false };
+    }
+
+    const { error: scoreError } = await supabaseClient.rpc("increment_user_score", {
+      user_id_input: userId,
+      score_to_add: next.score,
+    });
+    if (scoreError) {
+      console.error("Failed to increment user score:", scoreError);
+      return { error: "Kunde inte uppdatera totalpoängen.", alreadySolved: false };
+    }
+    return { error: null, alreadySolved: false };
+  } catch (error) {
+    console.error("Failed to save daily completion:", error);
+    return { error: "Kunde inte spara resultatet.", alreadySolved: false };
+  }
+}
+
 export async function loadRemoteCompletions(userId: string): Promise<DailyCompletion[]> {
   if (!isSupabaseConfigured) return [];
   const { data, error } = await supabaseClient

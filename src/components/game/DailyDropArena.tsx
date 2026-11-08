@@ -20,6 +20,7 @@ import { DateSwitcher } from '@/components/game/DateSwitcher';
 import { GuessQuestionHeader } from '@/components/game/GuessQuestionHeader';
 import { SolvedFixtureCard } from '@/components/game/SolvedFixtureCard';
 import { findFixtureSolve, lockDropLocally, persistFixtureScore, readLocalDropSolve } from '@/lib/fixture-solves';
+import { completeDailyChallenge } from '@/lib/daily-completions';
 import { completePendingDuel } from '@/lib/duels';
 import { rememberSolvedCase } from '@/lib/solved-cases';
 import { isDateKey, isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from '@/lib/drop-dates';
@@ -328,6 +329,11 @@ export function DailyDropArena(props: {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user?.id) {
               await persistFixtureScore({ id: challenge.id, date: solveStamp }, currentScore);
+              const completion = await completeDailyChallenge(
+                { dropDate, solved: true, score: currentScore, challengeId: challenge.id },
+                user.id,
+              );
+              if (completion.error) showToast(completion.error);
               const { data: prof } = await supabaseClient
                 .from('profiles')
                 .select('username')
