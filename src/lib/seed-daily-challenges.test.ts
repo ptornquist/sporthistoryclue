@@ -48,7 +48,6 @@ describe("seed daily challenges", () => {
     for (let day = 1; day <= daysInMonth; day += 1) {
       const dateKey = `${MONTH}-${String(day).padStart(2, "0")}`;
       const puzzle = puzzles[(day - 1) % puzzles.length];
-      const rowId = `${puzzle.id}-${dateKey}`;
       const clues = clueStrings(puzzle);
       const options = [
         puzzle.title,
@@ -60,11 +59,13 @@ describe("seed daily challenges", () => {
       const category = SPORT_LABEL[puzzle.sport] ?? puzzle.sport;
 
       statements.push(
-        `insert into public.challenges (id, fixture_date, date_key, title, subject, year, category, sport, clues, options, created_at)\n` +
-          `values (\n` +
-          `  '${escapeSql(rowId)}',\n` +
+        `insert into public.challenges (id, fixture_date, drop_date, scheduled_date, slug, title, subject, year, category, sport, clues, options, created_at)\n` +
+          `select\n` +
+          `  gen_random_uuid(),\n` +
           `  '${dateKey}',\n` +
           `  '${dateKey}',\n` +
+          `  '${dateKey}',\n` +
+          `  '${escapeSql(puzzle.id)}-${dateKey}',\n` +
           `  '${escapeSql(puzzle.title)}',\n` +
           `  '${escapeSql(puzzle.title)}',\n` +
           `  ${puzzle.year},\n` +
@@ -73,14 +74,15 @@ describe("seed daily challenges", () => {
           `  '${escapeSql(JSON.stringify(clues))}'::jsonb,\n` +
           `  '${escapeSql(JSON.stringify(options))}'::jsonb,\n` +
           `  now()\n` +
-          `)\n` +
-          `on conflict (id) do nothing;`,
+          `where not exists (\n` +
+          `  select 1 from public.challenges where fixture_date = '${dateKey}'\n` +
+          `);`,
       );
     }
 
     const sql =
       `-- Seed ${daysInMonth} daily challenges for ${MONTH}\n` +
-      `-- Paste into the Supabase SQL editor. Existing ids are skipped.\n\n` +
+      `-- Paste into the Supabase SQL editor.\n\n` +
       statements.join("\n\n") +
       "\n";
 
