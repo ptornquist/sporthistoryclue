@@ -4,11 +4,17 @@ import { isGuestOpenDrop, shiftUtcDateKey, utcDateKey } from "./drop-dates";
 describe("isGuestOpenDrop", () => {
   const now = new Date("2026-10-02T15:00:00.000Z");
 
-  it("opens today and yesterday for guests", () => {
+  it("opens every drop up to and including today for guests", () => {
     expect(utcDateKey(now)).toBe("2026-10-02");
     expect(isGuestOpenDrop("2026-10-02", now)).toBe(true);
     expect(isGuestOpenDrop("2026-10-01", now)).toBe(true);
-    expect(isGuestOpenDrop("2026-09-30", now)).toBe(false);
+    expect(isGuestOpenDrop("2026-09-30", now)).toBe(true);
+    expect(isGuestOpenDrop("2020-11-01", now)).toBe(true);
+  });
+
+  it("blocks future dates for guests", () => {
+    expect(isGuestOpenDrop("2026-10-03", now)).toBe(false);
+    expect(isGuestOpenDrop("2027-01-01", now)).toBe(false);
   });
 
   it("steps a date key without shifting the calendar day", () => {

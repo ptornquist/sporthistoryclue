@@ -15,8 +15,7 @@ export function isDateKey(value: string | null | undefined): value is string {
   return Boolean(value && DATE_KEY.test(value));
 }
 
-/** Today and yesterday stay open without an archive sign-in. */
+/** Every drop up to and including today stays open without a sign-in. */
 export function isGuestOpenDrop(dateKey: string, now = new Date()): boolean {
-  const today = utcDateKey(now);
-  return dateKey === today || dateKey === shiftUtcDateKey(today, -1);
+  return isDateKey(dateKey) && dateKey <= utcDateKey(now);
 }
