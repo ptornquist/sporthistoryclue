@@ -240,11 +240,7 @@ async function loadFromTable(
     if (!matched.error && matched.data) {
       return normalizeRow(matched.data, dateKey);
     }
-
-    const all = await client.from(table).select("*");
-    if (all.error || !all.data?.length) return null;
-    const row = all.data[hashString(dateKey) % all.data.length];
-    return normalizeRow(row, dateKey);
+    return null;
   } catch {
     return null;
   }
@@ -356,11 +352,12 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
 }
 
 export async function loadDatedPublicDrop(dateKey: string): Promise<PublicDaily | null> {
+  const isToday = dateKey === utcTodayKey();
   const client = challengeClient();
   if (client) {
     try {
       const row = await fetchDailyChallengeRow(client, dateKey, {
-        allowLatestFallback: dateKey === utcTodayKey(),
+        allowLatestFallback: isToday,
       });
       if (row) {
         const fixture = publicFromChallengeRow(row, dateKey);
@@ -370,6 +367,9 @@ export async function loadDatedPublicDrop(dateKey: string): Promise<PublicDaily 
       // Catalog fixtures still open the arena when the challenges table is unreachable.
     }
   }
+  // Past dates with no stored row must not fall back to a random catalog
+  // fixture — that would show the wrong (possibly non-Swedish) challenge.
+  if (!isToday) return null;
   try {
     return toPublicDaily(await loadDailyFixture(dateKey));
   } catch {

@@ -1,7 +1,7 @@
 import { isGuestOpenDrop } from "@/lib/drop-dates";
 import {
   fourDistinctOptions,
-  loadDailyFixture,
+  loadDatedPublicDrop,
   loadMatchFixture,
   parseDateKey,
   toPublicDaily,
@@ -30,11 +30,13 @@ export async function GET(request: Request) {
     return Response.json({ error: "Sign in to open past drops." }, { status: 401 });
   }
 
-  const fixture = await loadDailyFixture(dateKey);
-  const payload = toPublicDaily(fixture);
-  const rawOptions = Array.from(new Set(payload.options.filter(Boolean)));
+  const fixture = await loadDatedPublicDrop(dateKey);
+  if (!fixture) {
+    return Response.json({ error: "Ingen kluring hittades för det här datumet." }, { status: 404 });
+  }
+  const rawOptions = Array.from(new Set(fixture.options.filter(Boolean)));
   return Response.json({
-    ...payload,
+    ...fixture,
     options: fourDistinctOptions(rawOptions, rawOptions[0] ?? "", rawOptions.slice(1)),
   });
 }

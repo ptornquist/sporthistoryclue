@@ -429,10 +429,42 @@ export function DailyDropArena(props: {
     await sharePayload('SportsHistoryClue-duell', text, url);
   };
 
-  if (loading || !challenge) {
+  if (loading) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex items-center justify-center font-mono text-xs uppercase text-zinc-400">
-        {loading ? 'Laddar matchen...' : 'Droppen är inte tillgänglig'}
+        Laddar matchen...
+      </main>
+    );
+  }
+
+  if (!challenge) {
+    return (
+      <main className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans flex flex-col justify-between">
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+          <span className="text-4xl" aria-hidden>🗄️</span>
+          <h1 className="mt-4 text-2xl font-black uppercase tracking-tight text-zinc-900">
+            Droppen är inte tillgänglig
+          </h1>
+          <p className="mt-2 max-w-sm text-sm text-zinc-500">
+            Ingen kluring hittades för det här datumet. Det kan bero på att dagen inte har fått
+            någon drop ännu, eller att länken är felaktig.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/"
+              className="rounded-xl bg-zinc-900 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
+            >
+              ← Till dagens drop
+            </Link>
+            <Link
+              href="/archive"
+              className="rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-xs font-black uppercase tracking-wider text-zinc-700 hover:border-zinc-900"
+            >
+              Bläddra i arkivet
+            </Link>
+          </div>
+        </div>
+        <Footer />
       </main>
     );
   }
