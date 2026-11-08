@@ -230,15 +230,27 @@ async function loadFromTable(
   if (!client) return null;
 
   try {
+    // fixture_date is the scheduled column; date_key exists only on older rows.
     const matched = await client
+      .from(table)
+      .select("*")
+      .eq("fixture_date", dateKey)
+      .limit(1)
+      .maybeSingle();
+
+    if (!matched.error && matched.data) {
+      return normalizeRow(matched.data, dateKey);
+    }
+
+    const byDateKey = await client
       .from(table)
       .select("*")
       .eq("date_key", dateKey)
       .limit(1)
       .maybeSingle();
 
-    if (!matched.error && matched.data) {
-      return normalizeRow(matched.data, dateKey);
+    if (!byDateKey.error && byDateKey.data) {
+      return normalizeRow(byDateKey.data, dateKey);
     }
     return null;
   } catch {
