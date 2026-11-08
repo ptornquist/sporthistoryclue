@@ -200,6 +200,17 @@ export function resolveTacticalClueList(source: unknown): string[] {
     const text = parsed.trim();
     return text ? [text] : [];
   }
+  // A JSONB object keyed by language, e.g. { sv: [...], en: [...] }.
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const record = parsed as Record<string, unknown>;
+    for (const key of ["sv", "en"]) {
+      if (Array.isArray(record[key])) return resolveTacticalClueList(record[key]);
+    }
+    for (const item of Object.values(record)) {
+      if (Array.isArray(item)) return resolveTacticalClueList(item);
+    }
+    return [];
+  }
   if (!Array.isArray(parsed)) return [];
   return parsed
     .map((item) => (typeof item === "string" ? item.trim() : textOf(item)))

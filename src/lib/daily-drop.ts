@@ -342,11 +342,12 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
   if (fixture.optionsLocked && fixture.options.length > 0) {
     options = resolveGuessOptions(fixture.options, generated, true);
   }
+  if (!fixture.clues.some(Boolean)) return null;
   return {
     id: fixture.id,
     date_key: fixture.date_key,
     category: fixture.category,
-    clues: fixture.clues.length > 0 ? fixture.clues : ["En detalj ur arkivet."],
+    clues: fixture.clues,
     options: options.length > 0 ? options : generated,
   };
 }

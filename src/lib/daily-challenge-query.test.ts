@@ -135,6 +135,30 @@ describe("stored challenge fields", () => {
       "1972 Summit Series: Canada vs Soviet Union",
     ]);
   });
+
+  it("reads clues stored as a JSONB language map, preferring Swedish", () => {
+    const stored = readStoredChallenge({
+      title: "Mirakel på is",
+      clues: { sv: ["Arenan är full.", "Ett kallt krig."], en: ["The arena is packed."] },
+    });
+    expect(stored.clues).toEqual(["Arenan är full.", "Ett kallt krig."]);
+  });
+
+  it("reads clues stored as a JSON string holding a language map", () => {
+    const stored = readStoredChallenge({
+      title: "Mirakel på is",
+      clues: '{"sv":["Arenan är full."],"en":["The arena is packed."]}',
+    });
+    expect(stored.clues).toEqual(["Arenan är full."]);
+  });
+
+  it("falls back to English when Swedish is missing in a language map", () => {
+    const stored = readStoredChallenge({
+      title: "Miracle on Ice",
+      clues: { en: ["The arena is packed."] },
+    });
+    expect(stored.clues).toEqual(["The arena is packed."]);
+  });
 });
 
 describe("home route cache", () => {

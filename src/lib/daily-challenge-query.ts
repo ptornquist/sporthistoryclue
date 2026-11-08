@@ -19,16 +19,31 @@ function text(value: unknown): string {
 
 function asArray(value: unknown): unknown[] {
   if (Array.isArray(value)) return value;
-  if (typeof value !== "string") return [];
-  const trimmed = value.trim();
-  if (!trimmed) return [];
-  try {
-    const parsed = JSON.parse(trimmed) as unknown;
-    if (Array.isArray(parsed)) return parsed;
-  } catch {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (Array.isArray(parsed)) return parsed;
+      // A JSON string holding a language map such as {"sv":[...],"en":[...]}.
+      if (parsed && typeof parsed === "object") return asArray(parsed);
+    } catch {
+      return [trimmed];
+    }
     return [trimmed];
   }
-  return [trimmed];
+  // A JSONB object keyed by language, e.g. { sv: [...], en: [...] }.
+  // Prefer Swedish, then English, then the first array value found.
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["sv", "en"]) {
+      if (Array.isArray(record[key]) && record[key].length > 0) return record[key] as unknown[];
+    }
+    for (const item of Object.values(record)) {
+      if (Array.isArray(item) && item.length > 0) return item;
+    }
+  }
+  return [];
 }
 
 function textItem(item: unknown): string {
