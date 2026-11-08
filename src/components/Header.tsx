@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useLanguage, type Language } from '@/context/LanguageContext';
 
 const NAV_LINKS = [
   { name: '🎯 Dagens Drop', href: '/' },
@@ -28,6 +29,37 @@ export function MobileNavDropdown({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
+function LanguageToggle() {
+  const { language, setLanguage } = useLanguage();
+  const options: Array<{ id: Language; label: string }> = [
+    { id: 'sv', label: 'SV' },
+    { id: 'en', label: 'EN' },
+  ];
+  return (
+    <div
+      role="group"
+      aria-label="Språk / Language"
+      className="flex items-center gap-1 bg-zinc-100 p-1 rounded-full border border-zinc-200"
+    >
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          onClick={() => setLanguage(option.id)}
+          aria-pressed={language === option.id}
+          className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+            language === option.id
+              ? 'bg-zinc-900 text-white'
+              : 'text-zinc-500 hover:text-zinc-900'
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -47,6 +79,7 @@ export default function Header() {
         </nav>
       </div>
       <div className="flex items-center gap-4 shrink-0">
+        <LanguageToggle />
         <Link className="hidden md:flex px-3.5 py-1.5 rounded-full bg-white border-2 border-zinc-200 hover:border-zinc-900 text-xs font-black uppercase text-zinc-900 shadow-sm transition-all items-center gap-2" href="/profile">
           👤 Profil
         </Link>

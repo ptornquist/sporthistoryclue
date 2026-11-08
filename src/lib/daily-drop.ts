@@ -14,7 +14,7 @@ import {
   type DailyChallengeClient,
 } from "@/lib/daily-challenge-query";
 import { distinctOptionValues } from "@/lib/option-text";
-import { resolveTacticalClueList } from "@/lib/tactical-clues";
+import { localizedClues, resolveTacticalClueList, type ClueLanguage } from "@/lib/tactical-clues";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   createPublicSupabaseClient,
@@ -250,11 +250,17 @@ async function loadFromTable(
   }
 }
 
-function normalizeRow(row: Record<string, unknown>, dateKey: string): SecretDaily | null {
+function normalizeRow(
+  row: Record<string, unknown>,
+  dateKey: string,
+  language: ClueLanguage = "sv",
+): SecretDaily | null {
   const subject = stringField(row, "subject") || stringField(row, "title") || stringField(row, "target_subject");
   const year = numberField(row, "year") || numberField(row, "target_year");
-  const tactical = resolveTacticalClueList(row.tactical_clues);
-  const clues = tactical.some(Boolean) ? tactical : resolveTacticalClueList(row.clues);
+  const tactical = resolveTacticalClueList(localizedClues(row.tactical_clues, language));
+  const clues = tactical.some(Boolean)
+    ? tactical
+    : resolveTacticalClueList(localizedClues(row.clues, language));
   if (!subject || !year || !clues.some(Boolean)) return null;
 
   const category =
@@ -327,8 +333,12 @@ function challengeClient(): DailyChallengeClient | null {
   return client ? (client as unknown as DailyChallengeClient) : null;
 }
 
-function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily | null {
-  const stored = readStoredChallenge(row);
+function publicFromChallengeRow(
+  row: ChallengeRow,
+  dateKey: string,
+  language: ClueLanguage = "sv",
+): PublicDaily | null {
+  const stored = readStoredChallenge(row, language);
   const subject = stringField(row, "subject") || stringField(row, "title") || stored.title;
   const year = numberField(row, "year") || numberField(row, "target_year");
   const category = stringField(row, "category") || stringField(row, "sport") || "Sports History";
@@ -355,7 +365,10 @@ function publicFromChallengeRow(row: ChallengeRow, dateKey: string): PublicDaily
   };
 }
 
-export async function loadDatedPublicDrop(dateKey: string): Promise<PublicDaily | null> {
+export async function loadDatedPublicDrop(
+  dateKey: string,
+  language: ClueLanguage = "sv",
+): Promise<PublicDaily | null> {
   const client = challengeClient();
   if (client) {
     try {
@@ -363,7 +376,7 @@ export async function loadDatedPublicDrop(dateKey: string): Promise<PublicDaily 
         allowLatestFallback: dateKey === utcTodayKey(),
       });
       if (row) {
-        const fixture = publicFromChallengeRow(row, dateKey);
+        const fixture = publicFromChallengeRow(row, dateKey, language);
         if (fixture?.clues.some(Boolean)) return fixture;
       }
     } catch {
@@ -377,11 +390,17 @@ export async function loadDatedPublicDrop(dateKey: string): Promise<PublicDaily 
   }
 }
 
-export async function loadTodayPublicDrop(now = new Date()): Promise<PublicDaily | null> {
-  return loadDatedPublicDrop(utcTodayKey(now));
+export async function loadTodayPublicDrop(
+  now = new Date(),
+  language: ClueLanguage = "sv",
+): Promise<PublicDaily | null> {
+  return loadDatedPublicDrop(utcTodayKey(now), language);
 }
 
-export async function loadPublicChallengeById(id: string): Promise<PublicDaily | null> {
+export async function loadPublicChallengeById(
+  id: string,
+  language: ClueLanguage = "sv",
+): Promise<PublicDaily | null> {
   const trimmed = id.trim();
   if (!isMatchKey(trimmed)) return null;
   const client = supabaseAdmin ?? (isSupabaseConfigured ? createPublicSupabaseClient() : null);
@@ -389,7 +408,7 @@ export async function loadPublicChallengeById(id: string): Promise<PublicDaily |
     try {
       const { data, error } = await client.from("challenges").select("*").eq("id", trimmed).maybeSingle();
       if (!error && data) {
-        const fixture = publicFromChallengeRow(data, utcTodayKey());
+        const fixture = publicFromChallengeRow(data, utcTodayKey(), language);
         if (fixture) return fixture;
       }
     } catch {

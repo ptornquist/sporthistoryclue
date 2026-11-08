@@ -1,17 +1,23 @@
 import { isGuestOpenDrop } from "@/lib/drop-dates";
 import {
   fourDistinctOptions,
-  loadDailyFixture,
+  loadDatedPublicDrop,
   loadMatchFixture,
   parseDateKey,
   toPublicDaily,
   viewerCanOpenArchive,
 } from "@/lib/daily-drop";
+import type { ClueLanguage } from "@/lib/tactical-clues";
 
 export const dynamic = "force-dynamic";
 
+function parseLanguage(value: string | null): ClueLanguage {
+  return value === "en" ? "en" : "sv";
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const language = parseLanguage(url.searchParams.get("lang"));
   const match = url.searchParams.get("match")?.trim();
   if (match) {
     const storyline = await loadMatchFixture(match);
@@ -30,11 +36,13 @@ export async function GET(request: Request) {
     return Response.json({ error: "Sign in to open past drops." }, { status: 401 });
   }
 
-  const fixture = await loadDailyFixture(dateKey);
-  const payload = toPublicDaily(fixture);
-  const rawOptions = Array.from(new Set(payload.options.filter(Boolean)));
+  const fixture = await loadDatedPublicDrop(dateKey, language);
+  if (!fixture) {
+    return Response.json({ error: "That drop could not be loaded." }, { status: 404 });
+  }
+  const rawOptions = Array.from(new Set(fixture.options.filter(Boolean)));
   return Response.json({
-    ...payload,
+    ...fixture,
     options: fourDistinctOptions(rawOptions, rawOptions[0] ?? "", rawOptions.slice(1)),
   });
 }
