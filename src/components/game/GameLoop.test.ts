@@ -83,7 +83,9 @@ describe("SolvedFixtureCard", () => {
     expect(html).toContain("🔥 3 dagars svit");
     expect(html).toContain("Dela resultat");
     expect(html).toContain("Utmana en vän");
+    expect(html.indexOf("Dela resultat")).toBeLessThan(html.indexOf("Utmana en vän"));
     expect(html).toContain("bg-blue-600");
+    expect(html).toContain('aria-haspopup="dialog"');
   });
 });
 

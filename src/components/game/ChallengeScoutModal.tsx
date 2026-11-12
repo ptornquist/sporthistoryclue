@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { ScoutProfile } from "@/lib/supabase/network";
 
 export function ChallengeScoutModal({
@@ -23,20 +24,44 @@ export function ChallengeScoutModal({
   onClose: () => void;
   onChallenge: (username: string) => void;
 }) {
+  const armed = useRef(false);
+  const points = typeof score === "number" && Number.isFinite(score) ? score : 0;
+  const matchId = fixtureId.trim() || "daily";
+  const roster = (Array.isArray(scouts) ? scouts : []).filter(
+    (scout) => scout && typeof scout.username === "string" && scout.username.replace(/^@/, "").trim(),
+  );
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      armed.current = true;
+    });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
   const copyLink = async () => {
-    const challengeUrl = `${window.location.origin}?challenge=${fixtureId}&score=${score}`;
+    const origin = window.location?.origin || "";
+    const challengeUrl = `${origin}?challenge=${encodeURIComponent(matchId)}&score=${points}`;
     try {
       await navigator.clipboard.writeText(challengeUrl);
       window.alert("Utmaningslänk kopierad till urklipp! Skicka den till en vän.");
     } catch {
-      window.alert("Kunde inte kopiera utmaningslänken.");
+      window.alert(challengeUrl);
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={() => {
+        if (armed.current) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="challenge-scout-title"
@@ -44,12 +69,13 @@ export function ChallengeScoutModal({
       <div
         className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-zinc-200 bg-white p-6 text-left shadow-2xl"
         onClick={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
       >
         <h2 id="challenge-scout-title" className="text-2xl font-black uppercase tracking-tight text-zinc-900">
           ⚔️ Utmana en vän
         </h2>
         <p className="mt-2 text-sm text-zinc-500">
-          Skicka din poäng på {score.toLocaleString()} och låt en annan scout försöka slå den.
+          Skicka din poäng på {points.toLocaleString()} och låt en annan scout försöka slå den.
         </p>
 
         <button
@@ -71,15 +97,14 @@ export function ChallengeScoutModal({
           <p className="mt-3 text-xs font-bold uppercase tracking-wider text-zinc-400">Hämtar scouter...</p>
         ) : !signedIn ? (
           <p className="mt-3 text-sm text-zinc-600">Logga in för att utmana en scout direkt i appen.</p>
-        ) : scouts.length === 0 ? (
+        ) : roster.length === 0 ? (
           <p className="mt-3 text-sm text-zinc-600">Inga scouter att utmana ännu.</p>
         ) : (
           <ul className="mt-3 space-y-2">
-            {scouts.map((scout) => {
-              const handle = scout.username?.replace(/^@/, "") || "";
-              if (!handle) return null;
+            {roster.map((scout) => {
+              const handle = scout.username?.replace(/^@/, "").trim() || "";
               return (
-                <li key={scout.id} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
+                <li key={scout.id || handle} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
                   <span className="min-w-0 truncate text-sm font-black text-zinc-900">@{handle}</span>
                   <button
                     type="button"
